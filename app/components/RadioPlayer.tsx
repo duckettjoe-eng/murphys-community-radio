@@ -6,7 +6,7 @@ export default function RadioPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [nowPlaying] = useState("Skull County Radio — Test Broadcast");
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const streamUrl = "https://example.com/stream.mp3";
+  const streamUrl = "https://streams.ilovemusic.de/iloveradio1.mp3";
 
   const togglePlayback = () => {
     if (!audioRef.current) return;
