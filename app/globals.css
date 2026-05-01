@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  background: #071d16;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(201, 155, 59, 0.16), transparent 30rem),
+    radial-gradient(circle at 88% 14%, rgba(135, 155, 117, 0.12), transparent 26rem),
+    linear-gradient(135deg, #051711 0%, #0c2f21 48%, #071d16 100%);
+  color: #f6efd8;
+  font-family: Inter, ui-sans-serif, system-ui, Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: #c99b3b;
+  color: #071d16;
+}
+
+.paper-texture {
+  background-image:
+    linear-gradient(rgba(29, 36, 31, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29, 36, 31, 0.03) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.grain-overlay {
+  background-image:
+    radial-gradient(circle at 25% 20%, rgba(246, 239, 216, 0.09) 0 1px, transparent 1px),
+    radial-gradient(circle at 75% 80%, rgba(201, 155, 59, 0.08) 0 1px, transparent 1px);
+  background-size: 18px 18px, 26px 26px;
+}
+
+@layer components {
+  .section-kicker {
+    @apply text-xs font-bold uppercase tracking-[0.24em] text-gold;
+  }
+
+  .section-title {
+    @apply mt-3 font-display text-4xl font-bold leading-[1.02] text-cream sm:text-5xl;
+  }
+
+  .section-copy {
+    @apply mt-4 max-w-2xl text-base leading-7 text-parchment/85 sm:text-lg;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-gold px-6 py-3 text-sm font-bold uppercase tracking-[0.14em] text-hunter-deep shadow-gold-soft transition duration-200 hover:-translate-y-0.5 hover:bg-gold-light hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-gold-light focus:ring-offset-2 focus:ring-offset-hunter-deep;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-gold/65 px-6 py-3 text-sm font-bold uppercase tracking-[0.14em] text-gold-light transition duration-200 hover:-translate-y-0.5 hover:bg-gold hover:text-hunter-deep focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-hunter-deep;
+  }
+
+  .premium-card {
+    @apply rounded-lg border border-gold/20 shadow-2xl shadow-black/20 transition duration-300;
+  }
+
+  .form-field {
+    @apply flex flex-col gap-2 text-sm font-bold uppercase tracking-[0.14em] text-hunter;
+  }
+
+  .form-field input,
+  .form-field select,
+  .form-field textarea {
+    @apply w-full rounded-md border border-hunter/20 bg-cream px-4 py-3 text-base font-normal normal-case tracking-normal text-ink outline-none transition duration-200 placeholder:text-ink/40 focus:border-gold focus:ring-2 focus:ring-gold/30;
+  }
+}
