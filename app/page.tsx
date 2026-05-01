@@ -38,7 +38,7 @@ const shows = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen pb-32 overflow-hidden bg-hunter-deep text-cream">
+    <main className="min-h-screen overflow-hidden bg-hunter-deep pb-28 text-cream">
       <section className="relative border-b border-gold/25 bg-[radial-gradient(circle_at_18%_18%,rgba(224,191,112,0.16),transparent_25rem),radial-gradient(circle_at_84%_20%,rgba(135,155,117,0.12),transparent_24rem),linear-gradient(145deg,#0c2f21_0%,#071d16_72%)]">
         <div className="absolute inset-0 opacity-[0.16] grain-overlay" />
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
