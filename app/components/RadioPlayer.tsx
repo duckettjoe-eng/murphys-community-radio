@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { getCurrentShow } from "../lib/schedule";
 
 function splitMetadata(nowPlaying: string) {
   const separator = nowPlaying.includes(" — ") ? " — " : " - ";
@@ -28,6 +29,7 @@ export default function RadioPlayer() {
   const [muted, setMuted] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [isFading, setIsFading] = useState(false);
+  const [currentShow, setCurrentShow] = useState(getCurrentShow());
   const fallbackNowPlaying = "Golden Era Hip-Hop — Test Stream";
   const [nowPlaying, setNowPlaying] = useState(fallbackNowPlaying);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -85,6 +87,18 @@ export default function RadioPlayer() {
     refreshNowPlaying();
 
     const interval = setInterval(refreshNowPlaying, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const updateShow = () => {
+      setCurrentShow(getCurrentShow());
+    };
+
+    updateShow();
+
+    const interval = setInterval(updateShow, 60000);
 
     return () => clearInterval(interval);
   }, []);
@@ -178,6 +192,9 @@ export default function RadioPlayer() {
                   isFading ? "opacity-0" : "opacity-100"
                 }`}
               >
+                <p className="truncate text-xs font-semibold uppercase tracking-[0.14em] text-cream/60">
+                  {currentShow.name}
+                </p>
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-yellow-500/80">
                   NOW PLAYING
                 </p>
@@ -257,6 +274,17 @@ export default function RadioPlayer() {
                   </span>
                 </div>
                 <div>
+                  <div className="mb-4 rounded-xl border border-gold/20 bg-black/15 p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-yellow-500/80">
+                      CURRENT SHOW
+                    </p>
+                    <p className="mt-2 font-display text-2xl font-bold leading-tight text-[#f3ead2]">
+                      {currentShow.name}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-cream/65">
+                      {currentShow.host}
+                    </p>
+                  </div>
                   <p className="text-xs font-bold uppercase tracking-[0.24em] text-yellow-500/80">
                     NOW PLAYING
                   </p>
