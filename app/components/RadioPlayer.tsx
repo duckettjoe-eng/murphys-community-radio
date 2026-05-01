@@ -1,6 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+function splitMetadata(nowPlaying: string) {
+  const separator = nowPlaying.includes(" — ") ? " — " : " - ";
+
+  if (!nowPlaying.includes(separator)) {
+    return {
+      artist: "Murphys Community Radio",
+      title: nowPlaying,
+    };
+  }
+
+  const [artist, ...titleParts] = nowPlaying.split(separator);
+  const title = titleParts.join(separator).trim();
+
+  return {
+    artist: artist.trim() || "Murphys Community Radio",
+    title: title || nowPlaying,
+  };
+}
 
 export default function RadioPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -8,16 +27,38 @@ export default function RadioPlayer() {
   const [volume, setVolume] = useState(0.8);
   const [muted, setMuted] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [isFading, setIsFading] = useState(false);
   const fallbackNowPlaying = "Golden Era Hip-Hop — Test Stream";
   const [nowPlaying, setNowPlaying] = useState(fallbackNowPlaying);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const nowPlayingRef = useRef(fallbackNowPlaying);
+  const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const streamUrl = "https://streams.ilovemusic.de/iloveradio1.mp3";
+  const metadata = useMemo(() => splitMetadata(nowPlaying), [nowPlaying]);
   const expandedStatus =
     status === "Playing"
       ? "Live"
       : status === "Stream unavailable"
         ? "Offline"
         : status;
+
+  const updateNowPlaying = (nextNowPlaying: string) => {
+    const nextValue = nextNowPlaying || fallbackNowPlaying;
+
+    if (nextValue === nowPlayingRef.current) return;
+
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+    }
+
+    setIsFading(true);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      nowPlayingRef.current = nextValue;
+      setNowPlaying(nextValue);
+      setIsFading(false);
+    }, 200);
+  };
 
   const refreshNowPlaying = async () => {
     try {
@@ -30,13 +71,13 @@ export default function RadioPlayer() {
       const data = (await response.json()) as { title?: string };
 
       if (data?.title) {
-        setNowPlaying(data.title);
+        updateNowPlaying(data.title);
         return;
       }
 
-      setNowPlaying(fallbackNowPlaying);
+      updateNowPlaying(fallbackNowPlaying);
     } catch {
-      setNowPlaying(fallbackNowPlaying);
+      updateNowPlaying(fallbackNowPlaying);
     }
   };
 
@@ -59,6 +100,14 @@ export default function RadioPlayer() {
 
     audioRef.current.muted = muted;
   }, [muted]);
+
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const togglePlayback = () => {
     if (!audioRef.current) return;
@@ -133,11 +182,20 @@ export default function RadioPlayer() {
                 </div>
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.24em] text-yellow-500/80">
-                    Now Playing
+                    NOW PLAYING
                   </p>
-                  <p className="mt-2 max-w-4xl text-2xl font-semibold leading-tight text-[#f3ead2] sm:text-3xl">
-                    {nowPlaying}
-                  </p>
+                  <div
+                    className={`mt-2 max-w-4xl overflow-hidden transition-opacity duration-300 ${
+                      isFading ? "opacity-0" : "opacity-100"
+                    }`}
+                  >
+                    <p className="metadata-marquee whitespace-nowrap text-2xl font-semibold leading-tight text-[#f3ead2] sm:text-3xl">
+                      {metadata.title}
+                    </p>
+                    <p className="mt-1 truncate text-sm font-semibold uppercase tracking-[0.18em] text-cream/65">
+                      {metadata.artist}
+                    </p>
+                  </div>
                 </div>
                 <p className="text-sm text-cream/65">
                   Foothill voices, on the air.
@@ -166,12 +224,21 @@ export default function RadioPlayer() {
                   {status}
                 </span>
               </div>
-              <p className="max-w-3xl truncate text-sm text-cream sm:text-base">
-                <span className="text-yellow-500/80">Now Playing: </span>
-                <span className="font-semibold text-[#f3ead2]">
-                  {nowPlaying}
-                </span>
-              </p>
+              <div
+                className={`max-w-3xl transition-opacity duration-300 ${
+                  isFading ? "opacity-0" : "opacity-100"
+                }`}
+              >
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-yellow-500/80">
+                  NOW PLAYING
+                </p>
+                <p className="truncate text-sm font-semibold text-[#f3ead2] sm:text-base">
+                  {metadata.title}
+                </p>
+                <p className="truncate text-xs font-semibold uppercase tracking-[0.14em] text-cream/55">
+                  {metadata.artist}
+                </p>
+              </div>
               <p className="text-xs text-cream/65">
                 Foothill voices, on the air.
               </p>

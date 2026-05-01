@@ -45,6 +45,31 @@ body {
   background-size: 18px 18px, 26px 26px;
 }
 
+@keyframes metadata-marquee {
+  0%,
+  18% {
+    transform: translateX(0);
+  }
+
+  82%,
+  100% {
+    transform: translateX(-20%);
+  }
+}
+
+.metadata-marquee {
+  display: inline-block;
+  min-width: 100%;
+  width: max-content;
+  padding-right: 3rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .metadata-marquee {
+    animation: metadata-marquee 14s ease-in-out infinite alternate;
+  }
+}
+
 @layer components {
   .section-kicker {
     @apply text-xs font-bold uppercase tracking-[0.24em] text-gold;
