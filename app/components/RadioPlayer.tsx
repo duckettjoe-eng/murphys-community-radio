@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getCurrentShow } from "../lib/schedule";
 
 function splitMetadata(nowPlaying: string) {
   const separator = nowPlaying.includes(" — ") ? " — " : " - ";
@@ -29,7 +28,10 @@ export default function RadioPlayer() {
   const [muted, setMuted] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [isFading, setIsFading] = useState(false);
-  const [currentShow, setCurrentShow] = useState(getCurrentShow());
+  const [currentShow, setCurrentShow] = useState({
+    name: "Murphys Community Radio",
+    host: "Live Broadcast",
+  });
   const fallbackNowPlaying = "Golden Era Hip-Hop — Test Stream";
   const [nowPlaying, setNowPlaying] = useState(fallbackNowPlaying);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -83,6 +85,28 @@ export default function RadioPlayer() {
     }
   };
 
+  const fetchCurrentShow = async () => {
+    try {
+      const response = await fetch("/api/current-show", {
+        cache: "no-store",
+      });
+
+      const data = (await response.json()) as { name?: string; host?: string };
+
+      if (data?.name) {
+        setCurrentShow({
+          name: data.name,
+          host: data.host || "Live Broadcast",
+        });
+      }
+    } catch {
+      setCurrentShow({
+        name: "Murphys Community Radio",
+        host: "Live Broadcast",
+      });
+    }
+  };
+
   useEffect(() => {
     refreshNowPlaying();
 
@@ -92,13 +116,9 @@ export default function RadioPlayer() {
   }, []);
 
   useEffect(() => {
-    const updateShow = () => {
-      setCurrentShow(getCurrentShow());
-    };
+    fetchCurrentShow();
 
-    updateShow();
-
-    const interval = setInterval(updateShow, 60000);
+    const interval = setInterval(fetchCurrentShow, 60000);
 
     return () => clearInterval(interval);
   }, []);
