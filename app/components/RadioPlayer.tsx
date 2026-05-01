@@ -4,23 +4,31 @@ import { useEffect, useRef, useState } from "react";
 
 export default function RadioPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
+  const fallbackNowPlaying = "Golden Era Hip-Hop — Test Stream";
   const [nowPlaying, setNowPlaying] = useState(
-    "Golden Era Hip-Hop — Test Stream",
+    fallbackNowPlaying,
   );
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const streamUrl = "https://streams.ilovemusic.de/iloveradio1.mp3";
 
   const refreshNowPlaying = async () => {
     try {
-      // Future metadata endpoint will go here.
-      // Example:
-      // const res = await fetch("/api/now-playing");
-      // const data = await res.json();
-      // if (data?.title) setNowPlaying(data.title);
+      const response = await fetch("/api/now-playing", { cache: "no-store" });
 
-      setNowPlaying("Golden Era Hip-Hop — Test Stream");
+      if (!response.ok) {
+        throw new Error("Now playing endpoint failed");
+      }
+
+      const data = (await response.json()) as { title?: string };
+
+      if (data?.title) {
+        setNowPlaying(data.title);
+        return;
+      }
+
+      setNowPlaying(fallbackNowPlaying);
     } catch {
-      setNowPlaying("Golden Era Hip-Hop — Test Stream");
+      setNowPlaying(fallbackNowPlaying);
     }
   };
 
