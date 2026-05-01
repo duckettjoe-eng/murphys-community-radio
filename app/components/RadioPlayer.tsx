@@ -1,12 +1,36 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function RadioPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [nowPlaying] = useState("Skull County Radio — Test Broadcast");
+  const [nowPlaying, setNowPlaying] = useState(
+    "Golden Era Hip-Hop — Test Stream",
+  );
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const streamUrl = "https://streams.ilovemusic.de/iloveradio1.mp3";
+
+  const refreshNowPlaying = async () => {
+    try {
+      // Future metadata endpoint will go here.
+      // Example:
+      // const res = await fetch("/api/now-playing");
+      // const data = await res.json();
+      // if (data?.title) setNowPlaying(data.title);
+
+      setNowPlaying("Golden Era Hip-Hop — Test Stream");
+    } catch {
+      setNowPlaying("Golden Era Hip-Hop — Test Stream");
+    }
+  };
+
+  useEffect(() => {
+    refreshNowPlaying();
+
+    const interval = setInterval(refreshNowPlaying, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const togglePlayback = () => {
     if (!audioRef.current) return;
@@ -32,9 +56,14 @@ export default function RadioPlayer() {
       <audio ref={audioRef} src={streamUrl} preload="none" />
       <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 space-y-1">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-gold-light">
-            Murphys Community Radio
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-gold-light">
+              Murphys Community Radio
+            </p>
+            <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-cream shadow-sm">
+              LIVE
+            </span>
+          </div>
           <p className="text-sm text-cream sm:text-base">
             <span className="text-yellow-500/80">Now Playing: </span>
             <span className="font-semibold text-[#f3ead2]">{nowPlaying}</span>
