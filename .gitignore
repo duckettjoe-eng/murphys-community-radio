@@ -32,3 +32,5 @@ node_modules/
 node_modules/
 .next/
 .env.local
+public/audio/
+public/audio/
