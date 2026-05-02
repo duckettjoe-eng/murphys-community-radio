@@ -37,3 +37,6 @@ public/audio/
 public/audio/
 public/audio/
 public/audio/
+
+!public/audio-small/
+!public/audio-small/**
