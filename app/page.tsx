@@ -42,7 +42,7 @@ export default function Home() {
       <section className="relative border-b border-gold/25 bg-[radial-gradient(circle_at_18%_18%,rgba(224,191,112,0.16),transparent_25rem),radial-gradient(circle_at_84%_20%,rgba(135,155,117,0.12),transparent_24rem),linear-gradient(145deg,#0c2f21_0%,#071d16_72%)]">
         <div className="absolute inset-0 opacity-[0.16] grain-overlay" />
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
-        <nav className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-6 sm:px-8">
+        <nav className="relative mx-auto flex max-w-7xl flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <div>
             <p className="font-display text-xl font-bold text-gold-light">
               Murphys Community Radio
@@ -51,12 +51,20 @@ export default function Home() {
               XTRA GOOD LABS
             </p>
           </div>
-          <a
-            href="#listen"
-            className="rounded-lg border border-gold/60 px-4 py-2 text-sm font-semibold text-gold-light transition duration-200 hover:bg-gold hover:text-hunter-deep"
-          >
-            Listen Live
-          </a>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="/archive"
+              className="rounded-lg border border-gold/60 px-4 py-2 text-sm font-semibold text-gold-light transition duration-200 hover:bg-gold hover:text-hunter-deep"
+            >
+              Archive
+            </a>
+            <a
+              href="#listen"
+              className="rounded-lg border border-gold/60 px-4 py-2 text-sm font-semibold text-gold-light transition duration-200 hover:bg-gold hover:text-hunter-deep"
+            >
+              Listen Live
+            </a>
+          </div>
         </nav>
 
         <div className="relative mx-auto grid max-w-7xl gap-12 px-6 pb-20 pt-12 sm:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:pb-28 lg:pt-20">
@@ -78,6 +86,9 @@ export default function Home() {
             <div className="mt-10 flex flex-wrap gap-3">
               <a href="#listen" className="btn-primary">
                 Listen Live
+              </a>
+              <a href="/archive" className="btn-secondary">
+                Archive
               </a>
               <a href="#support" className="btn-secondary">
                 Support
@@ -128,6 +139,9 @@ export default function Home() {
               Live stream coming soon. The first broadcast home for Murphys
               Community Radio is warming up.
             </p>
+            <a href="/archive" className="btn-primary mt-6 inline-flex">
+              Listen to the Archive
+            </a>
           </div>
           <div className="premium-card border-hunter/15 bg-white/55 p-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
