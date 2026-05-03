@@ -13,10 +13,12 @@ export default function ArchivePage() {
   const [selectedDjSlug, setSelectedDjSlug] = useState(allDjsSlug);
   const [activeItem, setActiveItem] = useState<MusicArchiveItem | null>(null);
   const [activePartIndex, setActivePartIndex] = useState(0);
+  const [isFullShowPlayback, setIsFullShowPlayback] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const shouldAutoPlayRef = useRef(false);
   const activeParts =
     activeItem?.parts && activeItem.parts.length > 0
       ? activeItem.parts
@@ -138,17 +140,41 @@ export default function ArchivePage() {
 
     setActiveItem(item);
     setActivePartIndex(0);
+    setIsFullShowPlayback(false);
     setCurrentTime(0);
     setDuration(0);
+    shouldAutoPlayRef.current = true;
     setIsPlaying(true);
+  };
+
+  const playFullShow = (item: MusicArchiveItem) => {
+    const isCurrentEpisode = activeItem?.id === item.id;
+
+    setActiveItem(item);
+    setActivePartIndex(0);
+    setIsFullShowPlayback(true);
+    setCurrentTime(0);
+    setDuration(0);
+    shouldAutoPlayRef.current = true;
+    setIsPlaying(true);
+
+    if (isCurrentEpisode && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    }
   };
 
   const updateSelectedShow = (showSlug: string) => {
     setSelectedShowSlug(showSlug);
     setSelectedDjSlug(allDjsSlug);
     setActivePartIndex(0);
+    setIsFullShowPlayback(false);
     setCurrentTime(0);
     setDuration(0);
+    shouldAutoPlayRef.current = false;
   };
 
   const togglePlayback = () => {
@@ -176,28 +202,57 @@ export default function ArchivePage() {
   const playPart = (partIndex: number) => {
     if (!activeItem || partIndex < 0 || partIndex >= activeParts.length) return;
 
+    const isCurrentPart = partIndex === activePartIndex;
+
     setActivePartIndex(partIndex);
+    setIsFullShowPlayback(false);
     setCurrentTime(0);
     setDuration(0);
+    shouldAutoPlayRef.current = true;
     setIsPlaying(true);
+
+    if (isCurrentPart && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    }
   };
 
   const playPreviousPart = () => {
     playPart(activePartIndex - 1);
   };
 
-  const playNextPart = () => {
+  const playNextPart = (keepFullShowPlayback = false) => {
     const nextPartIndex = activePartIndex + 1;
 
     if (nextPartIndex >= activeParts.length) {
+      setIsFullShowPlayback(false);
+      shouldAutoPlayRef.current = false;
       setIsPlaying(false);
       return;
     }
 
     setActivePartIndex(nextPartIndex);
+    setIsFullShowPlayback(keepFullShowPlayback);
     setCurrentTime(0);
     setDuration(0);
+    shouldAutoPlayRef.current = true;
     setIsPlaying(true);
+  };
+
+  const handleEnded = () => {
+    const hasNextPart = activePartIndex < activeParts.length - 1;
+
+    if (isFullShowPlayback && hasNextPart) {
+      playNextPart(true);
+      return;
+    }
+
+    setIsFullShowPlayback(false);
+    shouldAutoPlayRef.current = false;
+    setIsPlaying(false);
   };
 
   const formatTime = (seconds: number) => {
@@ -212,22 +267,15 @@ export default function ArchivePage() {
   };
 
   useEffect(() => {
-    if (!activeItem || !audioRef.current) return;
+    if (!activeAudioSrc || !shouldAutoPlayRef.current || !audioRef.current) {
+      return;
+    }
 
     audioRef.current
       .play()
       .then(() => setIsPlaying(true))
       .catch(() => setIsPlaying(false));
-  }, [activeItem]);
-
-  useEffect(() => {
-    if (!activeAudioSrc || !isPlaying || !audioRef.current) return;
-
-    audioRef.current
-      .play()
-      .then(() => setIsPlaying(true))
-      .catch(() => setIsPlaying(false));
-  }, [activeAudioSrc, isPlaying]);
+  }, [activeAudioSrc]);
 
   return (
     <main className="min-h-screen bg-hunter-deep text-cream">
@@ -240,7 +288,7 @@ export default function ArchivePage() {
           onTimeUpdate={(event) =>
             setCurrentTime(event.currentTarget.currentTime)
           }
-          onEnded={playNextPart}
+          onEnded={handleEnded}
         />
       ) : null}
 
@@ -303,8 +351,19 @@ export default function ArchivePage() {
                     </p>
                   )}
                   {activeItem && activeParts.length > 1 ? (
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-[0.16em]">
+                      {isFullShowPlayback ? (
+                        <span className="rounded-full bg-gold px-3 py-1 text-hunter">
+                          Playing full show
+                        </span>
+                      ) : null}
+                      <span className="rounded-full bg-cream/10 px-3 py-1 text-gold-light/80">
+                        Part {activePartIndex + 1} of {activeParts.length}
+                      </span>
+                    </div>
+                  ) : activeItem && isFullShowPlayback ? (
                     <p className="mt-2 text-xs font-bold uppercase tracking-[0.16em] text-gold-light/80">
-                      Part {activePartIndex + 1} of {activeParts.length}
+                      Playing full show
                     </p>
                   ) : null}
                 </div>
@@ -348,6 +407,14 @@ export default function ArchivePage() {
                     </span>
                     <span className="mt-1 block text-base text-cream">
                       Part {activePartIndex + 1} of {activeParts.length}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-xs uppercase tracking-[0.14em] text-cream/40">
+                      Status
+                    </span>
+                    <span className="mt-1 block text-base text-cream">
+                      {isFullShowPlayback ? "Playing full show" : "Single part"}
                     </span>
                   </div>
                   <div className="min-w-0">
@@ -403,7 +470,7 @@ export default function ArchivePage() {
                   </button>
                   <button
                     type="button"
-                    onClick={playNextPart}
+                    onClick={() => playNextPart(false)}
                     disabled={activePartIndex >= activeParts.length - 1}
                     className="rounded-full border border-cream/20 bg-cream/5 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-cream/75 transition duration-200 hover:border-gold/70 hover:text-gold-light disabled:cursor-not-allowed disabled:opacity-40"
                   >
@@ -537,6 +604,13 @@ export default function ArchivePage() {
                     {activeItem?.id === item.id && isPlaying
                       ? "Pause"
                       : "Play"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => playFullShow(item)}
+                    className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-gold px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-hunter transition duration-200 hover:-translate-y-0.5 hover:bg-gold-light hover:shadow-lg sm:ml-3 sm:mt-5 sm:w-auto"
+                  >
+                    Play Full Show
                   </button>
                 </div>
               </article>
