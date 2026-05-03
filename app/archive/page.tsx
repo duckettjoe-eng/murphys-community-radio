@@ -166,6 +166,15 @@ export default function ArchivePage() {
     setCurrentTime(nextTime);
   };
 
+  const playPart = (partIndex: number) => {
+    if (!activeItem || partIndex < 0 || partIndex >= activeParts.length) return;
+
+    setActivePartIndex(partIndex);
+    setCurrentTime(0);
+    setDuration(0);
+    setIsPlaying(true);
+  };
+
   const playNextPart = () => {
     const nextPartIndex = activePartIndex + 1;
 
@@ -317,6 +326,25 @@ export default function ArchivePage() {
                 <span>{formatTime(duration)}</span>
               </div>
             </div>
+
+            {activeItem && activeParts.length > 1 ? (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {activeParts.map((part, partIndex) => (
+                  <button
+                    key={part}
+                    type="button"
+                    onClick={() => playPart(partIndex)}
+                    className={`rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] transition duration-200 ${
+                      activePartIndex === partIndex
+                        ? "border-gold bg-gold text-hunter"
+                        : "border-cream/20 bg-cream/5 text-cream/75 hover:border-gold/70 hover:text-gold-light"
+                    }`}
+                  >
+                    Part {partIndex + 1}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
