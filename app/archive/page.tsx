@@ -320,7 +320,7 @@ export default function ArchivePage() {
 
       <section className="relative border-b border-gold/20 bg-[radial-gradient(circle_at_18%_12%,rgba(224,191,112,0.16),transparent_25rem),radial-gradient(circle_at_84%_16%,rgba(135,155,117,0.12),transparent_24rem),linear-gradient(145deg,#0c2f21_0%,#071d16_76%)]">
         <div className="absolute inset-0 opacity-[0.14] grain-overlay" />
-        <div className="relative mx-auto grid max-w-6xl gap-8 px-6 py-10 sm:px-8 sm:py-16 lg:grid-cols-[1fr_360px] lg:items-end">
+        <div className="relative mx-auto grid max-w-[1160px] gap-8 px-6 py-10 sm:px-8 sm:py-16 lg:grid-cols-[1fr_320px] lg:items-end">
           <div>
             <a
               href="/"
@@ -345,12 +345,12 @@ export default function ArchivePage() {
               Now Playing
             </p>
             {activeItem ? (
-              <div className="mt-4 grid gap-4 sm:grid-cols-[88px_1fr] lg:grid-cols-1">
+              <div className="mt-4 grid gap-4 sm:grid-cols-[80px_1fr] lg:grid-cols-[80px_1fr]">
                 {activeItem.artwork ? (
                   <img
                     src={activeItem.artwork}
                     alt={`${activeItem.host} artwork`}
-                    className="aspect-square w-24 rounded-lg border border-gold/25 object-cover shadow-lg shadow-black/20 lg:w-full"
+                    className="aspect-square w-20 rounded-lg border border-gold/25 object-cover shadow-lg shadow-black/20"
                   />
                 ) : null}
                 <div className="min-w-0">
@@ -382,18 +382,18 @@ export default function ArchivePage() {
       </section>
 
       <section className="bg-cream py-10 text-ink paper-texture sm:py-14">
-        <div className="mx-auto max-w-6xl px-6 sm:px-8">
-          <div className="premium-card sticky top-3 z-10 border-hunter/15 bg-hunter p-4 text-cream shadow-black/20 sm:p-5">
-            <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div className="grid min-w-0 gap-4 sm:grid-cols-[96px_1fr] sm:items-center">
+        <div className="mx-auto max-w-[1160px] px-6 sm:px-8">
+          <div className="premium-card sticky top-3 z-10 border-hunter/15 bg-hunter p-4 text-cream shadow-black/20">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <div className="grid min-w-0 gap-3 sm:grid-cols-[72px_1fr] sm:items-center">
                 {activeItem?.artwork ? (
                   <img
                     src={activeItem.artwork}
                     alt={`${activeItem.host} artwork`}
-                    className="aspect-square w-24 rounded-lg border border-gold/25 object-cover shadow-lg shadow-black/20"
+                    className="aspect-square w-20 rounded-lg border border-gold/25 object-cover shadow-lg shadow-black/20 sm:w-[72px]"
                   />
                 ) : (
-                  <div className="grid aspect-square w-24 place-items-center rounded-lg border border-gold/25 bg-cream/10 text-center text-xs font-bold uppercase tracking-[0.14em] text-cream/45">
+                  <div className="grid aspect-square w-20 place-items-center rounded-lg border border-gold/25 bg-cream/10 text-center text-xs font-bold uppercase tracking-[0.14em] text-cream/45 sm:w-[72px]">
                     Artwork
                   </div>
                 )}
@@ -401,7 +401,7 @@ export default function ArchivePage() {
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-light">
                     Archive Player
                   </p>
-                  <h2 className="mt-2 truncate font-display text-3xl font-bold leading-tight text-cream">
+                  <h2 className="mt-1 font-display text-2xl font-bold leading-tight text-cream sm:text-3xl">
                     {activeItem?.title || "Choose an episode"}
                   </h2>
                   {activeItem ? (
@@ -428,7 +428,7 @@ export default function ArchivePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 sm:min-w-[18rem]">
+              <div className="grid grid-cols-3 gap-2 lg:w-[17rem]">
                 <button
                   type="button"
                   onClick={playPreviousPart}
@@ -458,8 +458,8 @@ export default function ArchivePage() {
               </div>
             </div>
 
-            <div className="mt-4">
-              <div className="mb-3 h-2 overflow-hidden rounded-full bg-cream/15">
+            <div className="mt-3">
+              <div className="mb-2 h-2 overflow-hidden rounded-full bg-cream/15">
                 <div
                   className="h-full rounded-full bg-gold transition-[width] duration-200"
                   style={{ width: `${progressPercent}%` }}
@@ -476,25 +476,25 @@ export default function ArchivePage() {
                 className="h-2 w-full accent-gold"
                 aria-label="Episode progress"
               />
-              <div className="mt-2 flex justify-between text-xs font-semibold text-cream/55">
+              <div className="mt-1 flex justify-between text-xs font-semibold text-cream/55">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
               {activeAudioLabel ? (
-                <p className="mt-2 truncate text-xs font-semibold text-cream/45">
+                <p className="mt-1 truncate text-xs font-semibold text-cream/45">
                   {activeAudioLabel}
                 </p>
               ) : null}
             </div>
 
             {activeItem && activeParts.length > 1 ? (
-              <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {activeParts.map((part, partIndex) => (
                   <button
                     key={part}
                     type="button"
                     onClick={() => playPart(partIndex)}
-                    className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] transition duration-200 ${
+                    className={`rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] transition duration-200 ${
                       activePartIndex === partIndex
                         ? "border-gold bg-gold text-hunter"
                         : "border-cream/20 bg-cream/5 text-cream/75 hover:border-gold/70 hover:text-gold-light"
@@ -507,14 +507,14 @@ export default function ArchivePage() {
             ) : null}
           </div>
 
-          <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between lg:mt-14">
             <div>
               <p className="section-kicker">Browse Recordings</p>
               <h2 className="mt-2 font-display text-4xl font-bold text-hunter">
                 {selectedShowName}
               </h2>
             </div>
-            <div className="grid gap-3 sm:min-w-[32rem] sm:grid-cols-2">
+            <div className="grid w-full gap-3 sm:max-w-[34rem] sm:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <label
                   htmlFor="archive-show"
@@ -568,7 +568,7 @@ export default function ArchivePage() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
+          <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             {selectedArchiveItems.map((item) => (
               <article
                 key={item.id}
@@ -578,15 +578,15 @@ export default function ArchivePage() {
                     : "border-hunter/15 bg-white/80"
                 }`}
               >
-                <div className="grid gap-0 sm:grid-cols-[168px_1fr]">
+                <div className="grid min-w-0 gap-0 sm:grid-cols-[120px_minmax(0,1fr)]">
                   {item.artwork ? (
                     <img
                       src={item.artwork}
                       alt={`${item.host} artwork`}
-                      className="aspect-square w-full object-cover sm:h-full"
+                      className="aspect-square w-full max-h-[210px] object-cover sm:h-[120px] sm:w-[120px]"
                     />
                   ) : null}
-                  <div className="p-5 sm:p-6">
+                  <div className="min-w-0 p-5">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold">
                         {item.showName}
@@ -597,10 +597,10 @@ export default function ArchivePage() {
                         </span>
                       ) : null}
                     </div>
-                    <h3 className="mt-3 font-display text-3xl font-bold leading-tight text-hunter">
+                    <h3 className="mt-3 break-words font-display text-2xl font-bold leading-tight text-hunter">
                       {item.title}
                     </h3>
-                    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+                    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3 xl:grid-cols-1">
                       <div>
                         <dt className="text-xs font-bold uppercase tracking-[0.14em] text-ink/45">
                           Host
@@ -626,18 +626,18 @@ export default function ArchivePage() {
                         </dd>
                       </div>
                     </dl>
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-5 flex flex-wrap gap-3">
                       <button
                         type="button"
                         onClick={() => playFullShow(item)}
-                        className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-gold px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-hunter transition duration-200 hover:-translate-y-0.5 hover:bg-gold-light hover:shadow-lg"
+                        className="inline-flex min-h-12 flex-[1_1_10rem] items-center justify-center rounded-full bg-gold px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-hunter transition duration-200 hover:-translate-y-0.5 hover:bg-gold-light hover:shadow-lg"
                       >
                         Play Full Show
                       </button>
                       <button
                         type="button"
                         onClick={() => playEpisode(item)}
-                        className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-hunter px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-gold-light transition duration-200 hover:-translate-y-0.5 hover:bg-hunter-deep hover:shadow-lg"
+                        className="inline-flex min-h-12 flex-[1_1_10rem] items-center justify-center rounded-full bg-hunter px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-gold-light transition duration-200 hover:-translate-y-0.5 hover:bg-hunter-deep hover:shadow-lg"
                       >
                         {activeItem?.id === item.id && isPlaying
                           ? "Pause"
@@ -649,13 +649,13 @@ export default function ArchivePage() {
                         <p className="text-xs font-bold uppercase tracking-[0.14em] text-ink/45">
                           View Parts
                         </p>
-                        <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                        <div className="mt-2 flex flex-wrap gap-2">
                           {item.parts.map((part, partIndex) => (
                             <button
                               key={part}
                               type="button"
                               onClick={() => playItemPart(item, partIndex)}
-                              className={`shrink-0 rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] transition duration-200 ${
+                              className={`rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] transition duration-200 ${
                                 activeItem?.id === item.id &&
                                 activePartIndex === partIndex
                                   ? "border-gold bg-gold text-hunter"
