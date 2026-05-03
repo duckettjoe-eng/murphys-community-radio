@@ -63,7 +63,7 @@ export default function RadioPlayer() {
   const playbackSource: PlaybackSource =
     hasScheduledLiveShow && hasLiveStreamUrl ? "live" : "archive";
   const activeAudioUrl =
-    playbackSource === "live" ? liveStreamUrl : archiveTrack?.filePath || "";
+    playbackSource === "live" ? liveStreamUrl : archiveTrack?.audioUrl || "";
   const sourceLabel = playbackSource === "live" ? "Live" : "Archive";
   const metadata = useMemo(
     () =>
