@@ -1,3 +1,5 @@
+import { generatedMusicArchive } from "./generatedMusicArchive";
+
 export type MusicArchiveItem = {
   id: string;
   showSlug: string;
@@ -11,6 +13,15 @@ export type MusicArchiveItem = {
   parts: string[];
   artwork: string;
   date: string;
+};
+
+type GeneratedMusicArchiveItem = {
+  id: string;
+  title: string;
+  host: string;
+  date: string;
+  artwork: string;
+  parts: string[];
 };
 
 const SUPABASE_AUDIO_BASE =
@@ -233,4 +244,26 @@ export const beatDownArchive: MusicArchiveItem[] = [
   },
 ];
 
-export const localMusicArchive = beatDownArchive;
+const generatedBeatDownArchive: MusicArchiveItem[] = (
+  generatedMusicArchive as GeneratedMusicArchiveItem[]
+)
+  .filter((item) => item.parts.length > 0)
+  .map((item) => ({
+    id: item.id,
+    showSlug: "beatdown",
+    showName: "The Beat Down",
+    djSlug: "dj-hello-joey",
+    djName: item.host,
+    host: item.host,
+    title: item.title,
+    artist: item.host,
+    audioUrl: item.parts[0],
+    parts: item.parts,
+    artwork: item.artwork,
+    date: item.date,
+  }));
+
+export const localMusicArchive = [
+  ...beatDownArchive,
+  ...generatedBeatDownArchive,
+];
