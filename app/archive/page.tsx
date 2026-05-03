@@ -30,6 +30,7 @@ export default function ArchivePage() {
     ? decodeURIComponent(activeAudioSrc.split("/").pop() || "Archive audio")
     : null;
   const progressPercent = duration ? (currentTime / duration) * 100 : 0;
+  const hasArchiveItems = archiveItems.length > 0;
 
   const showOptions = useMemo(
     () => {
@@ -114,7 +115,7 @@ export default function ArchivePage() {
         setStatus("");
       } catch {
         setArchiveItems([]);
-        setStatus("Archive unavailable");
+        setStatus("The archive could not be loaded. Try refreshing the page.");
       }
     };
 
@@ -138,6 +139,8 @@ export default function ArchivePage() {
       return;
     }
 
+    setSelectedShowSlug(item.showSlug);
+    setSelectedDjSlug(allDjsSlug);
     setActiveItem(item);
     setActivePartIndex(0);
     setIsFullShowPlayback(false);
@@ -150,6 +153,8 @@ export default function ArchivePage() {
   const playFullShow = (item: MusicArchiveItem) => {
     const isCurrentEpisode = activeItem?.id === item.id;
 
+    setSelectedShowSlug(item.showSlug);
+    setSelectedDjSlug(allDjsSlug);
     setActiveItem(item);
     setActivePartIndex(0);
     setIsFullShowPlayback(true);
@@ -165,6 +170,27 @@ export default function ArchivePage() {
         .then(() => setIsPlaying(true))
         .catch(() => setIsPlaying(false));
     }
+  };
+
+  const playItemPart = (item: MusicArchiveItem, partIndex: number) => {
+    const parts =
+      item.parts && item.parts.length > 0
+        ? item.parts
+        : item.audioUrl
+          ? [item.audioUrl]
+          : [];
+
+    if (partIndex < 0 || partIndex >= parts.length) return;
+
+    setSelectedShowSlug(item.showSlug);
+    setSelectedDjSlug(allDjsSlug);
+    setActiveItem(item);
+    setActivePartIndex(partIndex);
+    setIsFullShowPlayback(false);
+    setCurrentTime(0);
+    setDuration(0);
+    shouldAutoPlayRef.current = true;
+    setIsPlaying(true);
   };
 
   const updateSelectedShow = (showSlug: string) => {
@@ -292,148 +318,147 @@ export default function ArchivePage() {
         />
       ) : null}
 
-      <section className="relative border-b border-gold/20 bg-[radial-gradient(circle_at_18%_12%,rgba(224,191,112,0.14),transparent_24rem),linear-gradient(145deg,#0c2f21_0%,#071d16_76%)]">
+      <section className="relative border-b border-gold/20 bg-[radial-gradient(circle_at_18%_12%,rgba(224,191,112,0.16),transparent_25rem),radial-gradient(circle_at_84%_16%,rgba(135,155,117,0.12),transparent_24rem),linear-gradient(145deg,#0c2f21_0%,#071d16_76%)]">
         <div className="absolute inset-0 opacity-[0.14] grain-overlay" />
-        <div className="relative mx-auto max-w-6xl px-6 py-10 sm:px-8 sm:py-16">
-          <a
-            href="/"
-            className="text-sm font-bold uppercase tracking-[0.18em] text-gold-light transition hover:text-cream"
-          >
-            Murphys Community Radio
-          </a>
-          <div className="mt-8 max-w-3xl">
-            <p className="section-kicker">Archive</p>
-            <h1 className="mt-3 font-display text-5xl font-bold leading-none text-cream sm:text-6xl">
-              The Beat Down
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-parchment/85 sm:text-lg">
-              Local music archive entries for The Beat Down recordings and
-              mixes.
-            </p>
+        <div className="relative mx-auto grid max-w-6xl gap-8 px-6 py-10 sm:px-8 sm:py-16 lg:grid-cols-[1fr_360px] lg:items-end">
+          <div>
+            <a
+              href="/"
+              className="text-sm font-bold uppercase tracking-[0.18em] text-gold-light transition hover:text-cream"
+            >
+              Murphys Community Radio
+            </a>
+            <div className="mt-8 max-w-3xl">
+              <p className="section-kicker">Archive</p>
+              <h1 className="mt-3 font-display text-6xl font-bold leading-none text-cream sm:text-7xl">
+                Archive
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-parchment/85 sm:text-lg">
+                Past shows, DJ sets, and community radio recordings from
+                Murphys Community Radio.
+              </p>
+            </div>
           </div>
+
+          <aside className="premium-card border-gold/25 bg-cream/10 p-5 shadow-black/20 backdrop-blur">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-light">
+              Now Playing
+            </p>
+            {activeItem ? (
+              <div className="mt-4 grid gap-4 sm:grid-cols-[88px_1fr] lg:grid-cols-1">
+                {activeItem.artwork ? (
+                  <img
+                    src={activeItem.artwork}
+                    alt={`${activeItem.host} artwork`}
+                    className="aspect-square w-24 rounded-lg border border-gold/25 object-cover shadow-lg shadow-black/20 lg:w-full"
+                  />
+                ) : null}
+                <div className="min-w-0">
+                  <h2 className="font-display text-3xl font-bold leading-tight text-cream">
+                    {activeItem.title}
+                  </h2>
+                  <p className="mt-2 text-sm font-semibold text-parchment/80">
+                    {activeItem.host}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-[0.14em]">
+                    {isFullShowPlayback ? (
+                      <span className="rounded-full bg-gold px-3 py-1 text-hunter">
+                        Playing full show
+                      </span>
+                    ) : null}
+                    <span className="rounded-full bg-cream/10 px-3 py-1 text-gold-light">
+                      Part {activePartIndex + 1} of {activeParts.length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-4 text-sm leading-6 text-parchment/75">
+                Choose a recording below to cue up the archive player.
+              </p>
+            )}
+          </aside>
         </div>
       </section>
 
       <section className="bg-cream py-10 text-ink paper-texture sm:py-14">
         <div className="mx-auto max-w-6xl px-6 sm:px-8">
-          <div className="premium-card border-hunter/15 bg-hunter p-5 text-cream shadow-black/10 sm:p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-light">
-              Beat Down Player
-            </p>
-            <div className="mt-4 grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
-              <div className="grid min-w-0 gap-4 sm:grid-cols-[112px_1fr] sm:items-center">
+          <div className="premium-card sticky top-3 z-10 border-hunter/15 bg-hunter p-4 text-cream shadow-black/20 sm:p-5">
+            <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div className="grid min-w-0 gap-4 sm:grid-cols-[96px_1fr] sm:items-center">
                 {activeItem?.artwork ? (
                   <img
                     src={activeItem.artwork}
-                    alt={`${activeItem.djName} artwork`}
-                    className="aspect-square w-28 rounded-lg border border-gold/25 object-cover shadow-lg shadow-black/20"
+                    alt={`${activeItem.host} artwork`}
+                    className="aspect-square w-24 rounded-lg border border-gold/25 object-cover shadow-lg shadow-black/20"
                   />
                 ) : (
-                  <div className="grid aspect-square w-28 place-items-center rounded-lg border border-gold/25 bg-cream/10 text-center text-xs font-bold uppercase tracking-[0.14em] text-cream/45">
+                  <div className="grid aspect-square w-24 place-items-center rounded-lg border border-gold/25 bg-cream/10 text-center text-xs font-bold uppercase tracking-[0.14em] text-cream/45">
                     Artwork
                   </div>
                 )}
                 <div className="min-w-0">
-                  <h2 className="truncate font-display text-3xl font-bold leading-tight text-cream">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-light">
+                    Archive Player
+                  </p>
+                  <h2 className="mt-2 truncate font-display text-3xl font-bold leading-tight text-cream">
                     {activeItem?.title || "Choose an episode"}
                   </h2>
                   {activeItem ? (
                     <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold text-cream/65">
-                      <span>{activeItem.artist}</span>
+                      <span>{activeItem.host}</span>
                       <span className="text-cream/35">/</span>
-                      <span>{activeItem.showName}</span>
-                      <span className="text-cream/35">/</span>
-                      <span>{activeItem.djName}</span>
+                      <span>
+                        Part {activePartIndex + 1} of {activeParts.length}
+                      </span>
+                      {isFullShowPlayback ? (
+                        <>
+                          <span className="text-cream/35">/</span>
+                          <span className="text-gold-light">
+                            Playing full show
+                          </span>
+                        </>
+                      ) : null}
                     </div>
                   ) : (
-                    <p className="mt-1 truncate text-sm font-semibold text-cream/65">
+                    <p className="mt-2 text-sm font-semibold text-cream/65">
                       {selectedShowName} archive
                     </p>
                   )}
-                  {activeItem && activeParts.length > 1 ? (
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-[0.16em]">
-                      {isFullShowPlayback ? (
-                        <span className="rounded-full bg-gold px-3 py-1 text-hunter">
-                          Playing full show
-                        </span>
-                      ) : null}
-                      <span className="rounded-full bg-cream/10 px-3 py-1 text-gold-light/80">
-                        Part {activePartIndex + 1} of {activeParts.length}
-                      </span>
-                    </div>
-                  ) : activeItem && isFullShowPlayback ? (
-                    <p className="mt-2 text-xs font-bold uppercase tracking-[0.16em] text-gold-light/80">
-                      Playing full show
-                    </p>
-                  ) : null}
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={togglePlayback}
-                disabled={!activeItem}
-                className="inline-flex w-full items-center justify-center rounded-full bg-gold px-6 py-3 text-sm font-bold uppercase tracking-[0.14em] text-hunter transition duration-200 hover:-translate-y-0.5 hover:bg-gold-light hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
-              >
-                {isPlaying ? "Pause" : "Play"}
-              </button>
+              <div className="grid grid-cols-3 gap-2 sm:min-w-[18rem]">
+                <button
+                  type="button"
+                  onClick={playPreviousPart}
+                  disabled={!activeItem || activePartIndex === 0}
+                  className="rounded-full border border-cream/20 bg-cream/5 px-4 py-3 text-xs font-bold uppercase tracking-[0.1em] text-cream/75 transition duration-200 hover:border-gold/70 hover:text-gold-light disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Prev
+                </button>
+                <button
+                  type="button"
+                  onClick={togglePlayback}
+                  disabled={!activeItem}
+                  className="rounded-full bg-gold px-4 py-3 text-xs font-bold uppercase tracking-[0.1em] text-hunter transition duration-200 hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isPlaying ? "Pause" : "Play"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => playNextPart(false)}
+                  disabled={
+                    !activeItem || activePartIndex >= activeParts.length - 1
+                  }
+                  className="rounded-full border border-cream/20 bg-cream/5 px-4 py-3 text-xs font-bold uppercase tracking-[0.1em] text-cream/75 transition duration-200 hover:border-gold/70 hover:text-gold-light disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
             </div>
 
-            <div className="mt-5 rounded-lg border border-cream/10 bg-cream/5 p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-light">
-                Now Playing
-              </p>
-              {activeItem ? (
-                <div className="mt-3 grid gap-2 text-sm font-semibold text-cream/75 sm:grid-cols-2">
-                  <div>
-                    <span className="block text-xs uppercase tracking-[0.14em] text-cream/40">
-                      Show
-                    </span>
-                    <span className="mt-1 block text-base text-cream">
-                      {activeItem.title}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase tracking-[0.14em] text-cream/40">
-                      Host
-                    </span>
-                    <span className="mt-1 block text-base text-cream">
-                      {activeItem.host}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase tracking-[0.14em] text-cream/40">
-                      Part
-                    </span>
-                    <span className="mt-1 block text-base text-cream">
-                      Part {activePartIndex + 1} of {activeParts.length}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase tracking-[0.14em] text-cream/40">
-                      Status
-                    </span>
-                    <span className="mt-1 block text-base text-cream">
-                      {isFullShowPlayback ? "Playing full show" : "Single part"}
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <span className="block text-xs uppercase tracking-[0.14em] text-cream/40">
-                      Audio
-                    </span>
-                    <span className="mt-1 block truncate text-base text-cream">
-                      {activeAudioLabel}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <p className="mt-2 text-sm font-semibold text-cream/60">
-                  Select an episode to start archive playback.
-                </p>
-              )}
-            </div>
-
-            <div className="mt-5">
+            <div className="mt-4">
               <div className="mb-3 h-2 overflow-hidden rounded-full bg-cream/15">
                 <div
                   className="h-full rounded-full bg-gold transition-[width] duration-200"
@@ -455,51 +480,36 @@ export default function ArchivePage() {
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
+              {activeAudioLabel ? (
+                <p className="mt-2 truncate text-xs font-semibold text-cream/45">
+                  {activeAudioLabel}
+                </p>
+              ) : null}
             </div>
 
             {activeItem && activeParts.length > 1 ? (
-              <div className="mt-5 grid gap-3">
-                <div className="grid gap-2 sm:grid-cols-2">
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+                {activeParts.map((part, partIndex) => (
                   <button
+                    key={part}
                     type="button"
-                    onClick={playPreviousPart}
-                    disabled={activePartIndex === 0}
-                    className="rounded-full border border-cream/20 bg-cream/5 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-cream/75 transition duration-200 hover:border-gold/70 hover:text-gold-light disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={() => playPart(partIndex)}
+                    className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] transition duration-200 ${
+                      activePartIndex === partIndex
+                        ? "border-gold bg-gold text-hunter"
+                        : "border-cream/20 bg-cream/5 text-cream/75 hover:border-gold/70 hover:text-gold-light"
+                    }`}
                   >
-                    Previous Part
+                    Part {partIndex + 1}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => playNextPart(false)}
-                    disabled={activePartIndex >= activeParts.length - 1}
-                    className="rounded-full border border-cream/20 bg-cream/5 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-cream/75 transition duration-200 hover:border-gold/70 hover:text-gold-light disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Next Part
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {activeParts.map((part, partIndex) => (
-                    <button
-                      key={part}
-                      type="button"
-                      onClick={() => playPart(partIndex)}
-                      className={`rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] transition duration-200 ${
-                        activePartIndex === partIndex
-                          ? "border-gold bg-gold text-hunter"
-                          : "border-cream/20 bg-cream/5 text-cream/75 hover:border-gold/70 hover:text-gold-light"
-                      }`}
-                    >
-                      Part {partIndex + 1}
-                    </button>
-                  ))}
-                </div>
+                ))}
               </div>
             ) : null}
           </div>
 
-          <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="section-kicker">Local Audio</p>
+              <p className="section-kicker">Browse Recordings</p>
               <h2 className="mt-2 font-display text-4xl font-bold text-hunter">
                 {selectedShowName}
               </h2>
@@ -558,69 +568,135 @@ export default function ArchivePage() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
             {selectedArchiveItems.map((item) => (
               <article
                 key={item.id}
                 className={`premium-card overflow-hidden shadow-black/10 ${
                   activeItem?.id === item.id
                     ? "border-gold bg-parchment shadow-gold-soft"
-                    : "border-hunter/15 bg-white/65"
+                    : "border-hunter/15 bg-white/80"
                 }`}
               >
-                {item.artwork ? (
-                  <img
-                    src={item.artwork}
-                    alt={`${item.djName} artwork`}
-                    className="aspect-square w-full object-cover"
-                  />
-                ) : null}
-                <div className="p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold">
-                    {item.showName}
-                  </p>
-                  <h3 className="mt-3 font-display text-3xl font-bold leading-tight text-hunter">
-                    {item.title}
-                  </h3>
-                  <p className="mt-2 font-semibold text-ink/75">
-                    {item.artist}
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-ink/60">
-                    DJ: {item.djName}
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-ink/50">
-                    {item.date}
-                  </p>
-                  {item.parts.length > 1 ? (
-                    <p className="mt-2 text-xs font-bold uppercase tracking-[0.16em] text-ink/45">
-                      {item.parts.length} parts
-                    </p>
+                <div className="grid gap-0 sm:grid-cols-[168px_1fr]">
+                  {item.artwork ? (
+                    <img
+                      src={item.artwork}
+                      alt={`${item.host} artwork`}
+                      className="aspect-square w-full object-cover sm:h-full"
+                    />
                   ) : null}
-                  <button
-                    type="button"
-                    onClick={() => playEpisode(item)}
-                    className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-hunter px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-gold-light transition duration-200 hover:-translate-y-0.5 hover:bg-hunter-deep hover:shadow-lg sm:w-auto"
-                  >
-                    {activeItem?.id === item.id && isPlaying
-                      ? "Pause"
-                      : "Play"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => playFullShow(item)}
-                    className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-gold px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-hunter transition duration-200 hover:-translate-y-0.5 hover:bg-gold-light hover:shadow-lg sm:ml-3 sm:mt-5 sm:w-auto"
-                  >
-                    Play Full Show
-                  </button>
+                  <div className="p-5 sm:p-6">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold">
+                        {item.showName}
+                      </p>
+                      {activeItem?.id === item.id ? (
+                        <span className="rounded-full bg-hunter px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-gold-light">
+                          Selected
+                        </span>
+                      ) : null}
+                    </div>
+                    <h3 className="mt-3 font-display text-3xl font-bold leading-tight text-hunter">
+                      {item.title}
+                    </h3>
+                    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+                      <div>
+                        <dt className="text-xs font-bold uppercase tracking-[0.14em] text-ink/45">
+                          Host
+                        </dt>
+                        <dd className="mt-1 font-semibold text-ink/75">
+                          {item.host}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-bold uppercase tracking-[0.14em] text-ink/45">
+                          Date
+                        </dt>
+                        <dd className="mt-1 font-semibold text-ink/75">
+                          {item.date}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-bold uppercase tracking-[0.14em] text-ink/45">
+                          Parts
+                        </dt>
+                        <dd className="mt-1 font-semibold text-ink/75">
+                          {item.parts.length || 1}
+                        </dd>
+                      </div>
+                    </dl>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => playFullShow(item)}
+                        className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-gold px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-hunter transition duration-200 hover:-translate-y-0.5 hover:bg-gold-light hover:shadow-lg"
+                      >
+                        Play Full Show
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => playEpisode(item)}
+                        className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-hunter px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-gold-light transition duration-200 hover:-translate-y-0.5 hover:bg-hunter-deep hover:shadow-lg"
+                      >
+                        {activeItem?.id === item.id && isPlaying
+                          ? "Pause"
+                          : "Play"}
+                      </button>
+                    </div>
+                    {item.parts.length > 1 ? (
+                      <div className="mt-5">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-ink/45">
+                          View Parts
+                        </p>
+                        <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                          {item.parts.map((part, partIndex) => (
+                            <button
+                              key={part}
+                              type="button"
+                              onClick={() => playItemPart(item, partIndex)}
+                              className={`shrink-0 rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] transition duration-200 ${
+                                activeItem?.id === item.id &&
+                                activePartIndex === partIndex
+                                  ? "border-gold bg-gold text-hunter"
+                                  : "border-hunter/15 bg-white text-hunter hover:border-gold hover:bg-parchment"
+                              }`}
+                            >
+                              Part {partIndex + 1}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </article>
             ))}
           </div>
 
-          {!status && selectedArchiveItems.length === 0 ? (
-            <p className="mt-6 rounded-md border border-dashed border-hunter/15 bg-white/55 px-4 py-3 text-sm font-semibold text-ink/55">
-              No archive items for {selectedShowName} yet.
-            </p>
+          {!status && hasArchiveItems && selectedArchiveItems.length === 0 ? (
+            <div className="mt-6 rounded-lg border border-dashed border-hunter/20 bg-white/65 px-5 py-6 text-center">
+              <p className="font-display text-2xl font-bold text-hunter">
+                No recordings found
+              </p>
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-ink/60">
+                There are no archive items for {selectedShowName} with the
+                current filters. Try another DJ, or add new shows through the
+                archive pipeline.
+              </p>
+            </div>
+          ) : null}
+
+          {!status && !hasArchiveItems ? (
+            <div className="mt-6 rounded-lg border border-dashed border-hunter/20 bg-white/65 px-5 py-6 text-center">
+              <p className="font-display text-2xl font-bold text-hunter">
+                The archive is ready for recordings
+              </p>
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-ink/60">
+                Add uploaded shows to the local archive data or run the archive
+                pipeline to publish new recordings here.
+              </p>
+            </div>
           ) : null}
         </div>
       </section>
