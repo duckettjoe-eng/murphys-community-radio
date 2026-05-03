@@ -12,10 +12,18 @@ export default function ArchivePage() {
   const [selectedShowSlug, setSelectedShowSlug] = useState(defaultShowSlug);
   const [selectedDjSlug, setSelectedDjSlug] = useState(allDjsSlug);
   const [activeItem, setActiveItem] = useState<MusicArchiveItem | null>(null);
+  const [activePartIndex, setActivePartIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const activeParts =
+    activeItem?.parts && activeItem.parts.length > 0
+      ? activeItem.parts
+      : activeItem?.audioUrl
+        ? [activeItem.audioUrl]
+        : [];
+  const activeAudioSrc = activeParts[activePartIndex] ?? null;
 
   const showOptions = useMemo(
     () => {
@@ -108,7 +116,7 @@ export default function ArchivePage() {
   }, []);
 
   const playEpisode = (item: MusicArchiveItem) => {
-    const isCurrentEpisode = activeItem?.filePath === item.filePath;
+    const isCurrentEpisode = activeItem?.id === item.id;
 
     if (isCurrentEpisode) {
       if (isPlaying) {
@@ -125,6 +133,7 @@ export default function ArchivePage() {
     }
 
     setActiveItem(item);
+    setActivePartIndex(0);
     setCurrentTime(0);
     setDuration(0);
     setIsPlaying(true);
@@ -157,6 +166,20 @@ export default function ArchivePage() {
     setCurrentTime(nextTime);
   };
 
+  const playNextPart = () => {
+    const nextPartIndex = activePartIndex + 1;
+
+    if (nextPartIndex >= activeParts.length) {
+      setIsPlaying(false);
+      return;
+    }
+
+    setActivePartIndex(nextPartIndex);
+    setCurrentTime(0);
+    setDuration(0);
+    setIsPlaying(true);
+  };
+
   const formatTime = (seconds: number) => {
     if (!Number.isFinite(seconds)) return "0:00";
 
@@ -177,16 +200,29 @@ export default function ArchivePage() {
       .catch(() => setIsPlaying(false));
   }, [activeItem]);
 
+  useEffect(() => {
+    if (!activeAudioSrc || !isPlaying || !audioRef.current) return;
+
+    audioRef.current
+      .play()
+      .then(() => setIsPlaying(true))
+      .catch(() => setIsPlaying(false));
+  }, [activeAudioSrc, isPlaying]);
+
   return (
     <main className="min-h-screen bg-hunter-deep text-cream">
-      <audio
-        ref={audioRef}
-        src={activeItem?.filePath}
-        preload="metadata"
-        onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
-        onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
-        onEnded={() => setIsPlaying(false)}
-      />
+      {activeAudioSrc ? (
+        <audio
+          ref={audioRef}
+          src={activeAudioSrc}
+          preload="metadata"
+          onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
+          onTimeUpdate={(event) =>
+            setCurrentTime(event.currentTarget.currentTime)
+          }
+          onEnded={playNextPart}
+        />
+      ) : null}
 
       <section className="relative border-b border-gold/20 bg-[radial-gradient(circle_at_18%_12%,rgba(224,191,112,0.14),transparent_24rem),linear-gradient(145deg,#0c2f21_0%,#071d16_76%)]">
         <div className="absolute inset-0 opacity-[0.14] grain-overlay" />
@@ -218,7 +254,7 @@ export default function ArchivePage() {
             </p>
             <div className="mt-4 grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
               <div className="grid min-w-0 gap-4 sm:grid-cols-[112px_1fr] sm:items-center">
-                {activeItem ? (
+                {activeItem?.artwork ? (
                   <img
                     src={activeItem.artwork}
                     alt={`${activeItem.djName} artwork`}
@@ -246,6 +282,11 @@ export default function ArchivePage() {
                       {selectedShowName} archive
                     </p>
                   )}
+                  {activeItem && activeParts.length > 1 ? (
+                    <p className="mt-2 text-xs font-bold uppercase tracking-[0.16em] text-gold-light/80">
+                      Part {activePartIndex + 1} of {activeParts.length}
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
@@ -342,18 +383,20 @@ export default function ArchivePage() {
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {selectedArchiveItems.map((item) => (
               <article
-                key={`${item.filePath}-${item.date}`}
+                key={item.id}
                 className={`premium-card overflow-hidden shadow-black/10 ${
-                  activeItem?.filePath === item.filePath
+                  activeItem?.id === item.id
                     ? "border-gold bg-parchment shadow-gold-soft"
                     : "border-hunter/15 bg-white/65"
                 }`}
               >
-                <img
-                  src={item.artwork}
-                  alt={`${item.djName} artwork`}
-                  className="aspect-square w-full object-cover"
-                />
+                {item.artwork ? (
+                  <img
+                    src={item.artwork}
+                    alt={`${item.djName} artwork`}
+                    className="aspect-square w-full object-cover"
+                  />
+                ) : null}
                 <div className="p-5">
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold">
                     {item.showName}
@@ -370,12 +413,17 @@ export default function ArchivePage() {
                   <p className="mt-2 text-sm font-semibold text-ink/50">
                     {item.date}
                   </p>
+                  {item.parts.length > 1 ? (
+                    <p className="mt-2 text-xs font-bold uppercase tracking-[0.16em] text-ink/45">
+                      {item.parts.length} parts
+                    </p>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => playEpisode(item)}
                     className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-hunter px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-gold-light transition duration-200 hover:-translate-y-0.5 hover:bg-hunter-deep hover:shadow-lg sm:w-auto"
                   >
-                    {activeItem?.filePath === item.filePath && isPlaying
+                    {activeItem?.id === item.id && isPlaying
                       ? "Pause"
                       : "Play"}
                   </button>
