@@ -23,15 +23,8 @@ yarn-error.log*
 
 # vercel
 .vercel
-node_modules/
-.next/
-.env.local
-node_modules/
-.next/
-.env.local
-node_modules/
-.next/
-.env.local
+incoming-audio/
+converted-audio/
 public/audio/
 public/audio-small/
 audio-small/

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "archive:build": "node scripts/build-radio-archive.mjs",
     "start": "next start",
     "lint": "next lint"
   },

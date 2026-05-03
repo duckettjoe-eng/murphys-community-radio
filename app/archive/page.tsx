@@ -24,6 +24,10 @@ export default function ArchivePage() {
         ? [activeItem.audioUrl]
         : [];
   const activeAudioSrc = activeParts[activePartIndex] ?? null;
+  const activeAudioLabel = activeAudioSrc
+    ? decodeURIComponent(activeAudioSrc.split("/").pop() || "Archive audio")
+    : null;
+  const progressPercent = duration ? (currentTime / duration) * 100 : 0;
 
   const showOptions = useMemo(
     () => {
@@ -142,6 +146,9 @@ export default function ArchivePage() {
   const updateSelectedShow = (showSlug: string) => {
     setSelectedShowSlug(showSlug);
     setSelectedDjSlug(allDjsSlug);
+    setActivePartIndex(0);
+    setCurrentTime(0);
+    setDuration(0);
   };
 
   const togglePlayback = () => {
@@ -173,6 +180,10 @@ export default function ArchivePage() {
     setCurrentTime(0);
     setDuration(0);
     setIsPlaying(true);
+  };
+
+  const playPreviousPart = () => {
+    playPart(activePartIndex - 1);
   };
 
   const playNextPart = () => {
@@ -309,7 +320,59 @@ export default function ArchivePage() {
               </button>
             </div>
 
+            <div className="mt-5 rounded-lg border border-cream/10 bg-cream/5 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-light">
+                Now Playing
+              </p>
+              {activeItem ? (
+                <div className="mt-3 grid gap-2 text-sm font-semibold text-cream/75 sm:grid-cols-2">
+                  <div>
+                    <span className="block text-xs uppercase tracking-[0.14em] text-cream/40">
+                      Show
+                    </span>
+                    <span className="mt-1 block text-base text-cream">
+                      {activeItem.title}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-xs uppercase tracking-[0.14em] text-cream/40">
+                      Host
+                    </span>
+                    <span className="mt-1 block text-base text-cream">
+                      {activeItem.host}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-xs uppercase tracking-[0.14em] text-cream/40">
+                      Part
+                    </span>
+                    <span className="mt-1 block text-base text-cream">
+                      Part {activePartIndex + 1} of {activeParts.length}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block text-xs uppercase tracking-[0.14em] text-cream/40">
+                      Audio
+                    </span>
+                    <span className="mt-1 block truncate text-base text-cream">
+                      {activeAudioLabel}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm font-semibold text-cream/60">
+                  Select an episode to start archive playback.
+                </p>
+              )}
+            </div>
+
             <div className="mt-5">
+              <div className="mb-3 h-2 overflow-hidden rounded-full bg-cream/15">
+                <div
+                  className="h-full rounded-full bg-gold transition-[width] duration-200"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
               <input
                 type="range"
                 min="0"
@@ -328,21 +391,41 @@ export default function ArchivePage() {
             </div>
 
             {activeItem && activeParts.length > 1 ? (
-              <div className="mt-5 flex flex-wrap gap-2">
-                {activeParts.map((part, partIndex) => (
+              <div className="mt-5 grid gap-3">
+                <div className="grid gap-2 sm:grid-cols-2">
                   <button
-                    key={part}
                     type="button"
-                    onClick={() => playPart(partIndex)}
-                    className={`rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] transition duration-200 ${
-                      activePartIndex === partIndex
-                        ? "border-gold bg-gold text-hunter"
-                        : "border-cream/20 bg-cream/5 text-cream/75 hover:border-gold/70 hover:text-gold-light"
-                    }`}
+                    onClick={playPreviousPart}
+                    disabled={activePartIndex === 0}
+                    className="rounded-full border border-cream/20 bg-cream/5 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-cream/75 transition duration-200 hover:border-gold/70 hover:text-gold-light disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Part {partIndex + 1}
+                    Previous Part
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={playNextPart}
+                    disabled={activePartIndex >= activeParts.length - 1}
+                    className="rounded-full border border-cream/20 bg-cream/5 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-cream/75 transition duration-200 hover:border-gold/70 hover:text-gold-light disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Next Part
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {activeParts.map((part, partIndex) => (
+                    <button
+                      key={part}
+                      type="button"
+                      onClick={() => playPart(partIndex)}
+                      className={`rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] transition duration-200 ${
+                        activePartIndex === partIndex
+                          ? "border-gold bg-gold text-hunter"
+                          : "border-cream/20 bg-cream/5 text-cream/75 hover:border-gold/70 hover:text-gold-light"
+                      }`}
+                    >
+                      Part {partIndex + 1}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : null}
           </div>
