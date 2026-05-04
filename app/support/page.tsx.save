@@ -1,0 +1,82 @@
+export default function SupportPage() {
+  return (
+    <main className="min-h-screen bg-black text-white px-6 py-12">
+      <div className="max-w-3xl mx-auto">
+
+        <h1 className="text-4xl font-bold mb-4">
+          Become a Founding Supporter
+        </h1>
+
+        <p className="text-lg text-gray-300 mb-8">
+          Murphys Community Radio is being built from the ground up—
+          by local artists, DJs, and community voices.
+        </p>
+
+        <div className="space-y-6">
+
+          {/* $25 */}
+ https://buy.stripe.com/9B66oJ5CM0tKbXk03y1gs00         <div className="border border-gray-700 rounded-xl p-6">
+            <h2 className="text-2xl font-semibold">$25 — Supporter</h2>
+            <p className="text-gray-400 mt-2">
+              Sticker + your name on our website
+            </p>
+            <a
+              href="REPLACE_25_LINK"
+              target="_blank"
+              className="inline-block mt-4 bg-white text-black px-6 py-2 rounded-lg font-medium"
+            >
+              Support for $25
+            </a>
+          </div>
+
+          {/* $100 */}
+          <div className="border border-gray-700 rounded-xl p-6">
+            <h2 className="text-2xl font-semibold">$100 — Amplifier</h2>
+            <p className="text-gray-400 mt-2">
+              Includes on-air thank you shoutout
+            </p>
+            <a
+              href="REPLACE_100_LINK"
+              target="_blank"
+              className="inline-block mt-4 bg-white text-black px-6 py-2 rounded-lg font-medium"
+            >
+              Support for $100
+            </a>
+          </div>
+
+          {/* $250 */}
+          <div className="border border-gray-700 rounded-xl p-6">
+            <h2 className="text-2xl font-semibold">$250 — Broadcaster</h2>
+            <p className="text-gray-400 mt-2">
+              Weekly shoutouts for one month
+            </p>
+            <a
+              href="REPLACE_250_LINK"
+              target="_blank"
+              className="inline-block mt-4 bg-white text-black px-6 py-2 rounded-lg font-medium"
+            >
+              Support for $250
+            </a>
+          </div>
+
+          {/* $500+ */}
+          <div className="border border-gray-700 rounded-xl p-6">
+            <h2 className="text-2xl font-semibold">$500+ — Producer</h2>
+            <p className="text-gray-400 mt-2">
+              “Presented by” credit on a show
+            </p>
+            <a
+              href="REPLACE_500_LINK"
+              target="_blank"
+              className="inline-block mt-4 bg-green-500 text-black px-6 py-2 rounded-lg font-medium"
+            >
+              Become a Producer
+            </a>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  );
+}
