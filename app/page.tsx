@@ -1,6 +1,7 @@
-import Image from "next/image";
+import Link from "next/link";
 import RadioPlayer from "./components/RadioPlayer";
-import Link from "next/link"; // ✅ ADDED
+
+const hostPortalUrl = "https://kmcr-host-portal.base44.app/";
 
 const underwriters = [
   "Pure Aloha Dispensary",
@@ -9,129 +10,210 @@ const underwriters = [
   "Ironstone Vineyards",
   "Murphys Hotel",
   "Alchemy Café",
-  "Brice Station Vineyards",
-];
-
-const submissionOptions = [
-  "Submit a show",
-  "Submit music",
-  "Submit an event",
-  "Become an underwriter",
-  "Volunteer / board interest",
 ];
 
 const shows = [
   {
     title: "Live From the Big Bush",
-    status: "Founding show prospect",
-    host: "Hosted by Ben G",
-    description:
-      "A local-forward hang with music, conversation, and the kind of foothill storytelling that sounds best when it is shared live.",
+    tag: "Founding show prospect",
+    desc: "Local music, conversation, and foothill storytelling from the people who live it.",
   },
   {
     title: "Skull County Radio Hour",
-    status: "In development",
-    host: "Skull County Radio",
-    description:
-      "A rotating hour for local culture, roots music, odd histories, and dispatches from the greater Calaveras creative scene.",
+    tag: "In development",
+    desc: "Roots, odd histories, culture, DJs, and sounds from the deeper Calaveras current.",
   },
 ];
 
 export default function Home() {
   return (
-    <main className="min-h-screen overflow-hidden bg-hunter-deep pb-28 text-cream">
+    <main className="min-h-screen bg-black pb-28 text-white">
+
       {/* HERO */}
-      <section className="relative border-b border-gold/25 bg-[radial-gradient(circle_at_18%_18%,rgba(224,191,112,0.16),transparent_25rem),radial-gradient(circle_at_84%_20%,rgba(135,155,117,0.12),transparent_24rem),linear-gradient(145deg,#0c2f21_0%,#071d16_72%)]">
-        <div className="absolute inset-0 opacity-[0.16] grain-overlay" />
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
+      <section className="relative overflow-hidden px-6 py-20">
+        <div className="absolute left-[-120px] top-[-120px] h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
+        <div className="absolute bottom-[-160px] right-[-120px] h-96 w-96 rounded-full bg-yellow-500/10 blur-3xl" />
 
-        <nav className="relative mx-auto flex max-w-7xl flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-          <div>
-            <p className="font-display text-xl font-bold text-gold-light">
-              Murphys Community Radio
-            </p>
-            <p className="text-xs uppercase tracking-[0.28em] text-cream/60">
-              XTRA GOOD LABS
-            </p>
-          </div>
+        <div className="relative mx-auto max-w-7xl">
 
-          <div className="flex flex-wrap gap-3">
-            <a href="/archive" className="btn-secondary">
-              Archive
-            </a>
-            <a href="#listen" className="btn-secondary">
-              Listen Live
-            </a>
-          </div>
-        </nav>
+          <nav className="mb-16 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.35em] text-orange-400">
+                Murphys Community Radio
+              </p>
+              <p className="mt-1 text-xs uppercase tracking-[0.25em] text-zinc-500">
+                Amplifying the voices of Calaveras County
+              </p>
+            </div>
 
-        <div className="relative mx-auto grid max-w-7xl gap-12 px-6 pb-20 pt-12 sm:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:pb-28 lg:pt-20">
-          <div className="max-w-3xl">
-            <p className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-gold-light">
-              Skull County Radio
-            </p>
-
-            <h1 className="font-display text-6xl font-bold text-cream sm:text-7xl lg:text-8xl">
-              Murphys Community Radio
-            </h1>
-
-            <p className="mt-6 text-xl text-parchment">
-              Amplifying the voices of Calaveras County.
-            </p>
-
-            <div className="mt-10 flex flex-wrap gap-3">
-              <a href="#listen" className="btn-primary">
-                Listen Live
-              </a>
-
-              <a href="/archive" className="btn-secondary">
+            <div className="flex flex-wrap gap-3">
+              <Link href="/archive" className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800">
                 Archive
-              </a>
-
-              {/* ✅ FIXED */}
-              <Link href="/support" className="btn-secondary">
-                Support
               </Link>
 
-              <a href="#submissions" className="btn-secondary">
-                Submit Music / Show
-              </a>
+              <Link href="/support" className="rounded-full bg-orange-400 px-5 py-3 text-sm font-bold text-black hover:bg-orange-300">
+                Support
+              </Link>
             </div>
-          </div>
+          </nav>
 
-          <div className="premium-card bg-cream/95 p-5 text-ink">
-            <Image
-              src="/images/mcr-logo.png"
-              alt="Murphys Community Radio logo"
-              width={520}
-              height={520}
-            />
+          <div className="grid gap-12 lg:grid-cols-[1fr_0.85fr] lg:items-center">
+            <div>
+              <p className="mb-5 text-sm font-black uppercase tracking-[0.35em] text-orange-400">
+                Local voices. Real signal. Community radio.
+              </p>
+
+              <h1 className="max-w-4xl text-6xl font-black leading-none tracking-tight md:text-8xl">
+                Murphys Community Radio
+              </h1>
+
+              <p className="mt-8 max-w-2xl text-xl leading-8 text-zinc-300">
+                A community-built radio platform for local music, DJs,
+                storytellers, artists, events, and Calaveras County culture.
+              </p>
+
+              <div className="mt-10 flex flex-wrap gap-4">
+                <Link href="/archive" className="rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300">
+                  Listen to the Archive
+                </Link>
+
+                <a href={hostPortalUrl} target="_blank" className="rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black">
+                  Submit a Show
+                </a>
+
+                <Link href="/underwrite" className="rounded-full border border-zinc-700 px-7 py-4 font-black text-white hover:bg-zinc-900">
+                  Become a Sponsor
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
+              <img
+                src="/logos/murphys-radio-logo-color.png"
+                alt="Murphys Community Radio"
+                className="mx-auto w-full max-w-md"
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* SUPPORT SECTION */}
-      <section id="support" className="bg-parchment py-20 text-ink">
-        <div className="mx-auto max-w-7xl px-6 sm:px-8">
-          <h2 className="section-title text-hunter">
-            Help launch the station.
-          </h2>
+      {/* SUPPORT */}
+      <section className="px-6 py-20">
+        <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-2">
 
-          <p className="mt-4 text-lg text-ink/75 max-w-xl">
-            Support Murphys Community Radio and help build the station.
-          </p>
+          <div className="rounded-3xl bg-orange-400 p-10 text-black">
+            <p className="text-sm font-black uppercase tracking-[0.25em]">
+              Support the Signal
+            </p>
 
-          <div className="mt-6 flex gap-4">
-            {/* ✅ DONATE FIXED */}
-            <Link href="/support" className="btn-primary">
+            <h2 className="mt-4 text-4xl font-black">
+              Help build the station.
+            </h2>
+
+            <p className="mt-4 leading-7 text-black/75">
+              Donations help fund streaming, equipment, licensing, launch costs,
+              and local programming.
+            </p>
+
+            <Link href="/support" className="mt-8 inline-block rounded-full bg-black px-7 py-4 font-black text-white">
               Donate
             </Link>
+          </div>
 
-            {/* ✅ SPONSOR ADDED */}
-            <Link href="/underwrite" className="btn-secondary">
-              Become a Sponsor
+          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-10">
+            <p className="text-sm font-black uppercase tracking-[0.25em] text-orange-400">
+              Business Support
+            </p>
+
+            <h2 className="mt-4 text-4xl font-black">
+              Underwrite local radio.
+            </h2>
+
+            <p className="mt-4 leading-7 text-zinc-300">
+              Put your business alongside local music, culture, events, and
+              community voices.
+            </p>
+
+            <Link href="/underwrite" className="mt-8 inline-block rounded-full bg-orange-400 px-7 py-4 font-black text-black">
+              Become an Underwriter
             </Link>
           </div>
+
+        </div>
+      </section>
+
+      {/* PROGRAMMING */}
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-sm font-black uppercase tracking-[0.35em] text-orange-400">
+            Programming
+          </p>
+
+          <h2 className="mt-4 text-5xl font-black">Shows in motion</h2>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-2">
+            {shows.map((show) => (
+              <div key={show.title} className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8">
+                <p className="text-xs font-black uppercase tracking-widest text-orange-400">
+                  {show.tag}
+                </p>
+
+                <h3 className="mt-4 text-3xl font-black">{show.title}</h3>
+
+                <p className="mt-4 leading-7 text-zinc-300">{show.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* UNDERWRITERS (TEXT VERSION) */}
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-7xl rounded-3xl border border-zinc-800 bg-zinc-950 p-10">
+
+          <p className="text-sm font-black uppercase tracking-[0.35em] text-orange-400">
+            Community Partners & Supporters
+          </p>
+
+          <h2 className="mt-4 text-4xl font-black">
+            Early community backers
+          </h2>
+
+          <div className="mt-8 grid gap-3 md:grid-cols-3">
+            {underwriters.map((name) => (
+              <div key={name} className="rounded-2xl bg-black px-5 py-4 text-sm font-bold text-zinc-300">
+                {name}
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* SUBMIT */}
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-4xl text-center">
+          <p className="text-sm font-black uppercase tracking-[0.35em] text-orange-400">
+            Skull County Radio
+          </p>
+
+          <h2 className="mt-4 text-5xl font-black">
+            Got a show, mix, story, or idea?
+          </h2>
+
+          <p className="mx-auto mt-6 max-w-2xl text-zinc-300">
+            Use the host portal to submit show ideas, episodes, links, and
+            programming concepts.
+          </p>
+
+          <a
+            href={hostPortalUrl}
+            target="_blank"
+            className="mt-8 inline-block rounded-full bg-orange-400 px-8 py-4 font-black text-black hover:bg-orange-300"
+          >
+            Open Host Portal
+          </a>
         </div>
       </section>
 

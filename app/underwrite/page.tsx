@@ -1,46 +1,52 @@
-const tiers = [
-  {
-    name: "Community Underwriter",
-    price: "$150/mo",
-    desc: "Support community radio and receive on-air acknowledgement.",
-    link: "https://buy.stripe.com/3cI4gBghqccs0eC17C1gs04",
-  },
-  {
-    name: "Local Amplifier",
-    price: "$250/mo",
-    desc: "Featured support with increased visibility on-air.",
-    link: "https://buy.stripe.com/bJecN78OY3FW5yWaIc1gs06",
-    featured: true,
-  },
-  {
-    name: "Station Partner",
-    price: "$500/mo",
-    desc: "Top-tier support with premium recognition.",
-    link: "https://buy.stripe.com/7sY9AVghqccs8L8g2w1gs05",
-  },
-];
-
 export default function UnderwritePage() {
+  const tiers = [
+    {
+      name: "Community Underwriter",
+      price: "$150/mo",
+      desc: "On-air acknowledgement + community support.",
+      link: "PASTE_150_LINK",
+    },
+    {
+      name: "Local Amplifier",
+      price: "$250/mo",
+      desc: "Featured presence + increased visibility.",
+      link: "PASTE_250_LINK",
+      featured: true,
+    },
+    {
+      name: "Station Partner",
+      price: "$500/mo",
+      desc: "Top-tier recognition across the station.",
+      link: "PASTE_500_LINK",
+    },
+  ];
+
   return (
     <main className="min-h-screen bg-black text-white px-6 py-20">
 
-      <div className="max-w-6xl mx-auto text-center">
-        <p className="text-sm uppercase tracking-[0.3em] text-orange-400 mb-4">
-          Murphys Community Radio
-        </p>
+      {/* LOGO */}
+      <div className="text-center">
+        <img
+          src="/logos/skull-county-radio-logo.png"
+          alt="Skull County Radio"
+          className="mx-auto mb-6 w-44 md:w-64"
+        />
+      </div>
 
+      {/* HERO */}
+      <div className="max-w-5xl mx-auto text-center">
         <h1 className="text-5xl md:text-7xl font-black">
-          Underwrite Local Radio
+          Underwrite the Signal
         </h1>
 
         <p className="mt-6 text-xl text-zinc-300 max-w-3xl mx-auto">
-          Support independent community broadcasting while aligning your business
-          with local music, culture, and storytelling.
+          Put your business in front of a real local audience—
+          not algorithms, not ads, just people.
         </p>
       </div>
 
+      {/* TIERS */}
       <div className="mt-16 grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
-
         {tiers.map((tier) => (
           <div
             key={tier.name}
@@ -51,13 +57,12 @@ export default function UnderwritePage() {
             }`}
           >
             {tier.featured && (
-              <p className="mb-4 text-xs font-bold uppercase tracking-widest bg-black text-white px-3 py-1 inline-block rounded-full">
-                Recommended
+              <p className="mb-4 text-xs font-bold uppercase bg-black text-white px-3 py-1 rounded-full inline-block">
+                Most Popular
               </p>
             )}
 
             <h2 className="text-2xl font-black">{tier.name}</h2>
-
             <p className="text-4xl font-black mt-2">{tier.price}</p>
 
             <p className="mt-4 text-sm opacity-80">{tier.desc}</p>
@@ -65,7 +70,6 @@ export default function UnderwritePage() {
             <a
               href={tier.link}
               target="_blank"
-              rel="noopener noreferrer"
               className={`mt-6 inline-block px-6 py-3 rounded-full font-bold ${
                 tier.featured
                   ? "bg-black text-white"
@@ -76,31 +80,30 @@ export default function UnderwritePage() {
             </a>
           </div>
         ))}
-
       </div>
 
-      <div className="mt-20 max-w-4xl mx-auto grid md:grid-cols-2 gap-8 text-left">
-
+      {/* BUSINESS VALUE */}
+      <div className="mt-24 max-w-5xl mx-auto grid md:grid-cols-3 gap-10 text-center">
         <div>
-          <h3 className="text-2xl font-black text-orange-300">
-            What is underwriting?
-          </h3>
-          <p className="mt-3 text-zinc-300">
-            Underwriting is not traditional advertising. It is recognition of
-            support for community radio.
+          <h3 className="text-xl font-black text-orange-300">📍 Local Reach</h3>
+          <p className="text-zinc-300 text-sm mt-2">
+            Connect directly with Murphys listeners.
           </p>
         </div>
 
         <div>
-          <h3 className="text-2xl font-black text-orange-300">
-            FCC-friendly messaging
-          </h3>
-          <p className="mt-3 text-zinc-300">
-            “Support for Murphys Community Radio comes from your business,
-            serving Murphys and Calaveras County.”
+          <h3 className="text-xl font-black text-orange-300">🎧 Real Attention</h3>
+          <p className="text-zinc-300 text-sm mt-2">
+            No scrolling. Just listening.
           </p>
         </div>
 
+        <div>
+          <h3 className="text-xl font-black text-orange-300">🤝 Trust</h3>
+          <p className="text-zinc-300 text-sm mt-2">
+            Align with local culture + community.
+          </p>
+        </div>
       </div>
 
     </main>
