@@ -255,36 +255,50 @@ export default function Home() {
           </p>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {nextShows.map((show, index) => (
-              <div
-                key={`${show.name}-${show.day}-${show.start}`}
-                className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6"
-              >
-                <p className="inline-flex rounded-full bg-orange-400 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-black">
-                  {index === 0 ? "Next Up" : "Upcoming"}
-                </p>
+            {nextShows.map((show, index) => {
+              const spotifyEmbedUrl = spotifyMap[show.name];
+              const spotifyOpenUrl = spotifyEmbedUrl.replace("/embed", "");
 
-                <h3 className="mt-5 text-2xl font-black">{show.name}</h3>
+              return (
+                <div
+                  key={`${show.name}-${show.day}-${show.start}`}
+                  className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6"
+                >
+                  <p className="inline-flex rounded-full bg-orange-400 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-black">
+                    {index === 0 ? "Next Up" : "Upcoming"}
+                  </p>
 
-                <p className="mt-2 text-sm font-bold text-orange-300">
-                  {show.airTime}
-                </p>
+                  <h3 className="mt-5 text-2xl font-black">{show.name}</h3>
 
-                <p className="mt-2 text-sm text-zinc-500">{show.host}</p>
+                  <p className="mt-2 text-sm font-bold text-orange-300">
+                    {show.airTime}
+                  </p>
 
-                <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-800 bg-black">
-                  <iframe
-                    title={`${show.name} Spotify playlist`}
-                    src={spotifyMap[show.name]}
-                    width="100%"
-                    height="152"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                    className="block rounded-2xl"
-                  />
+                  <p className="mt-2 text-sm text-zinc-500">{show.host}</p>
+
+                  <a
+                    href={spotifyOpenUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-5 block w-full rounded-full bg-orange-400 px-5 py-3 text-center text-sm font-black text-black hover:bg-orange-300"
+                  >
+                    Open in Spotify
+                  </a>
+
+                  <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-800 bg-black">
+                    <iframe
+                      title={`${show.name} Spotify playlist`}
+                      src={spotifyEmbedUrl}
+                      width="100%"
+                      height="152"
+                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                      loading="lazy"
+                      className="block rounded-2xl"
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-8">
