@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function SupportPage() {
   const tiers = [
     {
@@ -30,7 +32,34 @@ export default function SupportPage() {
   return (
     <main className="min-h-screen bg-black text-white px-6 py-20">
 
-      {/* LOGO (FIXED — GROUNDED, NOT FLOATING) */}
+      {/* NAV */}
+      <nav className="mb-12 flex flex-wrap items-center justify-between gap-4 max-w-7xl mx-auto">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.35em] text-orange-400">
+            Murphys Community Radio
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Link href="/" className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800">
+            Home
+          </Link>
+
+          <Link href="/archive" className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800">
+            Archive
+          </Link>
+
+          <Link href="/shows" className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800">
+            Shows
+          </Link>
+
+          <Link href="/underwrite" className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800">
+            Underwrite
+          </Link>
+        </div>
+      </nav>
+
+      {/* LOGO */}
       <div className="text-center mb-10">
         <img
           src="/logos/murphys-radio-logo-color.png"
