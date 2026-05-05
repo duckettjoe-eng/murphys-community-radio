@@ -4,69 +4,79 @@ const shows = [
     description:
       "Warm soul, funk, yacht rock, and sunset selections for golden-hour listening.",
     tags: ["Soul", "Funk", "Sunset"],
+    airTime: "Thursdays, 6–7 PM",
     spotifyUrl: "https://open.spotify.com/embed/playlist/6MmSFo11AbLLGuXx8iUQI8",
-  },
-  {
-    title: "Dusty Crate Hip-Hop Hour",
-    description:
-      "Classic hip-hop, breaks, samples, and crate-digging selections with deep groove energy.",
-    tags: ["Hip-Hop", "Breaks", "Crates"],
-    spotifyUrl: "https://open.spotify.com/embed/playlist/31SuOU4Vbv7xjdtYlW4PE1",
-  },
-  {
-    title: "Cali Sun Reggae Ride",
-    description:
-      "Reggae, dub, roots, and California coastal rhythms built for an easy ride.",
-    tags: ["Reggae", "Dub", "Roots"],
-    spotifyUrl: "https://open.spotify.com/embed/playlist/0mf1PWxgjPUG8abErI67tC",
   },
   {
     title: "Alt-Rock Barroom Radio",
     description:
       "Alternative rock, dive-bar anthems, 90s grit, and guitar-forward radio energy.",
     tags: ["Alt Rock", "Indie", "Barroom"],
+    airTime: "Thursdays, 7–8 PM",
     spotifyUrl: "https://open.spotify.com/embed/playlist/4LCviG4Etf6sfoQNNWbRfs",
   },
   {
-    title: "Weird Late-Night FM",
+    title: "Dusty Crate Hip-Hop Hour",
     description:
-      "Strange, cinematic, left-field, and after-hours sounds from the edge of the dial.",
-    tags: ["Experimental", "Late Night", "Oddities"],
-    spotifyUrl: "https://open.spotify.com/embed/playlist/5bChhr0FAb32b2oevGyUAv",
+      "Classic hip-hop, breaks, samples, and crate-digging selections with deep groove energy.",
+    tags: ["Hip-Hop", "Breaks", "Crates"],
+    airTime: "Fridays, 6–7 PM",
+    spotifyUrl: "https://open.spotify.com/embed/playlist/31SuOU4Vbv7xjdtYlW4PE1",
   },
   {
     title: "House Party Frequency",
     description:
       "Dance-floor friendly house, disco, edits, and party tracks for high-energy sets.",
     tags: ["House", "Disco", "Party"],
+    airTime: "Fridays, 7–8 PM",
     spotifyUrl: "https://open.spotify.com/embed/playlist/24x2HGar6r7xStbu7VktN4",
   },
   {
-    title: "Lowrider Soul Sunday",
+    title: "Weird Late-Night FM",
     description:
-      "Oldies, lowrider soul, sweet harmonies, and Sunday cruising music.",
-    tags: ["Oldies", "Soul", "Sunday"],
-    spotifyUrl: "https://open.spotify.com/embed/playlist/5mkOQT5zf6vag2lAzjgPEp",
+      "Strange, cinematic, left-field, and after-hours sounds from the edge of the dial.",
+    tags: ["Experimental", "Late Night", "Oddities"],
+    airTime: "Fridays, 8–9 PM",
+    spotifyUrl: "https://open.spotify.com/embed/playlist/5bChhr0FAb32b2oevGyUAv",
   },
   {
-    title: "Campfire Americana",
+    title: "Cali Sun Reggae Ride",
     description:
-      "Folk, country, roots, and storytelling songs for foothill evenings.",
-    tags: ["Americana", "Folk", "Country"],
-    spotifyUrl: "https://open.spotify.com/embed/playlist/27dShIERXqZ5HZG3gVIuRX",
+      "Reggae, dub, roots, and California coastal rhythms built for an easy ride.",
+    tags: ["Reggae", "Dub", "Roots"],
+    airTime: "Saturdays, 5–6 PM",
+    spotifyUrl: "https://open.spotify.com/embed/playlist/0mf1PWxgjPUG8abErI67tC",
   },
   {
     title: "Mashup Crate Hour",
     description:
       "Genre-crossing mashups, blends, tempo flips, and DJ-friendly surprises.",
     tags: ["Mashups", "DJ", "Open Format"],
+    airTime: "Saturdays, 6–7 PM",
     spotifyUrl: "https://open.spotify.com/embed/playlist/5wIMxNuCrHLXbGcnN6e4eb",
+  },
+  {
+    title: "Campfire Americana",
+    description:
+      "Folk, country, roots, and storytelling songs for foothill evenings.",
+    tags: ["Americana", "Folk", "Country"],
+    airTime: "Saturdays, 7–8 PM",
+    spotifyUrl: "https://open.spotify.com/embed/playlist/27dShIERXqZ5HZG3gVIuRX",
+  },
+  {
+    title: "Lowrider Soul Sunday",
+    description:
+      "Oldies, lowrider soul, sweet harmonies, and Sunday cruising music.",
+    tags: ["Oldies", "Soul", "Sunday"],
+    airTime: "Sundays, 10–11 AM",
+    spotifyUrl: "https://open.spotify.com/embed/playlist/5mkOQT5zf6vag2lAzjgPEp",
   },
   {
     title: "Skull County Garage Gospel",
     description:
       "Raw garage rock, blues grit, punk spirit, and backroad gospel energy.",
     tags: ["Garage", "Blues", "Rock"],
+    airTime: "Sundays, 11 AM–12 PM",
     spotifyUrl: "https://open.spotify.com/embed/playlist/5ciTziF2CsE7ifteDHg0FW",
   },
 ];
@@ -105,7 +115,7 @@ export default function ShowsPage() {
               className="rounded-3xl border border-white/10 bg-[#17171b] p-6 shadow-2xl"
             >
               <p className="mb-3 inline-flex rounded-full bg-orange-400 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-black">
-                Schedule TBA
+                {show.airTime}
               </p>
 
               <h2 className="text-2xl font-black leading-tight text-white">
