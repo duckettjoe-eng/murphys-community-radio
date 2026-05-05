@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const shows = [
   {
     title: "Golden Hour Groove",
@@ -83,11 +85,51 @@ const shows = [
 
 export default function ShowsPage() {
   return (
-    <main className="min-h-screen bg-black text-white">
-      <section className="px-6 py-20 text-center md:py-24">
+    <main className="min-h-screen bg-black pb-28 text-white">
+      {/* NAV */}
+      <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-8">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.35em] text-orange-400">
+            Murphys Community Radio
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/"
+            className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800"
+          >
+            Home
+          </Link>
+
+          <Link
+            href="/archive"
+            className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800"
+          >
+            Archive
+          </Link>
+
+          <Link
+            href="/underwrite"
+            className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800"
+          >
+            Underwrite
+          </Link>
+
+          <Link
+            href="/support"
+            className="rounded-full bg-orange-400 px-5 py-3 text-sm font-bold text-black hover:bg-orange-300"
+          >
+            Support
+          </Link>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section className="px-6 pb-20 pt-10 text-center md:pb-24">
         <div className="mx-auto max-w-5xl">
           <img
-            src="/SCR Logo Final.png"
+            src="/logos/skull-county-radio-logo.png"
             alt="Skull County Radio"
             className="mx-auto mb-8 w-36 md:w-48"
           />
@@ -107,6 +149,7 @@ export default function ShowsPage() {
         </div>
       </section>
 
+      {/* SHOW GRID */}
       <section className="mx-auto max-w-7xl px-6 pb-24">
         <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
           {shows.map((show) => (
@@ -137,9 +180,7 @@ export default function ShowsPage() {
                 ))}
               </div>
 
-              {/* ✅ FIXED PLAYER SECTION */}
               <div className="mt-6">
-
                 <a
                   href={show.spotifyUrl.replace("/embed", "")}
                   target="_blank"
@@ -160,9 +201,7 @@ export default function ShowsPage() {
                     className="block rounded-2xl"
                   />
                 </div>
-
               </div>
-
             </article>
           ))}
         </div>
