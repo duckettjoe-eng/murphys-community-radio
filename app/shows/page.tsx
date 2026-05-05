@@ -137,17 +137,32 @@ export default function ShowsPage() {
                 ))}
               </div>
 
-              <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black">
-                <iframe
-                  title={`${show.title} Spotify playlist`}
-                  src={show.spotifyUrl}
-                  width="100%"
-                  height="352"
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                  loading="lazy"
-                  className="block rounded-2xl"
-                />
+              {/* ✅ FIXED PLAYER SECTION */}
+              <div className="mt-6">
+
+                <a
+                  href={show.spotifyUrl.replace("/embed", "")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mb-4 block w-full rounded-full bg-orange-400 px-5 py-3 text-center text-sm font-black text-black hover:bg-orange-300"
+                >
+                  Open in Spotify
+                </a>
+
+                <div className="overflow-hidden rounded-2xl border border-white/10 bg-black">
+                  <iframe
+                    title={`${show.title} Spotify playlist`}
+                    src={show.spotifyUrl}
+                    width="100%"
+                    height="352"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    className="block rounded-2xl"
+                  />
+                </div>
+
               </div>
+
             </article>
           ))}
         </div>
