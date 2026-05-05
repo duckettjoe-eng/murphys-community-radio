@@ -1,5 +1,8 @@
 import Link from "next/link";
 import RadioPlayer from "./components/RadioPlayer";
+import { localSchedule } from "@/app/lib/localSchedule";
+
+export const dynamic = "force-dynamic";
 
 const hostPortalUrl = "https://kmcr-host-portal.base44.app/";
 
@@ -12,30 +15,97 @@ const underwriters = [
   "Alchemy Café",
 ];
 
-const shows = [
-  {
-    title: "Live From the Big Bush",
-    tag: "Founding show prospect",
-    desc: "Local music, conversation, and foothill storytelling from the people who live it.",
-  },
-  {
-    title: "Skull County Radio Hour",
-    tag: "In development",
-    desc: "Roots, odd histories, culture, DJs, and sounds from the deeper Calaveras current.",
-  },
+const spotifyMap: Record<string, string> = {
+  "Golden Hour Groove":
+    "https://open.spotify.com/embed/playlist/6MmSFo11AbLLGuXx8iUQI8",
+  "Dusty Crate Hip-Hop Hour":
+    "https://open.spotify.com/embed/playlist/31SuOU4Vbv7xjdtYlW4PE1",
+  "Cali Sun Reggae Ride":
+    "https://open.spotify.com/embed/playlist/0mf1PWxgjPUG8abErI67tC",
+  "Alt-Rock Barroom Radio":
+    "https://open.spotify.com/embed/playlist/4LCviG4Etf6sfoQNNWbRfs",
+  "Weird Late-Night FM":
+    "https://open.spotify.com/embed/playlist/5bChhr0FAb32b2oevGyUAv",
+  "House Party Frequency":
+    "https://open.spotify.com/embed/playlist/24x2HGar6r7xStbu7VktN4",
+  "Lowrider Soul Sunday":
+    "https://open.spotify.com/embed/playlist/5mkOQT5zf6vag2lAzjgPEp",
+  "Campfire Americana":
+    "https://open.spotify.com/embed/playlist/27dShIERXqZ5HZG3gVIuRX",
+  "Mashup Crate Hour":
+    "https://open.spotify.com/embed/playlist/5wIMxNuCrHLXbGcnN6e4eb",
+  "Skull County Garage Gospel":
+    "https://open.spotify.com/embed/playlist/5ciTziF2CsE7ifteDHg0FW",
+};
+
+const dayNames = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
 ];
 
+function toMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function formatTime(time: string) {
+  const [hourString, minuteString] = time.split(":");
+  const hour = Number(hourString);
+  const minute = Number(minuteString);
+
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  const displayMinute = minute === 0 ? "" : `:${minuteString}`;
+
+  return `${displayHour}${displayMinute} ${suffix}`;
+}
+
+function getNextShows() {
+  const now = new Date();
+  const currentDay = now.getDay();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  return localSchedule
+    .map((show) => {
+      const startMinutes = toMinutes(show.start);
+      let dayOffset = show.day - currentDay;
+
+      if (dayOffset < 0) dayOffset += 7;
+
+      let totalMinutes = dayOffset * 1440 + (startMinutes - currentMinutes);
+
+      if (totalMinutes <= 0) {
+        totalMinutes += 7 * 1440;
+      }
+
+      return {
+        ...show,
+        totalMinutes,
+        airTime: `${dayNames[show.day]}, ${formatTime(show.start)}–${formatTime(
+          show.end,
+        )}`,
+      };
+    })
+    .sort((a, b) => a.totalMinutes - b.totalMinutes)
+    .slice(0, 3);
+}
+
 export default function Home() {
+  const nextShows = getNextShows();
+
   return (
     <main className="min-h-screen bg-black pb-28 text-white">
-
       {/* HERO */}
       <section className="relative overflow-hidden px-6 py-20">
         <div className="absolute left-[-120px] top-[-120px] h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
         <div className="absolute bottom-[-160px] right-[-120px] h-96 w-96 rounded-full bg-yellow-500/10 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl">
-
           <nav className="mb-16 flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.35em] text-orange-400">
@@ -47,11 +117,24 @@ export default function Home() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Link href="/archive" className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800">
+              <Link
+                href="/archive"
+                className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800"
+              >
                 Archive
               </Link>
 
-              <Link href="/support" className="rounded-full bg-orange-400 px-5 py-3 text-sm font-bold text-black hover:bg-orange-300">
+              <Link
+                href="/shows"
+                className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800"
+              >
+                Shows
+              </Link>
+
+              <Link
+                href="/support"
+                className="rounded-full bg-orange-400 px-5 py-3 text-sm font-bold text-black hover:bg-orange-300"
+              >
                 Support
               </Link>
             </div>
@@ -73,15 +156,25 @@ export default function Home() {
               </p>
 
               <div className="mt-10 flex flex-wrap gap-4">
-                <Link href="/archive" className="rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300">
+                <Link
+                  href="/archive"
+                  className="rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300"
+                >
                   Listen to the Archive
                 </Link>
 
-                <a href={hostPortalUrl} target="_blank" className="rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black">
+                <a
+                  href={hostPortalUrl}
+                  target="_blank"
+                  className="rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
+                >
                   Submit a Show
                 </a>
 
-                <Link href="/underwrite" className="rounded-full border border-zinc-700 px-7 py-4 font-black text-white hover:bg-zinc-900">
+                <Link
+                  href="/underwrite"
+                  className="rounded-full border border-zinc-700 px-7 py-4 font-black text-white hover:bg-zinc-900"
+                >
                   Become a Sponsor
                 </Link>
               </div>
@@ -101,7 +194,6 @@ export default function Home() {
       {/* SUPPORT */}
       <section className="px-6 py-20">
         <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-2">
-
           <div className="rounded-3xl bg-orange-400 p-10 text-black">
             <p className="text-sm font-black uppercase tracking-[0.25em]">
               Support the Signal
@@ -116,7 +208,10 @@ export default function Home() {
               and local programming.
             </p>
 
-            <Link href="/support" className="mt-8 inline-block rounded-full bg-black px-7 py-4 font-black text-white">
+            <Link
+              href="/support"
+              className="mt-8 inline-block rounded-full bg-black px-7 py-4 font-black text-white"
+            >
               Donate
             </Link>
           </div>
@@ -135,11 +230,13 @@ export default function Home() {
               community voices.
             </p>
 
-            <Link href="/underwrite" className="mt-8 inline-block rounded-full bg-orange-400 px-7 py-4 font-black text-black">
+            <Link
+              href="/underwrite"
+              className="mt-8 inline-block rounded-full bg-orange-400 px-7 py-4 font-black text-black"
+            >
               Become an Underwriter
             </Link>
           </div>
-
         </div>
       </section>
 
@@ -150,44 +247,76 @@ export default function Home() {
             Programming
           </p>
 
-          <h2 className="mt-4 text-5xl font-black">Shows in motion</h2>
+          <h2 className="mt-4 text-5xl font-black">Up Next</h2>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-2">
-            {shows.map((show) => (
-              <div key={show.title} className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8">
-                <p className="text-xs font-black uppercase tracking-widest text-orange-400">
-                  {show.tag}
+          <p className="mt-4 max-w-2xl leading-7 text-zinc-400">
+            The next three scheduled Skull County Radio shows, linked to their
+            companion Spotify playlists.
+          </p>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {nextShows.map((show, index) => (
+              <div
+                key={`${show.name}-${show.day}-${show.start}`}
+                className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6"
+              >
+                <p className="inline-flex rounded-full bg-orange-400 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-black">
+                  {index === 0 ? "Next Up" : "Upcoming"}
                 </p>
 
-                <h3 className="mt-4 text-3xl font-black">{show.title}</h3>
+                <h3 className="mt-5 text-2xl font-black">{show.name}</h3>
 
-                <p className="mt-4 leading-7 text-zinc-300">{show.desc}</p>
+                <p className="mt-2 text-sm font-bold text-orange-300">
+                  {show.airTime}
+                </p>
+
+                <p className="mt-2 text-sm text-zinc-500">{show.host}</p>
+
+                <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-800 bg-black">
+                  <iframe
+                    title={`${show.name} Spotify playlist`}
+                    src={spotifyMap[show.name]}
+                    width="100%"
+                    height="152"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    className="block rounded-2xl"
+                  />
+                </div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-8">
+            <Link
+              href="/shows"
+              className="inline-block rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
+            >
+              View All Shows
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* UNDERWRITERS (TEXT VERSION) */}
+      {/* UNDERWRITERS */}
       <section className="px-6 py-20">
         <div className="mx-auto max-w-7xl rounded-3xl border border-zinc-800 bg-zinc-950 p-10">
-
           <p className="text-sm font-black uppercase tracking-[0.35em] text-orange-400">
             Community Partners & Supporters
           </p>
 
-          <h2 className="mt-4 text-4xl font-black">
-            Early community backers
-          </h2>
+          <h2 className="mt-4 text-4xl font-black">Early community backers</h2>
 
           <div className="mt-8 grid gap-3 md:grid-cols-3">
             {underwriters.map((name) => (
-              <div key={name} className="rounded-2xl bg-black px-5 py-4 text-sm font-bold text-zinc-300">
+              <div
+                key={name}
+                className="rounded-2xl bg-black px-5 py-4 text-sm font-bold text-zinc-300"
+              >
                 {name}
               </div>
             ))}
           </div>
-
         </div>
       </section>
 
