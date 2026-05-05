@@ -73,58 +73,61 @@ const shows = [
 
 export default function ShowsPage() {
   return (
-    <main className="min-h-screen bg-[#0F3D2E] text-[#F4EBDD]">
-      <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-        <div className="border border-[#C8A96A]/50 bg-[#F4EBDD] p-8 text-[#0F3D2E] shadow-2xl md:p-12">
-          <p className="mb-3 text-sm font-bold uppercase tracking-[0.3em] text-[#8B6F36]">
-            Murphys Community Radio
+    <main className="min-h-screen bg-black text-white">
+      <section className="px-6 py-20 text-center md:py-24">
+        <div className="mx-auto max-w-5xl">
+          <img
+            src="/SCR Logo Final.png"
+            alt="Skull County Radio"
+            className="mx-auto mb-8 w-36 md:w-48"
+          />
+
+          <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.35em] text-orange-400">
+            Murphys Community Radio Programming
           </p>
 
-          <h1 className="font-serif text-5xl font-bold leading-tight md:text-7xl">
+          <h1 className="text-5xl font-black leading-none tracking-tight md:text-7xl">
             Shows & Playlists
           </h1>
 
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-[#0F3D2E]/80 md:text-xl">
-            Curated programming from Murphys Community Radio and Skull County
-            Radio — built as a companion library for show blocks, playlists,
-            and future on-air programming.
+          <p className="mx-auto mt-6 max-w-3xl text-base leading-7 text-white/70 md:text-xl md:leading-8">
+            Curated show blocks from Skull County Radio — built for on-air
+            programming, companion listening, and future schedule expansion.
           </p>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="grid gap-8 md:grid-cols-2">
+      <section className="mx-auto max-w-7xl px-6 pb-24">
+        <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
           {shows.map((show) => (
             <article
               key={show.title}
-              className="overflow-hidden border border-[#C8A96A]/40 bg-[#F4EBDD] text-[#0F3D2E] shadow-xl"
+              className="rounded-3xl border border-white/10 bg-[#17171b] p-6 shadow-2xl"
             >
-              <div className="border-b border-[#C8A96A]/40 p-6">
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-[#8B6F36]">
-                  Schedule TBA
-                </p>
+              <p className="mb-3 inline-flex rounded-full bg-orange-400 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-black">
+                Schedule TBA
+              </p>
 
-                <h2 className="font-serif text-3xl font-bold leading-tight">
-                  {show.title}
-                </h2>
+              <h2 className="text-2xl font-black leading-tight text-white">
+                {show.title}
+              </h2>
 
-                <p className="mt-4 leading-7 text-[#0F3D2E]/80">
-                  {show.description}
-                </p>
+              <p className="mt-4 min-h-[72px] text-sm leading-6 text-white/65">
+                {show.description}
+              </p>
 
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {show.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="border border-[#C8A96A]/60 px-3 py-1 text-xs font-bold uppercase tracking-[0.15em] text-[#0F3D2E]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {show.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-white/70"
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
 
-              <div className="bg-[#0F3D2E] p-4">
+              <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black">
                 <iframe
                   title={`${show.title} Spotify playlist`}
                   src={show.spotifyUrl}
@@ -132,7 +135,7 @@ export default function ShowsPage() {
                   height="352"
                   allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                   loading="lazy"
-                  className="rounded-xl"
+                  className="block rounded-2xl"
                 />
               </div>
             </article>
