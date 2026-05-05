@@ -140,7 +140,7 @@ export default function Home() {
             </div>
           </nav>
 
-          <div className="grid gap-12 lg:grid-cols-[1fr_0.85fr] lg:items-center">
+          <div className="grid gap-12 lg:grid-cols-[1fr_1fr] lg:items-center">
             <div>
               <p className="mb-5 text-sm font-black uppercase tracking-[0.35em] text-orange-400">
                 Local voices. Real signal. Community radio.
@@ -166,6 +166,7 @@ export default function Home() {
                 <a
                   href={hostPortalUrl}
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
                 >
                   Submit a Show
@@ -180,11 +181,11 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
+            <div className="flex justify-center lg:justify-end">
               <img
                 src="/logos/murphys-radio-logo-color.png"
                 alt="Murphys Community Radio"
-                className="mx-auto w-full max-w-md"
+                className="w-[300px] drop-shadow-[0_30px_80px_rgba(0,0,0,0.9)] md:w-[500px] lg:w-[620px] xl:w-[700px]"
               />
             </div>
           </div>
@@ -353,6 +354,7 @@ export default function Home() {
           <a
             href={hostPortalUrl}
             target="_blank"
+            rel="noopener noreferrer"
             className="mt-8 inline-block rounded-full bg-orange-400 px-8 py-4 font-black text-black hover:bg-orange-300"
           >
             Open Host Portal
