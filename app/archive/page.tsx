@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { MusicArchiveItem } from "@/app/lib/localMusicArchive";
 
 const defaultShowSlug = "beatdown";
-const allDjsSlug = "all";
 
 export default function ArchivePage() {
   const [archiveItems, setArchiveItems] = useState<MusicArchiveItem[]>([]);
@@ -63,15 +62,40 @@ export default function ArchivePage() {
 
       {/* NAV */}
       <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-8">
-        <p className="text-sm font-bold uppercase tracking-[0.35em] text-orange-400">
-          Murphys Community Radio
-        </p>
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.35em] text-orange-400">
+            Murphys Community Radio
+          </p>
+        </div>
 
         <div className="flex flex-wrap gap-3">
-          <Link href="/" className="nav-btn">Home</Link>
-          <Link href="/shows" className="nav-btn">Shows</Link>
-          <Link href="/underwrite" className="nav-btn">Underwrite</Link>
-          <Link href="/support" className="nav-btn-active">Support</Link>
+          <Link
+            href="/"
+            className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800"
+          >
+            Home
+          </Link>
+
+          <Link
+            href="/shows"
+            className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800"
+          >
+            Shows
+          </Link>
+
+          <Link
+            href="/underwrite"
+            className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800"
+          >
+            Underwrite
+          </Link>
+
+          <Link
+            href="/support"
+            className="rounded-full bg-orange-400 px-5 py-3 text-sm font-bold text-black hover:bg-orange-300"
+          >
+            Support
+          </Link>
         </div>
       </nav>
 
@@ -80,6 +104,7 @@ export default function ArchivePage() {
         <img
           src="/logos/skull-county-radio-logo.png"
           className="mx-auto mb-8 w-36 md:w-48"
+          alt="Skull County Radio"
         />
 
         <h1 className="text-5xl md:text-7xl font-black">
@@ -126,7 +151,7 @@ export default function ArchivePage() {
               className={`px-4 py-2 rounded-full text-sm font-bold ${
                 selectedShowSlug === show.slug
                   ? "bg-orange-400 text-black"
-                  : "bg-zinc-900 border border-white/10"
+                  : "bg-zinc-900 border border-white/10 text-white"
               }`}
             >
               {show.name}
@@ -147,6 +172,7 @@ export default function ArchivePage() {
                 <img
                   src={item.artwork}
                   className="rounded-xl mb-4"
+                  alt={item.title}
                 />
               )}
 
