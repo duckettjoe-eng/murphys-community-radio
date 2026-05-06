@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useRef, useState } from "react";
 
 type SoundBed = {
   id: string;
@@ -9,16 +10,17 @@ type SoundBed = {
   url: string;
 };
 
-export default function StudioPage() {
+function StudioPageContent() {
+  const params = useSearchParams();
   const [recording, setRecording] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [soundBeds, setSoundBeds] = useState<SoundBed[]>([]);
   const [activeBed, setActiveBed] = useState<string | null>(null);
 
-  const [title, setTitle] = useState("");
-  const [artistHost, setArtistHost] = useState("");
+  const [title, setTitle] = useState(() => params.get("show_name") || "");
+  const [artistHost, setArtistHost] = useState(() => params.get("host") || "");
   const [recordingDate, setRecordingDate] = useState(
-    new Date().toISOString().slice(0, 10),
+    () => params.get("date") || new Date().toISOString().slice(0, 10),
   );
 
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -367,5 +369,13 @@ export default function StudioPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function StudioPage() {
+  return (
+    <Suspense>
+      <StudioPageContent />
+    </Suspense>
   );
 }
