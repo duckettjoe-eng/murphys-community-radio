@@ -4,6 +4,30 @@ import { localSchedule, type Show } from "@/app/lib/localSchedule";
 export const dynamic = "force-dynamic";
 
 const mixcloudLiveUrl = "https://www.mixcloud.com/live/djhellojoey/";
+const skullCountyHost = "DJ Hello Joey";
+
+const spotifyMap: Record<string, string> = {
+  "Golden Hour Groove":
+    "https://open.spotify.com/embed/playlist/6MmSFo11AbLLGuXx8iUQI8",
+  "Dusty Crate Hip-Hop Hour":
+    "https://open.spotify.com/embed/playlist/31SuOU4Vbv7xjdtYlW4PE1",
+  "Cali Sun Reggae Ride":
+    "https://open.spotify.com/embed/playlist/0mf1PWxgjPUG8abErI67tC",
+  "Alt-Rock Barroom Radio":
+    "https://open.spotify.com/embed/playlist/4LCviG4Etf6sfoQNNWbRfs",
+  "Weird Late-Night FM":
+    "https://open.spotify.com/embed/playlist/5bChhr0FAb32b2oevGyUAv",
+  "House Party Frequency":
+    "https://open.spotify.com/embed/playlist/24x2HGar6r7xStbu7VktN4",
+  "Lowrider Soul Sunday":
+    "https://open.spotify.com/embed/playlist/5mkOQT5zf6vag2lAzjgPEp",
+  "Campfire Americana":
+    "https://open.spotify.com/embed/playlist/27dShIERXqZ5HZG3gVIuRX",
+  "Mashup Crate Hour":
+    "https://open.spotify.com/embed/playlist/5wIMxNuCrHLXbGcnN6e4eb",
+  "Skull County Garage Gospel":
+    "https://open.spotify.com/embed/playlist/5ciTziF2CsE7ifteDHg0FW",
+};
 
 const dayNames = [
   "Sunday",
@@ -55,22 +79,71 @@ function getCurrentShow() {
   if (!show) {
     return {
       name: "Skull County Radio",
-      host: "Live Broadcast",
+      host: skullCountyHost,
       time: "Programming from Murphys, California",
+      spotifyEmbedUrl: null,
+      spotifyUrl: null,
     };
   }
 
+  const spotifyEmbedUrl = spotifyMap[show.name] || null;
+
   return {
     name: show.name,
-    host: show.host,
+    host: skullCountyHost,
     time: `${dayNames[show.day]}, ${formatTime(show.start)}-${formatTime(
       show.end,
     )}`,
+    spotifyEmbedUrl,
+    spotifyUrl: spotifyEmbedUrl?.replace("/embed", "") || null,
   };
+}
+
+function getUpcomingShows() {
+  const now = new Date();
+  const currentDay = now.getDay();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  return localSchedule
+    .map((show) => {
+      const startMinutes = timeToMinutes(show.start);
+      let dayOffset = show.day - currentDay;
+
+      if (dayOffset < 0) dayOffset += 7;
+
+      let totalMinutes = dayOffset * 1440 + (startMinutes - currentMinutes);
+
+      if (totalMinutes <= 0) {
+        totalMinutes += 7 * 1440;
+      }
+
+      return {
+        ...show,
+        totalMinutes,
+        time: `${dayNames[show.day]}, ${formatTime(show.start)}-${formatTime(
+          show.end,
+        )}`,
+      };
+    })
+    .sort((a, b) => a.totalMinutes - b.totalMinutes)
+    .slice(0, 4);
 }
 
 export default function LivePage() {
   const currentShow = getCurrentShow();
+  const upcomingShows = getUpcomingShows();
+  const nextPlaylistShow = upcomingShows.find((show) => spotifyMap[show.name]);
+  const fallbackSpotifyEmbedUrl = nextPlaylistShow
+    ? spotifyMap[nextPlaylistShow.name]
+    : null;
+  const playlistShow = currentShow.spotifyEmbedUrl
+    ? currentShow
+    : {
+        name: nextPlaylistShow?.name || currentShow.name,
+        time: nextPlaylistShow?.time || currentShow.time,
+        spotifyEmbedUrl: fallbackSpotifyEmbedUrl,
+        spotifyUrl: fallbackSpotifyEmbedUrl?.replace("/embed", "") || null,
+      };
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#050806] pb-24 text-[#f8efd8]">
@@ -127,7 +200,7 @@ export default function LivePage() {
               </h1>
 
               <p className="mt-6 max-w-2xl text-lg leading-8 text-[#f8efd8]/72 md:text-xl">
-                Streaming live from Murphys, California.
+                Streaming live from Murphys, California, with DJ Hello Joey.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -172,124 +245,131 @@ export default function LivePage() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-6 py-12 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="overflow-hidden rounded-2xl border border-[#d6a847]/25 bg-black shadow-[0_28px_90px_rgba(0,0,0,0.42)]">
+      <section className="mx-auto grid max-w-7xl items-start gap-8 px-6 py-12 xl:grid-cols-[360px_minmax(0,1fr)_360px]">
+        <div className="order-1 overflow-hidden rounded-2xl border border-[#d6a847]/25 bg-black shadow-[0_28px_90px_rgba(0,0,0,0.42)] xl:order-2">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#d6a847]/20 bg-[#0b120d] px-5 py-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.3em] text-[#d6a847]">
-                Mixcloud Live
+                Now Playing / Current Show
               </p>
-              <p className="mt-1 text-sm text-[#f8efd8]/55">
-                OBS to Mixcloud, linked here from the station site.
+              <h2 className="mt-2 text-2xl font-black leading-tight text-[#fff8e8]">
+                {currentShow.name}
+              </h2>
+              <p className="mt-1 text-sm font-bold text-[#f8efd8]/55">
+                Hosted by {currentShow.host} · {currentShow.time}
               </p>
             </div>
-            <a
-              href={mixcloudLiveUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full border border-[#d6a847]/50 px-5 py-3 text-sm font-black text-[#f3c866] hover:bg-[#d6a847] hover:text-[#080a07]"
-            >
-              Open Directly
-            </a>
           </div>
 
-          <div className="grid min-h-[520px] place-items-center bg-[radial-gradient(circle_at_center,rgba(214,168,71,0.16),transparent_34%),linear-gradient(135deg,#050806,#0b120d)] p-6 md:min-h-[620px]">
-            <div className="w-full max-w-2xl rounded-2xl border border-[#d6a847]/30 bg-[#f8efd8] p-8 text-center text-[#152017] shadow-[0_30px_90px_rgba(0,0,0,0.36)] md:p-12">
+          <div className="grid place-items-center bg-[radial-gradient(circle_at_center,rgba(214,168,71,0.16),transparent_34%),linear-gradient(135deg,#050806,#0b120d)] p-5 md:p-6">
+            <div className="w-full max-w-xl rounded-2xl border border-[#d6a847]/30 bg-[#f8efd8] p-8 text-center text-[#152017] shadow-[0_30px_90px_rgba(0,0,0,0.36)]">
               <img
                 src="/logos/skull-county-radio-logo.png"
                 alt="Skull County Radio"
-                className="mx-auto w-28 md:w-36"
+                className="mx-auto w-40 md:w-52"
               />
 
-              <p className="mt-8 text-xs font-black uppercase tracking-[0.3em] text-[#7b5c18]">
+              <p className="mt-6 text-xs font-black uppercase tracking-[0.3em] text-[#7b5c18]">
                 Live on Mixcloud
               </p>
-              <h2 className="mt-4 text-4xl font-black leading-tight md:text-5xl">
-                Join the broadcast
+              <h2 className="mt-3 text-4xl font-black leading-tight">
+                DJ Hello Joey
               </h2>
-              <p className="mx-auto mt-5 max-w-lg text-base leading-7 text-[#152017]/70">
-                Mixcloud live streams open on Mixcloud while the show is on the
-                air. Use the button below to listen live in a new tab.
-              </p>
 
               <a
                 href={mixcloudLiveUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-8 inline-flex rounded-full bg-[#d6a847] px-8 py-4 font-black text-[#080a07] shadow-[0_18px_45px_rgba(122,89,18,0.22)] hover:bg-[#f3c866]"
+                className="mt-6 inline-flex rounded-full bg-[#d6a847] px-8 py-4 font-black text-[#080a07] shadow-[0_18px_45px_rgba(122,89,18,0.22)] hover:bg-[#f3c866]"
               >
                 Open Live Stream
               </a>
 
-              <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-[#152017]/45">
-                Murphys Community Radio / Skull County Radio
+              <p className="mt-5 text-sm font-black uppercase tracking-[0.2em] text-[#152017]/50">
+                Join the broadcast
               </p>
             </div>
           </div>
 
           <div className="border-t border-[#d6a847]/20 bg-[#0b120d] px-5 py-4">
             <p className="text-sm leading-6 text-[#f8efd8]/64">
-              Mixcloud supports embeds for published shows and tracks, but live
-              broadcasts need to open directly on Mixcloud.
+              Murphys Community Radio 2026.
             </p>
           </div>
         </div>
 
-        <aside className="grid content-start gap-8">
-          <section className="rounded-2xl border border-[#d6a847]/25 bg-[#f8efd8] p-6 text-[#152017] shadow-[0_24px_70px_rgba(0,0,0,0.24)]">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-[#7b5c18]">
-              Now Playing / Current Show
-            </p>
-            <h2 className="mt-4 text-2xl font-black leading-tight">
-              {currentShow.name}
-            </h2>
-            <p className="mt-2 text-sm font-bold text-[#5e4a24]">
-              Hosted by {currentShow.host}
-            </p>
-            <p className="mt-5 rounded-xl bg-[#152017]/8 px-4 py-3 text-sm font-bold text-[#152017]/72">
-              {currentShow.time}
-            </p>
-          </section>
-
-          <section className="rounded-2xl border border-[#d6a847]/25 bg-[#0b120d] p-6 text-[#f8efd8]">
+        <aside className="contents">
+          <section className="order-2 rounded-2xl border border-[#d6a847]/25 bg-[#0b120d] p-6 text-[#f8efd8] xl:order-1">
             <p className="text-xs font-black uppercase tracking-[0.28em] text-[#d6a847]">
-              Broadcast Setup
+              Broadcast Playlist
             </p>
             <h2 className="mt-4 text-2xl font-black leading-tight">
-              OBS → Mixcloud → MurphysCommunityRadio.com
+              {playlistShow.name}
             </h2>
-            <div className="mt-5 grid gap-3 text-sm font-bold">
-              {["OBS", "Mixcloud", "MurphysCommunityRadio.com"].map(
-                (step, index) => (
-                  <div
-                    key={step}
-                    className="flex items-center gap-3 rounded-xl border border-[#d6a847]/15 bg-[#f8efd8]/6 px-4 py-3"
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#d6a847] text-xs font-black text-[#080a07]">
-                      {index + 1}
-                    </span>
-                    <span>{step}</span>
+            <p className="mt-2 text-sm font-bold text-[#f8efd8]/55">
+              {playlistShow.time}
+            </p>
+            <p className="mt-5 text-sm leading-6 text-[#f8efd8]/62">
+              The weekly Spotify playlist DJ Hello Joey works from for this
+              broadcast block.
+            </p>
+
+            <div className="mt-6 overflow-hidden rounded-xl border border-[#d6a847]/20 bg-black/35">
+              {playlistShow.spotifyEmbedUrl ? (
+                <>
+                  <iframe
+                    title={`${playlistShow.name} Spotify playlist`}
+                    src={playlistShow.spotifyEmbedUrl}
+                    className="h-[352px] w-full border-0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                  />
+                  <div className="border-t border-[#d6a847]/15 px-4 py-3">
+                    <a
+                      href={playlistShow.spotifyUrl || undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-black text-[#f3c866] hover:text-[#fff8e8]"
+                    >
+                      Open playlist on Spotify
+                    </a>
                   </div>
-                ),
+                </>
+              ) : (
+                <div className="px-4 py-5">
+                  <p className="text-sm leading-6 text-[#f8efd8]/60">
+                    The matching weekly Spotify playlist will appear here once a
+                    scheduled broadcast playlist is configured.
+                  </p>
+                </div>
               )}
             </div>
-            <p className="mt-5 text-sm leading-6 text-[#f8efd8]/62">
-              The live booth sends the program mix from OBS into Mixcloud, then
-              MurphysCommunityRadio.com carries the public-facing stream window
-              for listeners.
-            </p>
           </section>
 
-          <section className="rounded-2xl border border-dashed border-[#d6a847]/35 bg-[#0b120d]/70 p-6 text-[#f8efd8]">
+          <section className="order-3 rounded-2xl border border-dashed border-[#d6a847]/35 bg-[#0b120d]/70 p-6 text-[#f8efd8]">
             <p className="text-xs font-black uppercase tracking-[0.28em] text-[#d6a847]">
-              Coming Soon
+              Upcoming Shows
             </p>
-            <h2 className="mt-4 text-2xl font-black">Live chat & show notes</h2>
-            <div className="mt-5 min-h-40 rounded-xl border border-[#f8efd8]/10 bg-black/35 p-4">
-              <p className="text-sm leading-6 text-[#f8efd8]/52">
-                Space reserved for live chat, set notes, links, call-in prompts,
-                and guest details during future broadcasts.
-              </p>
+            <h2 className="mt-4 text-2xl font-black">
+              Next on Skull County Radio
+            </h2>
+            <div className="mt-5 grid gap-3">
+              {upcomingShows.map((show) => (
+                <div
+                  key={`${show.day}-${show.start}-${show.name}`}
+                  className="rounded-xl border border-[#f8efd8]/10 bg-black/35 p-4"
+                >
+                  <p className="text-sm font-black text-[#fff8e8]">
+                    {show.name}
+                  </p>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-[0.16em] text-[#d6a847]">
+                    {show.time}
+                  </p>
+                  <p className="mt-2 text-sm text-[#f8efd8]/52">
+                    Playlist-driven broadcast block, refreshed weekly.
+                  </p>
+                </div>
+              ))}
             </div>
           </section>
         </aside>

@@ -118,6 +118,13 @@ export default function Home() {
 
             <div className="flex flex-wrap gap-3">
               <Link
+                href="/live"
+                className="rounded-full bg-red-500 px-5 py-3 text-sm font-black text-white hover:bg-red-400"
+              >
+                Live Broadcast
+              </Link>
+
+              <Link
                 href="/archive"
                 className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800"
               >
