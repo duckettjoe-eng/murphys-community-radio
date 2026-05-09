@@ -4,8 +4,6 @@ import { localSchedule, type Show } from "@/app/lib/localSchedule";
 export const dynamic = "force-dynamic";
 
 const mixcloudLiveUrl = "https://www.mixcloud.com/live/djhellojoey/";
-const mixcloudEmbedUrl =
-  "https://www.mixcloud.com/widget/iframe/?hide_cover=1&light=0&feed=%2Flive%2Fdjhellojoey%2F";
 
 const dayNames = [
   "Sunday",
@@ -182,7 +180,7 @@ export default function LivePage() {
                 Mixcloud Live
               </p>
               <p className="mt-1 text-sm text-[#f8efd8]/55">
-                OBS to Mixcloud, embedded here for the station site.
+                OBS to Mixcloud, linked here from the station site.
               </p>
             </div>
             <a
@@ -195,19 +193,44 @@ export default function LivePage() {
             </a>
           </div>
 
-          <div className="relative min-h-[520px] bg-[#050806] md:min-h-[620px]">
-            <iframe
-              title="Skull County Radio live stream on Mixcloud"
-              src={mixcloudEmbedUrl}
-              className="absolute inset-0 h-full w-full border-0"
-              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-            />
+          <div className="grid min-h-[520px] place-items-center bg-[radial-gradient(circle_at_center,rgba(214,168,71,0.16),transparent_34%),linear-gradient(135deg,#050806,#0b120d)] p-6 md:min-h-[620px]">
+            <div className="w-full max-w-2xl rounded-2xl border border-[#d6a847]/30 bg-[#f8efd8] p-8 text-center text-[#152017] shadow-[0_30px_90px_rgba(0,0,0,0.36)] md:p-12">
+              <img
+                src="/logos/skull-county-radio-logo.png"
+                alt="Skull County Radio"
+                className="mx-auto w-28 md:w-36"
+              />
+
+              <p className="mt-8 text-xs font-black uppercase tracking-[0.3em] text-[#7b5c18]">
+                Live on Mixcloud
+              </p>
+              <h2 className="mt-4 text-4xl font-black leading-tight md:text-5xl">
+                Join the broadcast
+              </h2>
+              <p className="mx-auto mt-5 max-w-lg text-base leading-7 text-[#152017]/70">
+                Mixcloud live streams open on Mixcloud while the show is on the
+                air. Use the button below to listen live in a new tab.
+              </p>
+
+              <a
+                href={mixcloudLiveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-8 inline-flex rounded-full bg-[#d6a847] px-8 py-4 font-black text-[#080a07] shadow-[0_18px_45px_rgba(122,89,18,0.22)] hover:bg-[#f3c866]"
+              >
+                Open Live Stream
+              </a>
+
+              <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-[#152017]/45">
+                Murphys Community Radio / Skull County Radio
+              </p>
+            </div>
           </div>
 
           <div className="border-t border-[#d6a847]/20 bg-[#0b120d] px-5 py-4">
             <p className="text-sm leading-6 text-[#f8efd8]/64">
-              If the embedded player is unavailable, use the direct Mixcloud
-              link above to join the live broadcast.
+              Mixcloud supports embeds for published shows and tracks, but live
+              broadcasts need to open directly on Mixcloud.
             </p>
           </div>
         </div>
