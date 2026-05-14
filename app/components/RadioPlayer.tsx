@@ -73,6 +73,7 @@ export default function RadioPlayer() {
 
   const activeAudioUrl =
     playbackSource === "live" ? liveStreamUrl : archiveTrack?.audioUrl || "";
+  const hasActiveAudioUrl = activeAudioUrl.trim().length > 0;
 
   const sourceLabel = playbackSource === "live" ? "Live" : "Archive";
 
@@ -90,11 +91,11 @@ export default function RadioPlayer() {
   const displayedShow = {
     name:
       playbackSource === "archive"
-        ? archiveTrack?.showName || "The Beat Down"
+        ? archiveTrack?.showName || "Archive coming soon"
         : currentShow.name,
     host:
       playbackSource === "archive"
-        ? archiveTrack?.djName || "DJ Hello Joey"
+        ? archiveTrack?.djName || "Broadcast archive"
         : currentShow.host,
     hostLabel: playbackSource === "archive" ? "DJ" : "Host",
     source: sourceLabel,
@@ -221,7 +222,7 @@ export default function RadioPlayer() {
   }, []);
 
   const togglePlayback = () => {
-    if (!audioRef.current || !activeAudioUrl) return;
+    if (!audioRef.current || !hasActiveAudioUrl) return;
 
     if (isPlaying) {
       audioRef.current.pause();
@@ -247,27 +248,29 @@ export default function RadioPlayer() {
 
   return (
     <>
-      <audio
-        ref={audioRef}
-        src={activeAudioUrl}
-        preload="none"
-        onPlay={() => {
-          setIsPlaying(true);
-          setStatus("Playing");
-        }}
-        onPause={() => {
-          setIsPlaying(false);
-          setStatus("Paused");
-        }}
-        onError={() => {
-          setIsPlaying(false);
-          setStatus(
-            playbackSource === "archive"
-              ? "Archive unavailable"
-              : "Stream unavailable",
-          );
-        }}
-      />
+      {hasActiveAudioUrl ? (
+        <audio
+          ref={audioRef}
+          src={activeAudioUrl}
+          preload="none"
+          onPlay={() => {
+            setIsPlaying(true);
+            setStatus("Playing");
+          }}
+          onPause={() => {
+            setIsPlaying(false);
+            setStatus("Paused");
+          }}
+          onError={() => {
+            setIsPlaying(false);
+            setStatus(
+              playbackSource === "archive"
+                ? "Archive unavailable"
+                : "Stream unavailable",
+            );
+          }}
+        />
+      ) : null}
 
       {expanded ? (
         <button
@@ -341,11 +344,14 @@ export default function RadioPlayer() {
               <button
                 type="button"
                 onClick={togglePlayback}
-                className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black"
+                disabled={!hasActiveAudioUrl}
+                className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-white/50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
               >
                 {isPlaying
                   ? "Pause"
-                  : playbackSource === "archive"
+                  : !hasActiveAudioUrl
+                    ? "Coming Soon"
+                    : playbackSource === "archive"
                     ? "Play Archive"
                     : "Listen Live"}
               </button>
@@ -467,11 +473,14 @@ export default function RadioPlayer() {
               <button
                 type="button"
                 onClick={togglePlayback}
-                className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black"
+                disabled={!hasActiveAudioUrl}
+                className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-white/50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
               >
                 {isPlaying
                   ? "Pause"
-                  : playbackSource === "archive"
+                  : !hasActiveAudioUrl
+                    ? "Coming Soon"
+                    : playbackSource === "archive"
                     ? "Play Archive"
                     : "Listen Live"}
               </button>

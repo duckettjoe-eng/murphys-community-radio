@@ -163,7 +163,7 @@ export default function ArchivePage() {
             </>
           ) : (
             <p className="text-white/60">
-              Select a show to start listening
+              Archive recordings coming soon.
             </p>
           )}
         </div>
@@ -171,68 +171,85 @@ export default function ArchivePage() {
 
       {/* SHOW CARDS */}
       <section className="px-6">
-        <div className="mx-auto max-w-7xl grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {showCards.map((show) => {
-            const isExpanded = expandedShowSlug === show.slug;
+        {showCards.length > 0 ? (
+          <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {showCards.map((show) => {
+              const isExpanded = expandedShowSlug === show.slug;
 
-            return (
-              <div
-                key={show.slug}
-                className="overflow-hidden rounded-3xl border border-white/10 bg-[#17171b]"
-              >
-                <button
-                  type="button"
-                  onClick={() =>
-                    setExpandedShowSlug(isExpanded ? null : show.slug)
-                  }
-                  className="block w-full text-left"
-                  aria-expanded={isExpanded}
+              return (
+                <div
+                  key={show.slug}
+                  className="overflow-hidden rounded-3xl border border-white/10 bg-[#17171b]"
                 >
-                  <img
-                    src={show.artwork}
-                    className="aspect-square w-full object-cover"
-                    alt={show.name}
-                  />
-                </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedShowSlug(isExpanded ? null : show.slug)
+                    }
+                    className="block w-full text-left"
+                    aria-expanded={isExpanded}
+                  >
+                    <img
+                      src={show.artwork}
+                      className="aspect-square w-full object-cover"
+                      alt={show.name}
+                    />
+                  </button>
 
-                <div className="p-6">
-                  <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-300">
-                    {show.items.length}{" "}
-                    {show.items.length === 1 ? "episode" : "episodes"}
-                  </p>
+                  <div className="p-6">
+                    <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-300">
+                      {show.items.length}{" "}
+                      {show.items.length === 1 ? "episode" : "episodes"}
+                    </p>
 
-                  <h3 className="mt-3 text-2xl font-black">{show.name}</h3>
+                    <h3 className="mt-3 text-2xl font-black">{show.name}</h3>
 
-                  <p className="mt-2 text-sm text-white/60">{show.host}</p>
+                    <p className="mt-2 text-sm text-white/60">{show.host}</p>
 
-                  {isExpanded && (
-                    <div className="mt-6 space-y-3">
-                      {show.items.map((item) => (
-                        <div
-                          key={item.id}
-                          className="rounded-2xl border border-white/10 bg-black p-4"
-                        >
-                          <h4 className="font-black">{item.title}</h4>
-
-                          <p className="mt-1 text-sm text-white/50">
-                            {item.date}
-                          </p>
-
-                          <button
-                            onClick={() => playItem(item)}
-                            className="mt-4 w-full rounded-full bg-orange-400 px-5 py-3 font-black text-black"
+                    {isExpanded && (
+                      <div className="mt-6 space-y-3">
+                        {show.items.map((item) => (
+                          <div
+                            key={item.id}
+                            className="rounded-2xl border border-white/10 bg-black p-4"
                           >
-                            Play Episode
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                            <h4 className="font-black">{item.title}</h4>
+
+                            <p className="mt-1 text-sm text-white/50">
+                              {item.date}
+                            </p>
+
+                            <button
+                              onClick={() => playItem(item)}
+                              className="mt-4 w-full rounded-full bg-orange-400 px-5 py-3 font-black text-black"
+                            >
+                              Play Episode
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mx-auto max-w-5xl rounded-3xl border border-white/10 bg-[#17171b] p-8 text-center">
+            <p className="text-sm font-black uppercase tracking-[0.3em] text-orange-300">
+              Archive
+            </p>
+
+            <h2 className="mt-3 text-3xl font-black">
+              First broadcast coming soon.
+            </h2>
+
+            <p className="mx-auto mt-4 max-w-2xl text-white/60">
+              Archived shows will appear here after the first Murphys Community
+              Radio broadcast.
+            </p>
+          </div>
+        )}
       </section>
 
       {activeItem && <audio ref={audioRef} src={activeItem.audioUrl} />}
