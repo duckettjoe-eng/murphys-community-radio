@@ -4,11 +4,25 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MusicArchiveItem } from "@/app/lib/localMusicArchive";
 
-const defaultShowSlug = "beatdown";
+type ShowArchiveCard = {
+  slug: string;
+  name: string;
+  host: string;
+  artwork: string;
+  items: MusicArchiveItem[];
+};
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 export default function ArchivePage() {
   const [archiveItems, setArchiveItems] = useState<MusicArchiveItem[]>([]);
-  const [selectedShowSlug, setSelectedShowSlug] = useState(defaultShowSlug);
+  const [expandedShowSlug, setExpandedShowSlug] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<MusicArchiveItem | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -20,20 +34,27 @@ export default function ArchivePage() {
       .then((data) => setArchiveItems(data));
   }, []);
 
-  const selectedArchiveItems = useMemo(
-    () =>
-      archiveItems.filter((item) => item.showSlug === selectedShowSlug),
-    [archiveItems, selectedShowSlug]
-  );
+  const showCards = useMemo<ShowArchiveCard[]>(() => {
+    const map = new Map<string, ShowArchiveCard>();
 
-  const showOptions = useMemo(() => {
-    const map = new Map();
     archiveItems.forEach((item) => {
-      if (!map.has(item.showSlug)) {
-        map.set(item.showSlug, item.showName);
+      const name = item.showName || item.title || "Archived Show";
+      const slug = item.showSlug || slugify(name);
+
+      if (!map.has(slug)) {
+        map.set(slug, {
+          slug,
+          name,
+          host: item.host || item.djName || "KMCR Host",
+          artwork: item.artwork || "/artwork/dj-hello-joey.jpg",
+          items: [],
+        });
       }
+
+      map.get(slug)?.items.push(item);
     });
-    return Array.from(map, ([slug, name]) => ({ slug, name }));
+
+    return Array.from(map.values());
   }, [archiveItems]);
 
   const playItem = (item: MusicArchiveItem) => {
@@ -148,59 +169,73 @@ export default function ArchivePage() {
         </div>
       </section>
 
-      {/* FILTER */}
-      <section className="px-6 mb-10">
-        <div className="mx-auto max-w-5xl flex flex-wrap gap-3">
-          {showOptions.map((show) => (
-            <button
-              key={show.slug}
-              onClick={() => setSelectedShowSlug(show.slug)}
-              className={`px-4 py-2 rounded-full text-sm font-bold ${
-                selectedShowSlug === show.slug
-                  ? "bg-orange-400 text-black"
-                  : "bg-zinc-900 border border-white/10 text-white"
-              }`}
-            >
-              {show.name}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* GRID */}
+      {/* SHOW CARDS */}
       <section className="px-6">
         <div className="mx-auto max-w-7xl grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {selectedArchiveItems.map((item) => (
-            <div
-              key={item.id}
-              className="rounded-3xl border border-white/10 bg-[#17171b] p-6"
-            >
-              {item.artwork && (
-                <img
-                  src={item.artwork}
-                  className="rounded-xl mb-4"
-                  alt={item.title}
-                />
-              )}
+          {showCards.map((show) => {
+            const isExpanded = expandedShowSlug === show.slug;
 
-              <h3 className="text-xl font-black">{item.title}</h3>
-
-              <p className="text-sm text-white/60 mt-2">
-                {item.host}
-              </p>
-
-              <button
-                onClick={() => playItem(item)}
-                className="mt-4 w-full rounded-full bg-orange-400 px-5 py-3 font-black text-black"
+            return (
+              <div
+                key={show.slug}
+                className="overflow-hidden rounded-3xl border border-white/10 bg-[#17171b]"
               >
-                Play Episode
-              </button>
-            </div>
-          ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedShowSlug(isExpanded ? null : show.slug)
+                  }
+                  className="block w-full text-left"
+                  aria-expanded={isExpanded}
+                >
+                  <img
+                    src={show.artwork}
+                    className="aspect-square w-full object-cover"
+                    alt={show.name}
+                  />
+                </button>
+
+                <div className="p-6">
+                  <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-300">
+                    {show.items.length}{" "}
+                    {show.items.length === 1 ? "episode" : "episodes"}
+                  </p>
+
+                  <h3 className="mt-3 text-2xl font-black">{show.name}</h3>
+
+                  <p className="mt-2 text-sm text-white/60">{show.host}</p>
+
+                  {isExpanded && (
+                    <div className="mt-6 space-y-3">
+                      {show.items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="rounded-2xl border border-white/10 bg-black p-4"
+                        >
+                          <h4 className="font-black">{item.title}</h4>
+
+                          <p className="mt-1 text-sm text-white/50">
+                            {item.date}
+                          </p>
+
+                          <button
+                            onClick={() => playItem(item)}
+                            className="mt-4 w-full rounded-full bg-orange-400 px-5 py-3 font-black text-black"
+                          >
+                            Play Episode
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
-      <audio ref={audioRef} src={activeItem?.audioUrl || ""} />
+      {activeItem && <audio ref={audioRef} src={activeItem.audioUrl} />}
 
     </main>
   );
