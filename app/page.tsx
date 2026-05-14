@@ -6,14 +6,8 @@ export const dynamic = "force-dynamic";
 
 const hostPortalUrl = "https://kmcr-host-portal.base44.app/";
 
-const underwriters = [
-  "Pure Aloha Dispensary",
-  "Murphys Irish Pub",
-  "Murphys Magical Emporium",
-  "Ironstone Vineyards",
-  "Murphys Hotel",
-  "Alchemy Café",
-];
+// Add future community backers here when they are ready to publish.
+const underwriters: string[] = [];
 
 const spotifyMap: Record<string, string> = {
   "Golden Hour Groove":
@@ -323,22 +317,22 @@ export default function Home() {
       {/* UNDERWRITERS */}
       <section className="px-6 py-20">
         <div className="mx-auto max-w-7xl rounded-3xl border border-zinc-800 bg-zinc-950 p-10">
-          <p className="text-sm font-black uppercase tracking-[0.35em] text-orange-400">
-            Community Partners & Supporters
-          </p>
+          <h2 className="text-4xl font-black">Community Backers</h2>
 
-          <h2 className="mt-4 text-4xl font-black">Early community backers</h2>
+          <p className="mt-6 text-zinc-300">Supporters coming soon.</p>
 
-          <div className="mt-8 grid gap-3 md:grid-cols-3">
-            {underwriters.map((name) => (
-              <div
-                key={name}
-                className="rounded-2xl bg-black px-5 py-4 text-sm font-bold text-zinc-300"
-              >
-                {name}
-              </div>
-            ))}
-          </div>
+          {underwriters.length > 0 && (
+            <div className="mt-8 grid gap-3 md:grid-cols-3">
+              {underwriters.map((name) => (
+                <div
+                  key={name}
+                  className="rounded-2xl bg-black px-5 py-4 text-sm font-bold text-zinc-300"
+                >
+                  {name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
