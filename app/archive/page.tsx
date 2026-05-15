@@ -163,7 +163,7 @@ export default function ArchivePage() {
             </>
           ) : (
             <p className="text-white/60">
-              Archive recordings coming soon.
+              Select an archived show to listen on Mixcloud.
             </p>
           )}
         </div>
@@ -219,12 +219,23 @@ export default function ArchivePage() {
                               {item.date}
                             </p>
 
-                            <button
-                              onClick={() => playItem(item)}
-                              className="mt-4 w-full rounded-full bg-orange-400 px-5 py-3 font-black text-black"
-                            >
-                              Play Episode
-                            </button>
+                            {item.externalUrl ? (
+                              <a
+                                href={item.externalUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-4 block w-full rounded-full bg-orange-400 px-5 py-3 text-center font-black text-black"
+                              >
+                                Open on {item.platform || "Mixcloud"}
+                              </a>
+                            ) : (
+                              <button
+                                onClick={() => playItem(item)}
+                                className="mt-4 w-full rounded-full bg-orange-400 px-5 py-3 font-black text-black"
+                              >
+                                Play Episode
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>

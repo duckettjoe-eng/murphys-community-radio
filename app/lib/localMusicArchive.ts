@@ -13,6 +13,8 @@ export type MusicArchiveItem = {
   parts: string[];
   artwork: string;
   date: string;
+  externalUrl?: string;
+  platform?: string;
 };
 
 type GeneratedMusicArchiveItem = {
@@ -25,6 +27,45 @@ type GeneratedMusicArchiveItem = {
 };
 
 export const beatDownArchive: MusicArchiveItem[] = [];
+
+export const mixcloudArchive: MusicArchiveItem[] = [
+  {
+    id: "golden-hour-groove-2026-05-14",
+    showSlug: "golden-hour-groove",
+    showName: "Golden Hour Groove",
+    djSlug: "dj-hello-joey",
+    djName: "DJ Hello Joey",
+    host: "DJ Hello Joey",
+    title: "Golden Hour Groove 5.14.26",
+    artist: "DJ Hello Joey",
+    audioUrl: "",
+    parts: [],
+    artwork:
+      "https://thumbnailer.mixcloud.com/unsafe/600x600/extaudio/a/2/b/6/ee13-cad7-4ee0-8e9f-cf2fdc0daed0",
+    date: "May 14, 2026",
+    externalUrl:
+      "https://www.mixcloud.com/djhellojoey/golden-era-groove-51426/",
+    platform: "Mixcloud",
+  },
+  {
+    id: "alt-rock-bar-room-2026-05-14",
+    showSlug: "alt-rock-barroom-radio",
+    showName: "Alt-Rock Barroom Radio",
+    djSlug: "dj-hello-joey",
+    djName: "DJ Hello Joey",
+    host: "DJ Hello Joey",
+    title: "Alt Rock Bar Room 5.14.26",
+    artist: "DJ Hello Joey",
+    audioUrl: "",
+    parts: [],
+    artwork:
+      "https://thumbnailer.mixcloud.com/unsafe/600x600/extaudio/8/b/7/8/30fa-5248-4da1-9a19-ab18d6161ea4",
+    date: "May 14, 2026",
+    externalUrl:
+      "https://www.mixcloud.com/djhellojoey/bar-room-jukebox-51426/",
+    platform: "Mixcloud",
+  },
+];
 
 const generatedBeatDownArchive: MusicArchiveItem[] = (
   generatedMusicArchive as GeneratedMusicArchiveItem[]
@@ -46,6 +87,7 @@ const generatedBeatDownArchive: MusicArchiveItem[] = (
   }));
 
 export const localMusicArchive = [
+  ...mixcloudArchive,
   ...beatDownArchive,
   ...generatedBeatDownArchive,
 ];
