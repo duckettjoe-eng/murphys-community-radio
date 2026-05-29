@@ -57,6 +57,19 @@ body {
   }
 }
 
+@keyframes live-broadcast-flash {
+  0%,
+  100% {
+    background-color: #ef4444;
+    box-shadow: 0 0 0 rgba(248, 113, 113, 0);
+  }
+
+  50% {
+    background-color: #fb923c;
+    box-shadow: 0 0 28px rgba(248, 113, 113, 0.72);
+  }
+}
+
 .metadata-marquee {
   display: inline-block;
   min-width: 100%;
@@ -67,6 +80,10 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   .metadata-marquee {
     animation: metadata-marquee 14s ease-in-out infinite alternate;
+  }
+
+  .live-broadcast-flash {
+    animation: live-broadcast-flash 1.15s ease-in-out infinite;
   }
 }
 

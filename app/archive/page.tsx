@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import LiveBroadcastButton from "@/app/components/LiveBroadcastButton";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MusicArchiveItem } from "@/app/lib/localMusicArchive";
 
@@ -90,12 +91,7 @@ export default function ArchivePage() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <Link
-            href="/live"
-            className="rounded-full bg-red-500 px-5 py-3 text-sm font-black text-white hover:bg-red-400"
-          >
-            Live Broadcast
-          </Link>
+          <LiveBroadcastButton />
 
           <Link
             href="/"

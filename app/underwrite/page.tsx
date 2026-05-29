@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LiveBroadcastButton from "@/app/components/LiveBroadcastButton";
 
 export default function UnderwritePage() {
   const tiers = [
@@ -35,9 +36,7 @@ export default function UnderwritePage() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <Link href="/live" className="rounded-full bg-red-500 px-5 py-3 text-sm font-black text-white hover:bg-red-400">
-            Live Broadcast
-          </Link>
+          <LiveBroadcastButton />
 
           <Link href="/" className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800">
             Home

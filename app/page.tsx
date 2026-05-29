@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LiveBroadcastButton from "@/app/components/LiveBroadcastButton";
 import RadioPlayer from "./components/RadioPlayer";
 import { getLiveOverrideShow } from "@/app/lib/liveOverride";
 import { localSchedule } from "@/app/lib/localSchedule";
@@ -7,7 +8,6 @@ import { getStationDateParts } from "@/app/lib/stationTime";
 export const dynamic = "force-dynamic";
 
 const hostPortalUrl = "https://kmcr-host-portal.base44.app/";
-const mixcloudLiveUrl = "https://www.mixcloud.com/live/skullcountyradio/";
 
 // Add future community backers here when they are ready to publish.
 const underwriters: string[] = [];
@@ -132,23 +132,7 @@ export default function Home() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              {currentScheduledShow ? (
-                <a
-                  href={mixcloudLiveUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-full bg-red-500 px-5 py-3 text-sm font-black text-white hover:bg-red-400"
-                >
-                  Live Broadcast
-                </a>
-              ) : (
-                <Link
-                  href="/live"
-                  className="rounded-full bg-red-500 px-5 py-3 text-sm font-black text-white hover:bg-red-400"
-                >
-                  Live Broadcast
-                </Link>
-              )}
+              <LiveBroadcastButton />
 
               <Link
                 href="/archive"
