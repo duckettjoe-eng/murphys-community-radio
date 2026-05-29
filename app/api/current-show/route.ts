@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getLiveOverrideShow } from "@/app/lib/liveOverride";
 import { localSchedule, type Show } from "@/app/lib/localSchedule";
+import {
+  getManualLiveStatus,
+  manualStatusToShow,
+} from "@/app/lib/manualLiveStatus";
 import { formatStationTime, getStationDateParts } from "@/app/lib/stationTime";
 
 const fallbackShow = {
@@ -65,10 +69,12 @@ function normalizeSupabaseShow(show: SupabaseShow): Show | null {
   };
 }
 
-function getLocalCurrentShow(now: Date): CurrentShowResponse {
+async function getLocalCurrentShow(now: Date): Promise<CurrentShowResponse> {
   const { day: currentDay, minutes: currentMinutes } =
     getStationDateParts(now);
-  const overrideShow = getLiveOverrideShow(now);
+  const manualLiveStatus = await getManualLiveStatus(now);
+  const manualShow = manualStatusToShow(manualLiveStatus);
+  const overrideShow = manualShow || getLiveOverrideShow(now);
 
   const current =
     overrideShow ||
@@ -78,7 +84,7 @@ function getLocalCurrentShow(now: Date): CurrentShowResponse {
 
   return {
     ...current,
-    source: overrideShow ? "live-override" : "local-schedule-file",
+    source: overrideShow ? manualLiveStatus.source : "local-schedule-file",
     time: formatStationTime(now),
     day: currentDay,
     isLive: current.name !== fallbackShow.name,
@@ -143,7 +149,7 @@ async function fetchProxyCurrentShow() {
 
 export async function GET() {
   const now = new Date();
-  const localCurrent = getLocalCurrentShow(now);
+  const localCurrent = await getLocalCurrentShow(now);
 
   try {
     const supabaseCurrent = await fetchSupabaseCurrentShow(now);

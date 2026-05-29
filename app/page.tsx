@@ -3,6 +3,10 @@ import LiveBroadcastButton from "@/app/components/LiveBroadcastButton";
 import RadioPlayer from "./components/RadioPlayer";
 import { getLiveOverrideShow } from "@/app/lib/liveOverride";
 import { localSchedule } from "@/app/lib/localSchedule";
+import {
+  getManualLiveStatus,
+  manualStatusToShow,
+} from "@/app/lib/manualLiveStatus";
 import { getStationDateParts } from "@/app/lib/stationTime";
 
 export const dynamic = "force-dynamic";
@@ -77,8 +81,15 @@ function isCurrentShow(show: (typeof localSchedule)[number]) {
   );
 }
 
-function getCurrentScheduledShow() {
-  return getLiveOverrideShow() || localSchedule.find(isCurrentShow) || null;
+async function getCurrentScheduledShow() {
+  const manualLiveStatus = await getManualLiveStatus();
+
+  return (
+    manualStatusToShow(manualLiveStatus) ||
+    getLiveOverrideShow() ||
+    localSchedule.find(isCurrentShow) ||
+    null
+  );
 }
 
 function getNextShows() {
@@ -109,8 +120,8 @@ function getNextShows() {
     .slice(0, 3);
 }
 
-export default function Home() {
-  const currentScheduledShow = getCurrentScheduledShow();
+export default async function Home() {
+  const currentScheduledShow = await getCurrentScheduledShow();
   const nextShows = getNextShows();
 
   return (

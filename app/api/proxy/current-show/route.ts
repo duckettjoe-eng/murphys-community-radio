@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { getLiveOverrideShow } from "@/app/lib/liveOverride";
+import {
+  getManualLiveStatus,
+  manualStatusToShow,
+} from "@/app/lib/manualLiveStatus";
 import type { Show } from "@/app/lib/localSchedule";
 import { formatStationTime, getStationDateParts } from "@/app/lib/stationTime";
 
@@ -60,14 +64,16 @@ export async function GET() {
   const now = new Date();
   const { day: currentDay, minutes: currentMinutes } =
     getStationDateParts(now);
-  const overrideShow = getLiveOverrideShow(now);
+  const manualLiveStatus = await getManualLiveStatus(now);
+  const overrideShow =
+    manualStatusToShow(manualLiveStatus) || getLiveOverrideShow(now);
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (overrideShow) {
     return NextResponse.json({
       ...overrideShow,
-      source: "live-override",
+      source: manualLiveStatus.source,
       time: formatStationTime(now),
       day: currentDay,
       isLive: true,
