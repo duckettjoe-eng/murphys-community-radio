@@ -56,6 +56,7 @@ export default function RadioPlayer() {
   const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const liveStreamUrl = ""; // Add the real stream URL here when live streaming is ready.
+  const liveRoomUrl = "https://www.mixcloud.com/live/skullcountyradio/";
 
   const archiveTrack = useMemo<MusicArchiveItem | undefined>(
     () =>
@@ -68,8 +69,9 @@ export default function RadioPlayer() {
 
   const hasLiveStreamUrl = liveStreamUrl.trim().length > 0;
 
-  const playbackSource: PlaybackSource =
-    hasScheduledLiveShow && hasLiveStreamUrl ? "live" : "archive";
+  const playbackSource: PlaybackSource = hasScheduledLiveShow
+    ? "live"
+    : "archive";
 
   const activeAudioUrl =
     playbackSource === "live" ? liveStreamUrl : archiveTrack?.audioUrl || "";
@@ -84,8 +86,20 @@ export default function RadioPlayer() {
             artist: archiveTrack.artist,
             title: archiveTrack.title,
           }
+        : !hasLiveStreamUrl
+          ? {
+              artist: currentShow.host,
+              title: currentShow.name,
+            }
         : splitMetadata(nowPlaying),
-    [archiveTrack, nowPlaying, playbackSource],
+    [
+      archiveTrack,
+      currentShow.host,
+      currentShow.name,
+      hasLiveStreamUrl,
+      nowPlaying,
+      playbackSource,
+    ],
   );
 
   const displayedShow = {
@@ -101,12 +115,16 @@ export default function RadioPlayer() {
     source: sourceLabel,
   };
 
+  const statusLabel =
+    playbackSource === "live" && !hasLiveStreamUrl ? "Live now" : status;
+
   const expandedStatus =
-    status === "Playing"
+    statusLabel === "Playing"
       ? sourceLabel
-      : status === "Stream unavailable" || status === "Archive unavailable"
+      : statusLabel === "Stream unavailable" ||
+          statusLabel === "Archive unavailable"
         ? "Offline"
-        : status;
+        : statusLabel;
 
   const updateNowPlaying = (nextNowPlaying: string) => {
     const nextValue = nextNowPlaying || fallbackNowPlaying;
@@ -160,9 +178,7 @@ export default function RadioPlayer() {
       };
 
       if (data?.name) {
-        const hasRealScheduledShow =
-          data.source === "local-schedule-file" &&
-          data.name !== "Murphys Community Radio";
+        const hasRealScheduledShow = data.name !== "Murphys Community Radio";
 
         setHasScheduledLiveShow(hasRealScheduledShow);
         setCurrentShow({
@@ -184,14 +200,14 @@ export default function RadioPlayer() {
   };
 
   useEffect(() => {
-    if (playbackSource !== "live") return;
+    if (playbackSource !== "live" || !hasLiveStreamUrl) return;
 
     refreshNowPlaying();
 
     const interval = setInterval(refreshNowPlaying, 30000);
 
     return () => clearInterval(interval);
-  }, [playbackSource]);
+  }, [hasLiveStreamUrl, playbackSource]);
 
   useEffect(() => {
     fetchCurrentShow();
@@ -295,7 +311,7 @@ export default function RadioPlayer() {
                 </p>
 
                 <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-white/60">
-                  {status}
+                  {statusLabel}
                 </span>
               </div>
 
@@ -341,20 +357,31 @@ export default function RadioPlayer() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center md:justify-end">
-              <button
-                type="button"
-                onClick={togglePlayback}
-                disabled={!hasActiveAudioUrl}
-                className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-white/50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-              >
-                {isPlaying
-                  ? "Pause"
-                  : !hasActiveAudioUrl
-                    ? "Coming Soon"
-                    : playbackSource === "archive"
-                    ? "Play Archive"
-                    : "Listen Live"}
-              </button>
+              {playbackSource === "live" && !hasActiveAudioUrl ? (
+                <a
+                  href={liveRoomUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black"
+                >
+                  Open Live Stream
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={togglePlayback}
+                  disabled={!hasActiveAudioUrl}
+                  className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-white/50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                >
+                  {isPlaying
+                    ? "Pause"
+                    : !hasActiveAudioUrl
+                      ? "Coming Soon"
+                      : playbackSource === "archive"
+                        ? "Play Archive"
+                        : "Listen Live"}
+                </button>
+              )}
 
               <div className="flex flex-wrap items-center gap-3 rounded-full border border-white/10 bg-zinc-950 px-4 py-2">
                 <label
@@ -470,20 +497,31 @@ export default function RadioPlayer() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-              <button
-                type="button"
-                onClick={togglePlayback}
-                disabled={!hasActiveAudioUrl}
-                className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-white/50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-              >
-                {isPlaying
-                  ? "Pause"
-                  : !hasActiveAudioUrl
-                    ? "Coming Soon"
-                    : playbackSource === "archive"
-                    ? "Play Archive"
-                    : "Listen Live"}
-              </button>
+              {playbackSource === "live" && !hasActiveAudioUrl ? (
+                <a
+                  href={liveRoomUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black"
+                >
+                  Open Live Stream
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={togglePlayback}
+                  disabled={!hasActiveAudioUrl}
+                  className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-white/50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                >
+                  {isPlaying
+                    ? "Pause"
+                    : !hasActiveAudioUrl
+                      ? "Coming Soon"
+                      : playbackSource === "archive"
+                        ? "Play Archive"
+                        : "Listen Live"}
+                </button>
+              )}
 
               <div className="flex flex-wrap items-center gap-3 rounded-full border border-white/10 bg-zinc-950 px-4 py-2">
                 <label
