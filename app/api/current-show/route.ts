@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getLiveOverrideShow } from "@/app/lib/liveOverride";
 import { localSchedule, type Show } from "@/app/lib/localSchedule";
 import { formatStationTime, getStationDateParts } from "@/app/lib/stationTime";
 
@@ -66,15 +67,17 @@ function normalizeSupabaseShow(show: SupabaseShow): Show | null {
 function getLocalCurrentShow(now: Date): CurrentShowResponse {
   const { day: currentDay, minutes: currentMinutes } =
     getStationDateParts(now);
+  const overrideShow = getLiveOverrideShow(now);
 
   const current =
+    overrideShow ||
     localSchedule.find((show) => {
       return isActiveShow(show, currentDay, currentMinutes);
     }) || fallbackShow;
 
   return {
     ...current,
-    source: "local-schedule-file",
+    source: overrideShow ? "live-override" : "local-schedule-file",
     time: formatStationTime(now),
     day: currentDay,
   };
@@ -87,6 +90,7 @@ async function fetchSupabaseCurrentShow(
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) return null;
+  if (getLiveOverrideShow(now)) return null;
 
   const { day: currentDay, minutes: currentMinutes } =
     getStationDateParts(now);

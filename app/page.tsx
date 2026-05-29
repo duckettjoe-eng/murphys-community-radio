@@ -1,5 +1,6 @@
 import Link from "next/link";
 import RadioPlayer from "./components/RadioPlayer";
+import { getLiveOverrideShow } from "@/app/lib/liveOverride";
 import { localSchedule } from "@/app/lib/localSchedule";
 import { getStationDateParts } from "@/app/lib/stationTime";
 
@@ -77,7 +78,7 @@ function isCurrentShow(show: (typeof localSchedule)[number]) {
 }
 
 function getCurrentScheduledShow() {
-  return localSchedule.find(isCurrentShow) || null;
+  return getLiveOverrideShow() || localSchedule.find(isCurrentShow) || null;
 }
 
 function getNextShows() {
