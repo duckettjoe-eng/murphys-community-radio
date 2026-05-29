@@ -123,6 +123,8 @@ function getUpcomingShows() {
         time: `${dayNames[show.day]}, ${formatTime(show.start)}-${formatTime(
           show.end,
         )}`,
+        spotifyEmbedUrl: spotifyMap[show.name] || null,
+        spotifyUrl: spotifyMap[show.name]?.replace("/embed", "") || null,
       };
     })
     .sort((a, b) => a.totalMinutes - b.totalMinutes)
@@ -354,22 +356,43 @@ export default function LivePage() {
               Next on Skull County Radio
             </h2>
             <div className="mt-5 grid gap-3">
-              {upcomingShows.map((show) => (
-                <div
-                  key={`${show.day}-${show.start}-${show.name}`}
-                  className="rounded-xl border border-[#f8efd8]/10 bg-black/35 p-4"
-                >
-                  <p className="text-sm font-black text-[#fff8e8]">
-                    {show.name}
-                  </p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-[0.16em] text-[#d6a847]">
-                    {show.time}
-                  </p>
-                  <p className="mt-2 text-sm text-[#f8efd8]/52">
-                    Playlist-driven broadcast block, refreshed weekly.
-                  </p>
-                </div>
-              ))}
+              {upcomingShows.map((show) => {
+                const cardContent = (
+                  <>
+                    <p className="text-sm font-black text-[#fff8e8]">
+                      {show.name}
+                    </p>
+                    <p className="mt-1 text-xs font-bold uppercase tracking-[0.16em] text-[#d6a847]">
+                      {show.time}
+                    </p>
+                    <p className="mt-2 text-sm text-[#f8efd8]/52">
+                      Playlist-driven broadcast block, refreshed weekly.
+                    </p>
+                    <p className="mt-3 text-xs font-black uppercase tracking-[0.18em] text-[#f3c866]">
+                      {show.spotifyUrl ? "Open playlist" : "Playlist coming soon"}
+                    </p>
+                  </>
+                );
+
+                return show.spotifyUrl ? (
+                  <a
+                    key={`${show.day}-${show.start}-${show.name}`}
+                    href={show.spotifyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block rounded-xl border border-[#f8efd8]/10 bg-black/35 p-4 transition hover:border-[#d6a847]/50 hover:bg-black/55"
+                  >
+                    {cardContent}
+                  </a>
+                ) : (
+                  <div
+                    key={`${show.day}-${show.start}-${show.name}`}
+                    className="rounded-xl border border-[#f8efd8]/10 bg-black/35 p-4"
+                  >
+                    {cardContent}
+                  </div>
+                );
+              })}
             </div>
           </section>
         </aside>
