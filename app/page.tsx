@@ -6,6 +6,7 @@ import { getStationDateParts } from "@/app/lib/stationTime";
 export const dynamic = "force-dynamic";
 
 const hostPortalUrl = "https://kmcr-host-portal.base44.app/";
+const mixcloudLiveUrl = "https://www.mixcloud.com/live/skullcountyradio/";
 
 // Add future community backers here when they are ready to publish.
 const underwriters: string[] = [];
@@ -60,6 +61,25 @@ function formatTime(time: string) {
   return `${displayHour}${displayMinute} ${suffix}`;
 }
 
+function isCurrentShow(show: (typeof localSchedule)[number]) {
+  const { day: currentDay, minutes: currentMinutes } = getStationDateParts();
+
+  if (show.day !== currentDay) return false;
+
+  const start = toMinutes(show.start);
+  const end = toMinutes(show.end);
+  const isFullDay = show.start === "00:00" && show.end === "23:59";
+
+  return (
+    currentMinutes >= start &&
+    (isFullDay ? currentMinutes <= end : currentMinutes < end)
+  );
+}
+
+function getCurrentScheduledShow() {
+  return localSchedule.find(isCurrentShow) || null;
+}
+
 function getNextShows() {
   const { day: currentDay, minutes: currentMinutes } = getStationDateParts();
 
@@ -89,6 +109,7 @@ function getNextShows() {
 }
 
 export default function Home() {
+  const currentScheduledShow = getCurrentScheduledShow();
   const nextShows = getNextShows();
 
   return (
@@ -110,12 +131,23 @@ export default function Home() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Link
-                href="/live"
-                className="rounded-full bg-red-500 px-5 py-3 text-sm font-black text-white hover:bg-red-400"
-              >
-                Live Broadcast
-              </Link>
+              {currentScheduledShow ? (
+                <a
+                  href={mixcloudLiveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full bg-red-500 px-5 py-3 text-sm font-black text-white hover:bg-red-400"
+                >
+                  Live Broadcast
+                </a>
+              ) : (
+                <Link
+                  href="/live"
+                  className="rounded-full bg-red-500 px-5 py-3 text-sm font-black text-white hover:bg-red-400"
+                >
+                  Live Broadcast
+                </Link>
+              )}
 
               <Link
                 href="/archive"
