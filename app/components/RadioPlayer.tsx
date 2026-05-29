@@ -57,6 +57,7 @@ export default function RadioPlayer() {
 
   const liveStreamUrl = ""; // Add the real stream URL here when live streaming is ready.
   const liveRoomUrl = "https://www.mixcloud.com/live/skullcountyradio/";
+  const djAvatarUrl = "/artwork/dj-hello-joey-avatar.jpg";
 
   const archiveTrack = useMemo<MusicArchiveItem | undefined>(
     () =>
@@ -428,7 +429,11 @@ export default function RadioPlayer() {
           <div className="mx-auto flex max-w-7xl flex-col gap-4">
             <div className="grid gap-5 border-b border-white/10 pb-5 md:grid-cols-[120px_1fr_auto] md:items-center">
               <div className="grid aspect-square w-24 place-items-center rounded-2xl border border-orange-400/25 bg-zinc-950 shadow-inner shadow-black/50 md:w-28">
-                <div className="h-10 w-10 rounded-full border-4 border-orange-400/80 bg-white/5" />
+                <img
+                  src={djAvatarUrl}
+                  alt={`${displayedShow.host} avatar`}
+                  className="h-20 w-20 rounded-full border-4 border-orange-400/80 bg-white object-cover object-center md:h-24 md:w-24"
+                />
               </div>
 
               <div className="min-w-0 space-y-3">
