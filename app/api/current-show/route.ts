@@ -14,6 +14,7 @@ type CurrentShowResponse = {
   source: string;
   time: string;
   day: number;
+  isLive: boolean;
 };
 
 type SupabaseShow = Partial<Show> & {
@@ -80,6 +81,7 @@ function getLocalCurrentShow(now: Date): CurrentShowResponse {
     source: overrideShow ? "live-override" : "local-schedule-file",
     time: formatStationTime(now),
     day: currentDay,
+    isLive: current.name !== fallbackShow.name,
   };
 }
 
@@ -119,6 +121,7 @@ async function fetchSupabaseCurrentShow(
     source: "supabase-direct",
     time: formatStationTime(now),
     day: currentDay,
+    isLive: true,
   };
 }
 
@@ -146,15 +149,27 @@ export async function GET() {
     const supabaseCurrent = await fetchSupabaseCurrentShow(now);
 
     if (supabaseCurrent) {
-      return NextResponse.json(supabaseCurrent);
+      return NextResponse.json(supabaseCurrent, {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      });
     }
   } catch {
     const proxyCurrent = await fetchProxyCurrentShow();
 
     if (proxyCurrent) {
-      return NextResponse.json(proxyCurrent);
+      return NextResponse.json(proxyCurrent, {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      });
     }
   }
 
-  return NextResponse.json(localCurrent);
+  return NextResponse.json(localCurrent, {
+    headers: {
+      "Cache-Control": "no-store, max-age=0",
+    },
+  });
 }

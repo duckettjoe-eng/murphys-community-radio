@@ -70,6 +70,7 @@ export async function GET() {
       source: "live-override",
       time: formatStationTime(now),
       day: currentDay,
+      isLive: true,
     });
   }
 
@@ -79,6 +80,7 @@ export async function GET() {
       source: "supabase-proxy-fallback",
       time: formatStationTime(now),
       day: currentDay,
+      isLive: false,
     });
   }
 
@@ -107,6 +109,7 @@ export async function GET() {
       source: current ? "supabase-proxy" : "supabase-proxy-fallback",
       time: formatStationTime(now),
       day: currentDay,
+      isLive: Boolean(current),
     });
   } catch {
     return NextResponse.json({
@@ -114,6 +117,7 @@ export async function GET() {
       source: "supabase-proxy-fallback",
       time: formatStationTime(now),
       day: currentDay,
+      isLive: false,
     });
   }
 }

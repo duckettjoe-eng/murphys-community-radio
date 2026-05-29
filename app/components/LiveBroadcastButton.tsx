@@ -8,12 +8,14 @@ const inactiveClassName =
   "rounded-full bg-red-500 px-5 py-3 text-sm font-black text-white hover:bg-red-400";
 const activeClassName = `${inactiveClassName} live-broadcast-flash ring-2 ring-red-300/70`;
 
-function isLiveShow(name?: string) {
-  return Boolean(name && name !== "Murphys Community Radio");
-}
+type LiveBroadcastButtonProps = {
+  initialIsLive?: boolean;
+};
 
-export default function LiveBroadcastButton() {
-  const [isLive, setIsLive] = useState(false);
+export default function LiveBroadcastButton({
+  initialIsLive = false,
+}: LiveBroadcastButtonProps) {
+  const [isLive, setIsLive] = useState(initialIsLive);
 
   useEffect(() => {
     let isMounted = true;
@@ -23,10 +25,16 @@ export default function LiveBroadcastButton() {
         const response = await fetch("/api/current-show", {
           cache: "no-store",
         });
-        const data = (await response.json()) as { name?: string };
+        const data = (await response.json()) as {
+          isLive?: boolean;
+          name?: string;
+        };
 
         if (isMounted) {
-          setIsLive(isLiveShow(data.name));
+          setIsLive(
+            data.isLive ??
+              Boolean(data.name && data.name !== "Murphys Community Radio"),
+          );
         }
       } catch {
         if (isMounted) {
