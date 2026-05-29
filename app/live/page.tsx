@@ -4,7 +4,7 @@ import { getStationDateParts } from "@/app/lib/stationTime";
 
 export const dynamic = "force-dynamic";
 
-const mixcloudLiveUrl = "https://www.mixcloud.com/skullcountyradio/";
+const mixcloudLiveUrl = "https://www.mixcloud.com/live/skullcountyradio/";
 const skullCountyHost = "DJ Hello Joey";
 
 const spotifyMap: Record<string, string> = {
