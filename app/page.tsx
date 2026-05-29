@@ -394,7 +394,7 @@ export default function Home() {
         </div>
       </section>
 
-      <RadioPlayer />
+      {currentScheduledShow ? <RadioPlayer /> : null}
     </main>
   );
 }
