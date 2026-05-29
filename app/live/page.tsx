@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { localSchedule, type Show } from "@/app/lib/localSchedule";
+import { getStationDateParts } from "@/app/lib/stationTime";
 
 export const dynamic = "force-dynamic";
 
@@ -69,9 +70,7 @@ function isCurrentShow(show: Show, currentDay: number, currentMinutes: number) {
 }
 
 function getCurrentShow() {
-  const now = new Date();
-  const currentDay = now.getDay();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const { day: currentDay, minutes: currentMinutes } = getStationDateParts();
   const show = localSchedule.find((item) =>
     isCurrentShow(item, currentDay, currentMinutes),
   );
@@ -100,9 +99,7 @@ function getCurrentShow() {
 }
 
 function getUpcomingShows() {
-  const now = new Date();
-  const currentDay = now.getDay();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const { day: currentDay, minutes: currentMinutes } = getStationDateParts();
 
   return localSchedule
     .map((show) => {

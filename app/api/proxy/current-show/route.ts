@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Show } from "@/app/lib/localSchedule";
+import { formatStationTime, getStationDateParts } from "@/app/lib/stationTime";
 
 const fallbackShow = {
   name: "Murphys Community Radio",
@@ -56,8 +57,8 @@ function normalizeSupabaseShow(show: SupabaseShow): Show | null {
 
 export async function GET() {
   const now = new Date();
-  const currentDay = now.getDay();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const { day: currentDay, minutes: currentMinutes } =
+    getStationDateParts(now);
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -65,7 +66,7 @@ export async function GET() {
     return NextResponse.json({
       ...fallbackShow,
       source: "supabase-proxy-fallback",
-      time: now.toLocaleTimeString(),
+      time: formatStationTime(now),
       day: currentDay,
     });
   }
@@ -93,14 +94,14 @@ export async function GET() {
     return NextResponse.json({
       ...(current || fallbackShow),
       source: current ? "supabase-proxy" : "supabase-proxy-fallback",
-      time: now.toLocaleTimeString(),
+      time: formatStationTime(now),
       day: currentDay,
     });
   } catch {
     return NextResponse.json({
       ...fallbackShow,
       source: "supabase-proxy-fallback",
-      time: now.toLocaleTimeString(),
+      time: formatStationTime(now),
       day: currentDay,
     });
   }

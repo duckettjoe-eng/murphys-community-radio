@@ -1,6 +1,7 @@
 import Link from "next/link";
 import RadioPlayer from "./components/RadioPlayer";
 import { localSchedule } from "@/app/lib/localSchedule";
+import { getStationDateParts } from "@/app/lib/stationTime";
 
 export const dynamic = "force-dynamic";
 
@@ -60,9 +61,7 @@ function formatTime(time: string) {
 }
 
 function getNextShows() {
-  const now = new Date();
-  const currentDay = now.getDay();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const { day: currentDay, minutes: currentMinutes } = getStationDateParts();
 
   return localSchedule
     .map((show) => {

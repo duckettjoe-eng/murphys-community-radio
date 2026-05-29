@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { localSchedule, type Show } from "@/app/lib/localSchedule";
+import { formatStationTime, getStationDateParts } from "@/app/lib/stationTime";
 
 const fallbackShow = {
   name: "Murphys Community Radio",
@@ -63,8 +64,8 @@ function normalizeSupabaseShow(show: SupabaseShow): Show | null {
 }
 
 function getLocalCurrentShow(now: Date): CurrentShowResponse {
-  const currentDay = now.getDay();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const { day: currentDay, minutes: currentMinutes } =
+    getStationDateParts(now);
 
   const current =
     localSchedule.find((show) => {
@@ -74,7 +75,7 @@ function getLocalCurrentShow(now: Date): CurrentShowResponse {
   return {
     ...current,
     source: "local-schedule-file",
-    time: now.toLocaleTimeString(),
+    time: formatStationTime(now),
     day: currentDay,
   };
 }
@@ -87,8 +88,8 @@ async function fetchSupabaseCurrentShow(
 
   if (!supabaseUrl || !supabaseAnonKey) return null;
 
-  const currentDay = now.getDay();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const { day: currentDay, minutes: currentMinutes } =
+    getStationDateParts(now);
   const response = await fetch(`${supabaseUrl}/rest/v1/shows?select=*`, {
     headers: {
       apikey: supabaseAnonKey,
@@ -112,7 +113,7 @@ async function fetchSupabaseCurrentShow(
     name: current.name,
     host: current.host,
     source: "supabase-direct",
-    time: now.toLocaleTimeString(),
+    time: formatStationTime(now),
     day: currentDay,
   };
 }
