@@ -317,24 +317,32 @@ export default function RadioPlayer() {
               </div>
 
               <div className="max-w-3xl">
-                <div className="mb-3 rounded-2xl border border-white/10 bg-zinc-950 p-3">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400/90">
-                    Current Source: {displayedShow.source}
-                  </p>
+                <div className="mb-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-zinc-950 p-3">
+                  <img
+                    src={djAvatarUrl}
+                    alt={`${displayedShow.host} avatar`}
+                    className="hidden h-14 w-14 shrink-0 rounded-full border-2 border-orange-400/80 bg-white object-cover object-center sm:block"
+                  />
 
-                  <p className="mt-1 truncate text-xl font-black leading-tight text-white">
-                    Show: {displayedShow.name}
-                  </p>
-
-                  <p className="mt-1 truncate text-xs font-semibold text-white/55">
-                    {displayedShow.hostLabel}: {displayedShow.host}
-                  </p>
-
-                  {playbackSource === "live" && currentShow.source ? (
-                    <p className="mt-1 truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-white/30">
-                      Source: {currentShow.source}
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400/90">
+                      Current Source: {displayedShow.source}
                     </p>
-                  ) : null}
+
+                    <p className="mt-1 truncate text-xl font-black leading-tight text-white">
+                      Show: {displayedShow.name}
+                    </p>
+
+                    <p className="mt-1 truncate text-xs font-semibold text-white/55">
+                      {displayedShow.hostLabel}: {displayedShow.host}
+                    </p>
+
+                    {playbackSource === "live" && currentShow.source ? (
+                      <p className="mt-1 truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-white/30">
+                        Source: {currentShow.source}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
 
                 <div
