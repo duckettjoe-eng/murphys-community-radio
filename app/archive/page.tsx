@@ -34,7 +34,7 @@ export default function ArchivePage() {
   const [expandedShowSlug, setExpandedShowSlug] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<MusicArchiveItem | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [selectedSourceId, setSelectedSourceId] = useState("all");
+  const [selectedSourceId, setSelectedSourceId] = useState("skull-county-radio");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
