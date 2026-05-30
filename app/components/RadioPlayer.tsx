@@ -1,35 +1,28 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  beatDownArchive,
-  type MusicArchiveItem,
-} from "@/app/lib/localMusicArchive";
 
 type CurrentShow = {
   name: string;
   host: string;
-  source?: string;
+  source: string;
 };
-
-type PlaybackSource = "archive" | "live";
 
 function splitMetadata(nowPlaying: string) {
   const separator = nowPlaying.includes(" — ") ? " — " : " - ";
 
   if (!nowPlaying.includes(separator)) {
     return {
-      artist: "Murphys Community Radio",
+      artist: "Skull County Radio",
       title: nowPlaying,
     };
   }
 
   const [artist, ...titleParts] = nowPlaying.split(separator);
-  const title = titleParts.join(separator).trim();
 
   return {
-    artist: artist.trim() || "Murphys Community Radio",
-    title: title || nowPlaying,
+    artist: artist?.trim() || "Skull County Radio",
+    title: titleParts.join(separator).trim() || nowPlaying,
   };
 }
 
@@ -38,185 +31,26 @@ export default function RadioPlayer() {
   const [status, setStatus] = useState("Ready");
   const [volume, setVolume] = useState(0.8);
   const [muted, setMuted] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const [isFading, setIsFading] = useState(false);
 
   const [currentShow, setCurrentShow] = useState<CurrentShow>({
-    name: "Murphys Community Radio",
-    host: "Live Broadcast",
+    name: "Skull County Radio",
+    host: "",
+    source: "Live",
   });
 
-  const [hasScheduledLiveShow, setHasScheduledLiveShow] = useState(false);
+  const fallbackNowPlaying = "Skull County Radio — Live Stream";
 
-  const fallbackNowPlaying = "Golden Era Hip-Hop — Test Stream";
   const [nowPlaying, setNowPlaying] = useState(fallbackNowPlaying);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const nowPlayingRef = useRef(fallbackNowPlaying);
-  const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const liveStreamUrl = ""; // Add the real stream URL here when live streaming is ready.
-  const liveRoomUrl = "https://www.mixcloud.com/live/skullcountyradio/";
-  const djAvatarUrl = "/artwork/dj-hello-joey-avatar.jpg";
-
-  const archiveTrack = useMemo<MusicArchiveItem | undefined>(
-    () =>
-      beatDownArchive.find(
-        (item) =>
-          item.showSlug === "beatdown" && item.djSlug === "dj-hello-joey",
-      ) || beatDownArchive[0],
-    [],
-  );
-
-  const hasLiveStreamUrl = liveStreamUrl.trim().length > 0;
-
-  const playbackSource: PlaybackSource = hasScheduledLiveShow
-    ? "live"
-    : "archive";
-
-  const activeAudioUrl =
-    playbackSource === "live" ? liveStreamUrl : archiveTrack?.audioUrl || "";
-  const hasActiveAudioUrl = activeAudioUrl.trim().length > 0;
-
-  const sourceLabel = playbackSource === "live" ? "Live" : "Archive";
+  const streamUrl =
+    "http://68.183.163.131/listen/skullcounty/radio.mp3";
 
   const metadata = useMemo(
-    () =>
-      playbackSource === "archive" && archiveTrack
-        ? {
-            artist: archiveTrack.artist,
-            title: archiveTrack.title,
-          }
-        : !hasLiveStreamUrl
-          ? {
-              artist: currentShow.host,
-              title: currentShow.name,
-            }
-        : splitMetadata(nowPlaying),
-    [
-      archiveTrack,
-      currentShow.host,
-      currentShow.name,
-      hasLiveStreamUrl,
-      nowPlaying,
-      playbackSource,
-    ],
+    () => splitMetadata(nowPlaying),
+    [nowPlaying],
   );
-
-  const displayedShow = {
-    name:
-      playbackSource === "archive"
-        ? archiveTrack?.showName || "Archive coming soon"
-        : currentShow.name,
-    host:
-      playbackSource === "archive"
-        ? archiveTrack?.djName || "Broadcast archive"
-        : currentShow.host,
-    hostLabel: playbackSource === "archive" ? "DJ" : "Host",
-    source: sourceLabel,
-  };
-
-  const statusLabel =
-    playbackSource === "live" && !hasLiveStreamUrl ? "Live now" : status;
-
-  const expandedStatus =
-    statusLabel === "Playing"
-      ? sourceLabel
-      : statusLabel === "Stream unavailable" ||
-          statusLabel === "Archive unavailable"
-        ? "Offline"
-        : statusLabel;
-
-  const updateNowPlaying = (nextNowPlaying: string) => {
-    const nextValue = nextNowPlaying || fallbackNowPlaying;
-
-    if (nextValue === nowPlayingRef.current) return;
-
-    if (fadeTimeoutRef.current) {
-      clearTimeout(fadeTimeoutRef.current);
-    }
-
-    setIsFading(true);
-
-    fadeTimeoutRef.current = setTimeout(() => {
-      nowPlayingRef.current = nextValue;
-      setNowPlaying(nextValue);
-      setIsFading(false);
-    }, 200);
-  };
-
-  const refreshNowPlaying = async () => {
-    try {
-      const response = await fetch("/api/now-playing", { cache: "no-store" });
-
-      if (!response.ok) {
-        throw new Error("Now playing endpoint failed");
-      }
-
-      const data = (await response.json()) as { title?: string };
-
-      if (data?.title) {
-        updateNowPlaying(data.title);
-        return;
-      }
-
-      updateNowPlaying(fallbackNowPlaying);
-    } catch {
-      updateNowPlaying(fallbackNowPlaying);
-    }
-  };
-
-  const fetchCurrentShow = async () => {
-    try {
-      const response = await fetch("/api/current-show", {
-        cache: "no-store",
-      });
-
-      const data = (await response.json()) as {
-        name?: string;
-        host?: string;
-        source?: string;
-      };
-
-      if (data?.name) {
-        const hasRealScheduledShow = data.name !== "Murphys Community Radio";
-
-        setHasScheduledLiveShow(hasRealScheduledShow);
-        setCurrentShow({
-          name: data.name,
-          host: data.host || "Live Broadcast",
-          source: data.source,
-        });
-        return;
-      }
-
-      setHasScheduledLiveShow(false);
-    } catch {
-      setHasScheduledLiveShow(false);
-      setCurrentShow({
-        name: "Murphys Community Radio",
-        host: "Live Broadcast",
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (playbackSource !== "live" || !hasLiveStreamUrl) return;
-
-    refreshNowPlaying();
-
-    const interval = setInterval(refreshNowPlaying, 30000);
-
-    return () => clearInterval(interval);
-  }, [hasLiveStreamUrl, playbackSource]);
-
-  useEffect(() => {
-    fetchCurrentShow();
-
-    const interval = setInterval(fetchCurrentShow, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -231,350 +65,197 @@ export default function RadioPlayer() {
   }, [muted]);
 
   useEffect(() => {
-    return () => {
-      if (fadeTimeoutRef.current) {
-        clearTimeout(fadeTimeoutRef.current);
+    const fetchNowPlaying = async () => {
+      try {
+        const response = await fetch("/api/now-playing", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed");
+        }
+
+        const data = (await response.json()) as {
+          title?: string;
+        };
+
+        setNowPlaying(data.title || fallbackNowPlaying);
+      } catch {
+        setNowPlaying(fallbackNowPlaying);
       }
     };
+
+    fetchNowPlaying();
+
+    const interval = setInterval(fetchNowPlaying, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const togglePlayback = () => {
-    if (!audioRef.current || !hasActiveAudioUrl) return;
+  useEffect(() => {
+    const fetchCurrentShow = async () => {
+      try {
+        const response = await fetch("/api/current-show", {
+          cache: "no-store",
+        });
+
+        const data = (await response.json()) as {
+          name?: string;
+          host?: string;
+          source?: string;
+        };
+
+        const isScheduledShow =
+          data?.name &&
+          data.name !== "Murphys Community Radio" &&
+          data.name !== "Unscheduled Live Mix";
+
+        if (isScheduledShow) {
+          setCurrentShow({
+            name: data.name || "Skull County Radio",
+            host: data.host || "",
+            source: data.source || "Live",
+          });
+
+          return;
+        }
+
+        setCurrentShow({
+          name: "Skull County Radio",
+          host: "",
+          source: "Live",
+        });
+      } catch {
+        setCurrentShow({
+          name: "Skull County Radio",
+          host: "",
+          source: "Live",
+        });
+      }
+    };
+
+    fetchCurrentShow();
+
+    const interval = setInterval(fetchCurrentShow, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const togglePlayback = async () => {
+    if (!audioRef.current) return;
 
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
+      setStatus("Paused");
       return;
     }
 
-    audioRef.current
-      .play()
-      .then(() => {
-        setIsPlaying(true);
-      })
-      .catch(() => {
-        setIsPlaying(false);
-        setStatus(
-          playbackSource === "archive"
-            ? "Archive unavailable"
-            : "Stream unavailable",
-        );
-        console.log("Audio failed to start");
-      });
+    try {
+      await audioRef.current.play();
+
+      setIsPlaying(true);
+      setStatus("Playing");
+    } catch {
+      setStatus("Stream unavailable");
+    }
   };
 
   return (
-    <>
-      {hasActiveAudioUrl ? (
-        <audio
-          ref={audioRef}
-          src={activeAudioUrl}
-          preload="none"
-          onPlay={() => {
-            setIsPlaying(true);
-            setStatus("Playing");
-          }}
-          onPause={() => {
-            setIsPlaying(false);
-            setStatus("Paused");
-          }}
-          onError={() => {
-            setIsPlaying(false);
-            setStatus(
-              playbackSource === "archive"
-                ? "Archive unavailable"
-                : "Stream unavailable",
-            );
-          }}
-        />
-      ) : null}
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-orange-400/20 bg-black/95 px-4 py-4 backdrop-blur">
+      <audio
+        ref={audioRef}
+        src={streamUrl}
+        preload="none"
+      />
 
-      {expanded ? (
-        <button
-          type="button"
-          aria-label="Close expanded radio player"
-          onClick={() => setExpanded(false)}
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-        />
-      ) : null}
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-orange-400 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-black">
+              LIVE
+            </span>
 
-      {!expanded ? (
-        <div className="fixed inset-x-0 bottom-0 z-50 max-h-64 overflow-y-auto border-t border-orange-400/25 bg-black/95 px-4 py-4 shadow-2xl shadow-black/80 backdrop-blur-md transition-all duration-300 ease-in-out sm:px-6 md:max-h-44">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="min-w-0 space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-orange-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-black">
-                  {sourceLabel}
-                </span>
+            <span className="text-xs font-black uppercase tracking-[0.18em] text-orange-300">
+              Murphys Community Radio
+            </span>
 
-                <p className="text-sm font-black uppercase tracking-[0.24em] text-orange-300">
-                  Murphys Community Radio
-                </p>
+            <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-white/60">
+              {status}
+            </span>
+          </div>
 
-                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-white/60">
-                  {statusLabel}
-                </span>
-              </div>
+          <div className="mt-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400/80">
+              Current Source
+            </p>
 
-              <div className="max-w-3xl">
-                <div className="mb-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-zinc-950 p-3">
-                  <img
-                    src={djAvatarUrl}
-                    alt={`${displayedShow.host} avatar`}
-                    className="hidden h-14 w-14 shrink-0 rounded-full border-2 border-orange-400/80 bg-white object-cover object-center sm:block"
-                  />
+            <h2 className="truncate text-xl font-black text-white">
+              {currentShow.name}
+            </h2>
 
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400/90">
-                      Current Source: {displayedShow.source}
-                    </p>
+            {currentShow.host ? (
+              <p className="truncate text-sm text-white/60">
+                Host: {currentShow.host}
+              </p>
+            ) : null}
+          </div>
 
-                    <p className="mt-1 truncate text-xl font-black leading-tight text-white">
-                      Show: {displayedShow.name}
-                    </p>
+          <div className="mt-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400/80">
+              Now Playing
+            </p>
 
-                    <p className="mt-1 truncate text-xs font-semibold text-white/55">
-                      {displayedShow.hostLabel}: {displayedShow.host}
-                    </p>
+            <p className="truncate text-base font-semibold text-white">
+              {metadata.title}
+            </p>
 
-                    {playbackSource === "live" && currentShow.source ? (
-                      <p className="mt-1 truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-white/30">
-                        Source: {currentShow.source}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div
-                  className={`transition-opacity duration-300 ${
-                    isFading ? "opacity-0" : "opacity-100"
-                  }`}
-                >
-                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-400/90">
-                    Track
-                  </p>
-
-                  <p className="truncate text-sm font-semibold text-white sm:text-base">
-                    {metadata.title}
-                  </p>
-
-                  <p className="truncate text-xs font-semibold uppercase tracking-[0.14em] text-white/45">
-                    {metadata.artist}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center md:justify-end">
-              {playbackSource === "live" && !hasActiveAudioUrl ? (
-                <a
-                  href={liveRoomUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black"
-                >
-                  Open Live Stream
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  onClick={togglePlayback}
-                  disabled={!hasActiveAudioUrl}
-                  className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-white/50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-                >
-                  {isPlaying
-                    ? "Pause"
-                    : !hasActiveAudioUrl
-                      ? "Coming Soon"
-                      : playbackSource === "archive"
-                        ? "Play Archive"
-                        : "Listen Live"}
-                </button>
-              )}
-
-              <div className="flex flex-wrap items-center gap-3 rounded-full border border-white/10 bg-zinc-950 px-4 py-2">
-                <label
-                  htmlFor="radio-volume"
-                  className="text-xs font-black uppercase tracking-[0.18em] text-white/50"
-                >
-                  Volume
-                </label>
-
-                <input
-                  id="radio-volume"
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={volume}
-                  onChange={(event) => setVolume(Number(event.target.value))}
-                  className="h-2 w-32 accent-orange-400 sm:w-40"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setMuted((current) => !current)}
-                  className="rounded-full border border-orange-400/40 px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-orange-300 transition duration-200 hover:bg-orange-400 hover:text-black"
-                >
-                  {muted ? "Unmute" : "Mute"}
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setExpanded(true)}
-                className="inline-flex items-center justify-center rounded-full border border-orange-400/40 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-orange-300 transition duration-200 hover:bg-orange-400 hover:text-black"
-              >
-                Expand
-              </button>
-            </div>
+            <p className="truncate text-xs uppercase tracking-[0.12em] text-white/40">
+              {metadata.artist}
+            </p>
           </div>
         </div>
-      ) : null}
 
-      {expanded ? (
-        <div className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto border-t border-orange-400/25 bg-black/95 px-4 py-5 shadow-2xl shadow-black/80 backdrop-blur-md transition-all duration-300 ease-in-out sm:px-6 md:max-h-[350px]">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4">
-            <div className="grid gap-5 border-b border-white/10 pb-5 md:grid-cols-[120px_1fr_auto] md:items-center">
-              <div className="grid aspect-square w-24 place-items-center rounded-2xl border border-orange-400/25 bg-zinc-950 shadow-inner shadow-black/50 md:w-28">
-                <img
-                  src={djAvatarUrl}
-                  alt={`${displayedShow.host} avatar`}
-                  className="h-20 w-20 rounded-full border-4 border-orange-400/80 bg-white object-cover object-center md:h-24 md:w-24"
-                />
-              </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={togglePlayback}
+            className="rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition hover:bg-orange-300"
+          >
+            {isPlaying ? "Pause" : "Listen Live"}
+          </button>
 
-              <div className="min-w-0 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-orange-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-black">
-                    {sourceLabel}
-                  </span>
+          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-zinc-950 px-4 py-2">
+            <label
+              htmlFor="radio-volume"
+              className="text-xs font-black uppercase tracking-[0.12em] text-white/50"
+            >
+              Volume
+            </label>
 
-                  <p className="text-sm font-black uppercase tracking-[0.24em] text-orange-300">
-                    Murphys Community Radio
-                  </p>
+            <input
+              id="radio-volume"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={volume}
+              onChange={(event) =>
+                setVolume(Number(event.target.value))
+              }
+              className="w-32 accent-orange-400"
+            />
 
-                  <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-white/60">
-                    {expandedStatus}
-                  </span>
-                </div>
-
-                <div>
-                  <div className="mb-4 rounded-2xl border border-white/10 bg-zinc-950 p-4">
-                    <p className="text-xs font-black uppercase tracking-[0.24em] text-orange-400/90">
-                      Current Source: {displayedShow.source}
-                    </p>
-
-                    <p className="mt-2 text-2xl font-black leading-tight text-white">
-                      Show: {displayedShow.name}
-                    </p>
-
-                    <p className="mt-1 text-sm font-semibold text-white/60">
-                      {displayedShow.hostLabel}: {displayedShow.host}
-                    </p>
-
-                    {playbackSource === "live" && currentShow.source ? (
-                      <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">
-                        Source: {currentShow.source}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <p className="text-xs font-black uppercase tracking-[0.24em] text-orange-400/90">
-                    Track
-                  </p>
-
-                  <div
-                    className={`mt-2 max-w-4xl overflow-hidden transition-opacity duration-300 ${
-                      isFading ? "opacity-0" : "opacity-100"
-                    }`}
-                  >
-                    <p className="metadata-marquee whitespace-nowrap text-2xl font-black leading-tight text-white sm:text-3xl">
-                      {metadata.title}
-                    </p>
-
-                    <p className="mt-1 truncate text-sm font-semibold uppercase tracking-[0.18em] text-white/45">
-                      {metadata.artist}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setExpanded(false)}
-                className="hidden rounded-full border border-orange-400/40 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-orange-300 transition duration-200 hover:bg-orange-400 hover:text-black md:inline-flex"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-              {playbackSource === "live" && !hasActiveAudioUrl ? (
-                <a
-                  href={liveRoomUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black"
-                >
-                  Open Live Stream
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  onClick={togglePlayback}
-                  disabled={!hasActiveAudioUrl}
-                  className="inline-flex min-w-36 items-center justify-center rounded-full bg-orange-400 px-6 py-3 text-sm font-black uppercase tracking-[0.14em] text-black transition duration-200 hover:-translate-y-0.5 hover:bg-orange-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-black disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-white/50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-                >
-                  {isPlaying
-                    ? "Pause"
-                    : !hasActiveAudioUrl
-                      ? "Coming Soon"
-                      : playbackSource === "archive"
-                        ? "Play Archive"
-                        : "Listen Live"}
-                </button>
-              )}
-
-              <div className="flex flex-wrap items-center gap-3 rounded-full border border-white/10 bg-zinc-950 px-4 py-2">
-                <label
-                  htmlFor="radio-volume-expanded"
-                  className="text-xs font-black uppercase tracking-[0.18em] text-white/50"
-                >
-                  Volume
-                </label>
-
-                <input
-                  id="radio-volume-expanded"
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={volume}
-                  onChange={(event) => setVolume(Number(event.target.value))}
-                  className="h-2 w-32 accent-orange-400 sm:w-40"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setMuted((current) => !current)}
-                  className="rounded-full border border-orange-400/40 px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-orange-300 transition duration-200 hover:bg-orange-400 hover:text-black"
-                >
-                  {muted ? "Unmute" : "Mute"}
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setExpanded(false)}
-                className="inline-flex items-center justify-center rounded-full border border-orange-400/40 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-orange-300 transition duration-200 hover:bg-orange-400 hover:text-black"
-              >
-                Close
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setMuted((current) => !current)}
+              className="rounded-full border border-orange-400/30 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-orange-300"
+            >
+              {muted ? "Unmute" : "Mute"}
+            </button>
           </div>
         </div>
-      ) : null}
-    </>
+      </div>
+    </div>
   );
 }
