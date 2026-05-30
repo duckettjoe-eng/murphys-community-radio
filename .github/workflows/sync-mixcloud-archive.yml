@@ -45,6 +45,7 @@ jobs:
 
       - name: Sync Mixcloud archive
         if: steps.local-time.outputs.should_run == 'true'
+        # Mixcloud source usernames are configured in scripts/sync-mixcloud-archive.mjs.
         run: npm run archive:mixcloud
 
       - name: Build

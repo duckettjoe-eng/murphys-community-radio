@@ -55,13 +55,21 @@ async function getPublishedSubmittedEpisodes() {
       .filter((row) => row.episode_url)
       .map((row) => ({
         id: row.id || slugify(row.episode_title || row.show_name || "episode"),
+        showSlug: slugify(row.show_name || row.episode_title || "submitted"),
+        showName: row.show_name || row.episode_title || "Submitted Episode",
+        djSlug: slugify(row.host_name || "submitted-link"),
+        djName: row.host_name || "KMCR Host",
         title: row.episode_title || row.show_name || "Untitled Episode",
         host: row.host_name || "KMCR Host",
+        artist: row.host_name || "KMCR Host",
         date: row.episode_date || "Recent",
         description: row.description || "",
         artwork: "/artwork/dj-hello-joey.jpg",
         audioUrl: row.episode_url,
+        parts: [],
         platform: row.platform || "Submitted Link",
+        sourceId: slugify(row.host_name || row.platform || "submitted-link"),
+        sourceLabel: row.host_name || row.platform || "Submitted Link",
       }));
   } catch (error) {
     console.error("Supabase archive fetch error:", error);

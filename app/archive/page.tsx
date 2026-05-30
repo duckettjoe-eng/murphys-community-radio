@@ -9,9 +9,17 @@ type ShowArchiveCard = {
   slug: string;
   name: string;
   host: string;
+  sourceLabel: string;
   artwork: string;
   items: MusicArchiveItem[];
 };
+
+const sourceFilters = [
+  { id: "all", label: "All DJs" },
+  { id: "skull-county-radio", label: "Skull County Radio" },
+  { id: "dj-hello-joey", label: "DJ Hello Joey" },
+  { id: "dj-aquarobotics", label: "DJ Aquarobotics" },
+];
 
 function slugify(value: string) {
   return value
@@ -26,6 +34,7 @@ export default function ArchivePage() {
   const [expandedShowSlug, setExpandedShowSlug] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<MusicArchiveItem | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [selectedSourceId, setSelectedSourceId] = useState("all");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -35,10 +44,28 @@ export default function ArchivePage() {
       .then((data) => setArchiveItems(data));
   }, []);
 
+  const filteredArchiveItems = useMemo(() => {
+    if (selectedSourceId === "all") return archiveItems;
+
+    const selectedFilter = sourceFilters.find(
+      (filter) => filter.id === selectedSourceId,
+    );
+
+    return archiveItems.filter((item) => {
+      if (item.sourceId === selectedSourceId) return true;
+      if (!selectedFilter) return false;
+
+      return (
+        item.djName === selectedFilter.label ||
+        item.sourceLabel === selectedFilter.label
+      );
+    });
+  }, [archiveItems, selectedSourceId]);
+
   const showCards = useMemo<ShowArchiveCard[]>(() => {
     const map = new Map<string, ShowArchiveCard>();
 
-    archiveItems.forEach((item) => {
+    filteredArchiveItems.forEach((item) => {
       const name = item.showName || item.title || "Archived Show";
       const slug = item.showSlug || slugify(name);
 
@@ -47,6 +74,7 @@ export default function ArchivePage() {
           slug,
           name,
           host: item.host || item.djName || "KMCR Host",
+          sourceLabel: item.sourceLabel || item.djName || item.host || "",
           artwork: item.artwork || "/artwork/dj-hello-joey.jpg",
           items: [],
         });
@@ -56,7 +84,21 @@ export default function ArchivePage() {
     });
 
     return Array.from(map.values());
-  }, [archiveItems]);
+    return Array.from(map.values()).map((show) => {
+      const sourceLabels = Array.from(
+        new Set(
+          show.items
+            .map((item) => item.sourceLabel || item.djName)
+            .filter(Boolean),
+        ),
+      );
+
+      return {
+        ...show,
+        sourceLabel: sourceLabels.join(" / ") || show.sourceLabel,
+      };
+    });
+  }, [filteredArchiveItems]);
 
   const playItem = (item: MusicArchiveItem) => {
     setActiveItem(item);
@@ -165,6 +207,33 @@ export default function ArchivePage() {
         </div>
       </section>
 
+      {/* SOURCE FILTER */}
+      <section className="px-6 mb-8">
+        <div className="mx-auto flex max-w-7xl flex-wrap gap-3">
+          {sourceFilters.map((filter) => {
+            const isSelected = selectedSourceId === filter.id;
+
+            return (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => {
+                  setSelectedSourceId(filter.id);
+                  setExpandedShowSlug(null);
+                }}
+                className={`rounded-full px-5 py-3 text-sm font-bold ${
+                  isSelected
+                    ? "bg-orange-400 text-black"
+                    : "bg-zinc-900 text-white hover:bg-zinc-800"
+                }`}
+              >
+                {filter.label}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       {/* SHOW CARDS */}
       <section className="px-6">
         {showCards.length > 0 ? (
@@ -201,6 +270,11 @@ export default function ArchivePage() {
                     <h3 className="mt-3 text-2xl font-black">{show.name}</h3>
 
                     <p className="mt-2 text-sm text-white/60">{show.host}</p>
+                    {show.sourceLabel && (
+                      <p className="mt-1 text-xs font-bold uppercase tracking-[0.24em] text-white/35">
+                        {show.sourceLabel}
+                      </p>
+                    )}
 
                     {isExpanded && (
                       <div className="mt-6 space-y-3">
@@ -214,6 +288,11 @@ export default function ArchivePage() {
                             <p className="mt-1 text-sm text-white/50">
                               {item.date}
                             </p>
+                            {(item.sourceLabel || item.djName) && (
+                              <p className="mt-1 text-xs font-bold uppercase tracking-[0.22em] text-white/35">
+                                {item.sourceLabel || item.djName}
+                              </p>
+                            )}
 
                             {item.externalUrl ? (
                               <a

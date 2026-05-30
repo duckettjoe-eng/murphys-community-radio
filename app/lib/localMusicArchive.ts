@@ -16,6 +16,15 @@ export type MusicArchiveItem = {
   date: string;
   externalUrl?: string;
   platform?: string;
+  sourceId?: string;
+  sourceLabel?: string;
+  mixcloudUsername?: string;
+  mixcloudKey?: string;
+  mixcloudUrl?: string;
+  embedUrl?: string;
+  imageUrl?: string;
+  publishedAt?: string;
+  createdAt?: string;
 };
 
 type GeneratedMusicArchiveItem = {
@@ -33,9 +42,19 @@ type GeneratedMixcloudArchiveItem = {
   showName: string;
   title: string;
   host: string;
+  djName?: string;
+  sourceId?: string;
+  sourceLabel?: string;
+  mixcloudUsername?: string;
+  mixcloudKey?: string;
+  mixcloudUrl?: string;
+  embedUrl?: string;
+  imageUrl?: string;
+  publishedAt?: string;
+  createdAt?: string;
   date: string;
   artwork: string;
-  externalUrl: string;
+  externalUrl?: string;
   platform: string;
 };
 
@@ -47,17 +66,26 @@ export const mixcloudArchive: MusicArchiveItem[] = (
   id: item.id,
   showSlug: item.showSlug,
   showName: item.showName,
-  djSlug: "dj-hello-joey",
-  djName: item.host,
+  djSlug: item.sourceId || "dj-hello-joey",
+  djName: item.djName || item.host,
   host: item.host,
   title: item.title,
   artist: item.host,
   audioUrl: "",
   parts: [],
-  artwork: item.artwork,
+  artwork: item.artwork || item.imageUrl || "/artwork/dj-hello-joey.jpg",
   date: item.date,
-  externalUrl: item.externalUrl,
+  externalUrl: item.externalUrl || item.mixcloudUrl,
   platform: item.platform,
+  sourceId: item.sourceId,
+  sourceLabel: item.sourceLabel,
+  mixcloudUsername: item.mixcloudUsername,
+  mixcloudKey: item.mixcloudKey,
+  mixcloudUrl: item.mixcloudUrl || item.externalUrl,
+  embedUrl: item.embedUrl,
+  imageUrl: item.imageUrl || item.artwork,
+  publishedAt: item.publishedAt,
+  createdAt: item.createdAt,
 }));
 
 const generatedBeatDownArchive: MusicArchiveItem[] = (

@@ -1,10 +1,34 @@
 #!/usr/bin/env node
 
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const MIXCLOUD_USERNAME = "djhellojoey";
-const MIXCLOUD_LIMIT = 20;
+const MIXCLOUD_LIMIT = 100;
+
+// Update Mixcloud usernames here when station or DJ source pages change.
+const MIXCLOUD_SOURCES = [
+  {
+    id: "skull-county-radio",
+    label: "Skull County Radio",
+    username: "skullcountyradio",
+    djName: "Skull County Radio",
+    includeAllUploads: true,
+  },
+  {
+    id: "dj-hello-joey",
+    label: "DJ Hello Joey",
+    username: "djhellojoey",
+    djName: "DJ Hello Joey",
+    includeAllUploads: true,
+  },
+  {
+    id: "dj-aquarobotics",
+    label: "DJ Aquarobotics",
+    username: "gdyken",
+    djName: "DJ Aquarobotics",
+    includeAllUploads: true,
+  },
+];
 
 const projectRoot = process.cwd();
 const archiveOutputPath = path.join(
@@ -69,6 +93,13 @@ const showMatchers = [
 
 const slugFromKey = (key) => key.split("/").filter(Boolean).at(-1) || "";
 
+const slugify = (value) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 const formatDate = (value) => {
   if (!value) return "Archive";
 
@@ -87,36 +118,100 @@ const matchShow = (cloudcast) =>
     ),
   );
 
-const fetchCloudcasts = async () => {
-  const url = new URL(
-    `https://api.mixcloud.com/${MIXCLOUD_USERNAME}/cloudcasts/`,
+const getImageUrl = (cloudcast) =>
+  cloudcast.pictures?.extra_large ||
+  cloudcast.pictures?.["640wx640h"] ||
+  cloudcast.pictures?.large ||
+  cloudcast.pictures?.medium ||
+  cloudcast.pictures?.thumbnail ||
+  "";
+
+const getPublishedAt = (cloudcast) =>
+  cloudcast.publish_date ||
+  cloudcast.published_time ||
+  cloudcast.created_time ||
+  "";
+
+const fetchCloudcastsForSource = async (source) => {
+  const cloudcasts = [];
+  let nextUrl = new URL(
+    `https://api.mixcloud.com/${source.username}/cloudcasts/`,
   );
-  url.searchParams.set("limit", String(MIXCLOUD_LIMIT));
+  nextUrl.searchParams.set("limit", String(MIXCLOUD_LIMIT));
 
-  const response = await fetch(url);
+  while (nextUrl) {
+    const response = await fetch(nextUrl);
 
-  if (!response.ok) {
-    throw new Error(
-      `Mixcloud cloudcasts fetch failed: ${response.status} ${response.statusText}`,
-    );
+    if (!response.ok) {
+      throw new Error(
+        `Mixcloud cloudcasts fetch failed for ${source.username}: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const data = await response.json();
+    if (Array.isArray(data.data)) {
+      cloudcasts.push(...data.data);
+    }
+
+    nextUrl = data.paging?.next ? new URL(data.paging.next) : null;
   }
 
-  const data = await response.json();
-  return Array.isArray(data.data) ? data.data : [];
+  return cloudcasts;
 };
 
-const loadExistingArchive = async () => {
-  try {
-    const source = await readFile(archiveOutputPath, "utf8");
-    const json = source
-      .replace(/^export const generatedMixcloudArchive = /, "")
-      .replace(/;\s*$/, "");
+const buildArchiveItem = (source, cloudcast) => {
+  const matchedShow = matchShow(cloudcast);
+  if (!source.includeAllUploads && !matchedShow) return null;
 
-    return JSON.parse(json);
-  } catch (error) {
-    if (error?.code === "ENOENT") return [];
-    throw error;
+  const mixcloudKey = cloudcast.key || "";
+  const mixcloudUrl = cloudcast.url || "";
+  const cloudcastSlug = cloudcast.slug || slugFromKey(mixcloudKey);
+  const title = cloudcast.name || "Untitled Mixcloud Upload";
+  const showName = matchedShow?.showName || title;
+  const showSlug = matchedShow?.showSlug || slugify(showName || cloudcastSlug);
+  const imageUrl = getImageUrl(cloudcast);
+  const publishedAt = getPublishedAt(cloudcast);
+  const createdAt = cloudcast.created_time || publishedAt;
+
+  return {
+    id: `${source.id}-${cloudcastSlug || slugify(title)}`,
+    title,
+    showName,
+    showSlug,
+    host: source.djName,
+    djName: source.djName,
+    sourceId: source.id,
+    sourceLabel: source.label,
+    mixcloudUsername: source.username,
+    mixcloudKey,
+    mixcloudUrl,
+    embedUrl: cloudcast.embed_url || cloudcast.embedUrl || "",
+    imageUrl,
+    publishedAt,
+    createdAt,
+    date: formatDate(publishedAt || createdAt),
+    artwork: imageUrl || "/artwork/dj-hello-joey.jpg",
+    externalUrl: mixcloudUrl,
+    platform: "Mixcloud",
+  };
+};
+
+const dedupeArchiveItems = (items) => {
+  const seenKeys = new Set();
+  const seenUrls = new Set();
+  const dedupedItems = [];
+
+  for (const item of items) {
+    const key = item.mixcloudKey || "";
+    const url = item.mixcloudUrl || "";
+    if ((key && seenKeys.has(key)) || (url && seenUrls.has(url))) continue;
+
+    if (key) seenKeys.add(key);
+    if (url) seenUrls.add(url);
+    dedupedItems.push(item);
   }
+
+  return dedupedItems;
 };
 
 const renderArchiveFile = (items) => `export const generatedMixcloudArchive = ${JSON.stringify(
@@ -127,47 +222,31 @@ const renderArchiveFile = (items) => `export const generatedMixcloudArchive = ${
 `;
 
 const main = async () => {
-  const [cloudcasts, existingItems] = await Promise.all([
-    fetchCloudcasts(),
-    loadExistingArchive(),
-  ]);
+  const sourceResults = await Promise.all(
+    MIXCLOUD_SOURCES.map(async (source) => ({
+      source,
+      cloudcasts: await fetchCloudcastsForSource(source),
+    })),
+  );
 
-  const existingUrls = new Set(existingItems.map((item) => item.externalUrl));
-
-  const newItems = cloudcasts
-    .map((cloudcast) => {
-      const matchedShow = matchShow(cloudcast);
-      if (!matchedShow || existingUrls.has(cloudcast.url)) return null;
-
-      return {
-        id: cloudcast.slug || slugFromKey(cloudcast.key),
-        showSlug: matchedShow.showSlug,
-        showName: matchedShow.showName,
-        title: cloudcast.name,
-        host: cloudcast.user?.name || "DJ Hello Joey",
-        date: formatDate(cloudcast.created_time),
-        artwork:
-          cloudcast.pictures?.extra_large ||
-          cloudcast.pictures?.["640wx640h"] ||
-          cloudcast.pictures?.large ||
-          "/artwork/dj-hello-joey.jpg",
-        externalUrl: cloudcast.url,
-        platform: "Mixcloud",
-      };
-    })
+  const archiveItems = sourceResults
+    .flatMap(({ source, cloudcasts }) =>
+      cloudcasts.map((cloudcast) => buildArchiveItem(source, cloudcast)),
+    )
     .filter(Boolean);
 
-  const nextItems = [...newItems, ...existingItems];
+  const nextItems = dedupeArchiveItems(archiveItems).sort((a, b) => {
+    const aTime = Date.parse(a.publishedAt || a.createdAt || "") || 0;
+    const bTime = Date.parse(b.publishedAt || b.createdAt || "") || 0;
+    return bTime - aTime;
+  });
 
   await writeFile(archiveOutputPath, renderArchiveFile(nextItems));
 
-  if (newItems.length === 0) {
-    console.log("No new matching Mixcloud shows found.");
-    return;
-  }
-
-  console.log(`Added ${newItems.length} Mixcloud archive item(s):`);
-  newItems.forEach((item) => console.log(`- ${item.showName}: ${item.title}`));
+  console.log(`Generated ${nextItems.length} Mixcloud archive item(s).`);
+  sourceResults.forEach(({ source, cloudcasts }) =>
+    console.log(`- ${source.label}: ${cloudcasts.length} upload(s)`),
+  );
 };
 
 main().catch((error) => {
