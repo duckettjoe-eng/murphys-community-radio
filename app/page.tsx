@@ -143,9 +143,7 @@ export default async function Home() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <LiveBroadcastButton
-                initialIsLive={Boolean(currentScheduledShow)}
-              />
+              <LiveBroadcastButton />
 
               <Link
                 href="/archive"

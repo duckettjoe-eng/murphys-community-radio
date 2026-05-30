@@ -27,13 +27,12 @@ export default function LiveBroadcastButton({
         });
         const data = (await response.json()) as {
           isLive?: boolean;
-          name?: string;
+          source?: string;
         };
 
         if (isMounted) {
           setIsLive(
-            data.isLive ??
-              Boolean(data.name && data.name !== "Murphys Community Radio"),
+            Boolean(data.isLive && data.source === "local-schedule-file"),
           );
         }
       } catch {

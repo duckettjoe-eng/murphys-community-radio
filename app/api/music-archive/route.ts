@@ -71,8 +71,7 @@ async function getPublishedSubmittedEpisodes() {
         sourceId: slugify(row.host_name || row.platform || "submitted-link"),
         sourceLabel: row.host_name || row.platform || "Submitted Link",
       }));
-  } catch (error) {
-    console.error("Supabase archive fetch error:", error);
+  } catch {
     return [];
   }
 }

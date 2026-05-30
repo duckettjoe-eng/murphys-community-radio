@@ -11,7 +11,7 @@ const MIXCLOUD_SOURCES = [
     id: "skull-county-radio",
     label: "Skull County Radio",
     username: "skullcountyradio",
-    djName: "Skull County Radio",
+    djName: "DJ Hello Joey",
     includeAllUploads: true,
   },
   {
@@ -91,6 +91,15 @@ const showMatchers = [
   },
 ];
 
+// Add DJ title/slug patterns here when a station/source account hosts mixes
+// from multiple DJs. These overrides are applied every time the archive syncs.
+const uploadHostMatchers = [
+  {
+    djName: "DJ Aquarobotics",
+    patterns: [/deep\s+diving/i, /reflections/i, /innaminnit/i],
+  },
+];
+
 const slugFromKey = (key) => key.split("/").filter(Boolean).at(-1) || "";
 
 const slugify = (value) =>
@@ -115,6 +124,16 @@ const matchShow = (cloudcast) =>
   showMatchers.find((show) =>
     show.patterns.some(
       (pattern) => pattern.test(cloudcast.name) || pattern.test(cloudcast.slug),
+    ),
+  );
+
+const matchUploadHost = (cloudcast) =>
+  uploadHostMatchers.find((host) =>
+    host.patterns.some(
+      (pattern) =>
+        pattern.test(cloudcast.name || "") ||
+        pattern.test(cloudcast.slug || "") ||
+        pattern.test(cloudcast.key || ""),
     ),
   );
 
@@ -161,6 +180,7 @@ const fetchCloudcastsForSource = async (source) => {
 
 const buildArchiveItem = (source, cloudcast) => {
   const matchedShow = matchShow(cloudcast);
+  const matchedUploadHost = matchUploadHost(cloudcast);
   if (!source.includeAllUploads && !matchedShow) return null;
 
   const mixcloudKey = cloudcast.key || "";
@@ -172,14 +192,15 @@ const buildArchiveItem = (source, cloudcast) => {
   const imageUrl = getImageUrl(cloudcast);
   const publishedAt = getPublishedAt(cloudcast);
   const createdAt = cloudcast.created_time || publishedAt;
+  const hostName = matchedUploadHost?.djName || source.djName;
 
   return {
     id: `${source.id}-${cloudcastSlug || slugify(title)}`,
     title,
     showName,
     showSlug,
-    host: source.djName,
-    djName: source.djName,
+    host: hostName,
+    djName: hostName,
     sourceId: source.id,
     sourceLabel: source.label,
     mixcloudUsername: source.username,

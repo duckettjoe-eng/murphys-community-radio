@@ -21,6 +21,16 @@ const sourceFilters = [
   { id: "dj-aquarobotics", label: "DJ Aquarobotics" },
 ];
 
+function getHostLabel(item: MusicArchiveItem) {
+  return item.host || item.djName || "KMCR Host";
+}
+
+function getSourceLabel(item: MusicArchiveItem) {
+  return item.sourceLabel && item.sourceLabel !== getHostLabel(item)
+    ? item.sourceLabel
+    : "";
+}
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -73,8 +83,8 @@ export default function ArchivePage() {
         map.set(slug, {
           slug,
           name,
-          host: item.host || item.djName || "KMCR Host",
-          sourceLabel: item.sourceLabel || item.djName || item.host || "",
+          host: getHostLabel(item),
+          sourceLabel: getSourceLabel(item),
           artwork: item.artwork || "/artwork/dj-hello-joey.jpg",
           items: [],
         });
@@ -83,18 +93,19 @@ export default function ArchivePage() {
       map.get(slug)?.items.push(item);
     });
 
-    return Array.from(map.values());
     return Array.from(map.values()).map((show) => {
+      const hostLabels = Array.from(
+        new Set(show.items.map((item) => getHostLabel(item)).filter(Boolean)),
+      );
       const sourceLabels = Array.from(
         new Set(
-          show.items
-            .map((item) => item.sourceLabel || item.djName)
-            .filter(Boolean),
+          show.items.map((item) => getSourceLabel(item)).filter(Boolean),
         ),
       );
 
       return {
         ...show,
+        host: hostLabels.join(" / ") || show.host,
         sourceLabel: sourceLabels.join(" / ") || show.sourceLabel,
       };
     });
@@ -288,9 +299,12 @@ export default function ArchivePage() {
                             <p className="mt-1 text-sm text-white/50">
                               {item.date}
                             </p>
-                            {(item.sourceLabel || item.djName) && (
+                            <p className="mt-1 text-sm text-white/60">
+                              Host: {getHostLabel(item)}
+                            </p>
+                            {getSourceLabel(item) && (
                               <p className="mt-1 text-xs font-bold uppercase tracking-[0.22em] text-white/35">
-                                {item.sourceLabel || item.djName}
+                                {getSourceLabel(item)}
                               </p>
                             )}
 

@@ -10,7 +10,7 @@ async function sha256(value: string) {
     .join("");
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const studioPassword = process.env.STUDIO_PASSWORD;
 
