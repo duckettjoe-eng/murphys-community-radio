@@ -390,7 +390,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {currentScheduledShow ? <RadioPlayer /> : null}
+      <RadioPlayer />
     </main>
   );
 }
