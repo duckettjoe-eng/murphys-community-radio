@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import LiveBroadcastButton from "@/app/components/LiveBroadcastButton";
+import { generatedMixcloudArchive } from "@/app/lib/generatedMixcloudArchive";
 
 const shows = [
   {
@@ -7,7 +10,9 @@ const shows = [
     description:
       "Warm soul, funk, yacht rock, and sunset selections for golden-hour listening.",
     tags: ["Soul", "Funk", "Sunset"],
-    airTime: "Thursdays, 6–7 PM",
+    day: "Thursday",
+    time: "6-7 PM",
+    artwork: "/artwork/shows/golden-era-groove.png",
     spotifyUrl: "https://open.spotify.com/embed/playlist/6MmSFo11AbLLGuXx8iUQI8",
   },
   {
@@ -15,7 +20,9 @@ const shows = [
     description:
       "Alternative rock, dive-bar anthems, 90s grit, and guitar-forward radio energy.",
     tags: ["Alt Rock", "Indie", "Barroom"],
-    airTime: "Thursdays, 7–8 PM",
+    day: "Thursday",
+    time: "7-8 PM",
+    artwork: "/artwork/shows/alt-rock-bar-room-radio.png",
     spotifyUrl: "https://open.spotify.com/embed/playlist/4LCviG4Etf6sfoQNNWbRfs",
   },
   {
@@ -23,7 +30,9 @@ const shows = [
     description:
       "Classic hip-hop, breaks, samples, and crate-digging selections with deep groove energy.",
     tags: ["Hip-Hop", "Breaks", "Crates"],
-    airTime: "Fridays, 6–7 PM",
+    day: "Friday",
+    time: "6-7 PM",
+    artwork: "/artwork/shows/dusty-crate-hip-hop-hour.png",
     spotifyUrl: "https://open.spotify.com/embed/playlist/31SuOU4Vbv7xjdtYlW4PE1",
   },
   {
@@ -31,7 +40,9 @@ const shows = [
     description:
       "Dance-floor friendly house, disco, edits, and party tracks for high-energy sets.",
     tags: ["House", "Disco", "Party"],
-    airTime: "Fridays, 7–8 PM",
+    day: "Friday",
+    time: "7-8 PM",
+    artwork: "/artwork/shows/house-party-frequency.png",
     spotifyUrl: "https://open.spotify.com/embed/playlist/24x2HGar6r7xStbu7VktN4",
   },
   {
@@ -39,7 +50,9 @@ const shows = [
     description:
       "Strange, cinematic, left-field, and after-hours sounds from the edge of the dial.",
     tags: ["Experimental", "Late Night", "Oddities"],
-    airTime: "Fridays, 8–9 PM",
+    day: "Friday",
+    time: "8-9 PM",
+    artwork: "/artwork/shows/weird-late-night-fm.png",
     spotifyUrl: "https://open.spotify.com/embed/playlist/5bChhr0FAb32b2oevGyUAv",
   },
   {
@@ -47,7 +60,9 @@ const shows = [
     description:
       "Reggae, dub, roots, and California coastal rhythms built for an easy ride.",
     tags: ["Reggae", "Dub", "Roots"],
-    airTime: "Saturdays, 5–6 PM",
+    day: "Saturday",
+    time: "5-6 PM",
+    artwork: "/artwork/shows/cali-sun-reggae-ride.png",
     spotifyUrl: "https://open.spotify.com/embed/playlist/0mf1PWxgjPUG8abErI67tC",
   },
   {
@@ -55,7 +70,9 @@ const shows = [
     description:
       "Genre-crossing mashups, blends, tempo flips, and DJ-friendly surprises.",
     tags: ["Mashups", "DJ", "Open Format"],
-    airTime: "Saturdays, 6–7 PM",
+    day: "Saturday",
+    time: "6-7 PM",
+    artwork: "/artwork/shows/mashup-crate-hour.png",
     spotifyUrl: "https://open.spotify.com/embed/playlist/5wIMxNuCrHLXbGcnN6e4eb",
   },
   {
@@ -63,7 +80,9 @@ const shows = [
     description:
       "Folk, country, roots, and storytelling songs for foothill evenings.",
     tags: ["Americana", "Folk", "Country"],
-    airTime: "Saturdays, 7–8 PM",
+    day: "Saturday",
+    time: "7-8 PM",
+    artwork: "/artwork/shows/campfire-americana.png",
     spotifyUrl: "https://open.spotify.com/embed/playlist/27dShIERXqZ5HZG3gVIuRX",
   },
   {
@@ -71,7 +90,9 @@ const shows = [
     description:
       "Oldies, lowrider soul, sweet harmonies, and Sunday cruising music.",
     tags: ["Oldies", "Soul", "Sunday"],
-    airTime: "Sundays, 10–11 AM",
+    day: "Sunday",
+    time: "10-11 AM",
+    artwork: "/artwork/shows/low-rider-soul-sunday.png",
     spotifyUrl: "https://open.spotify.com/embed/playlist/5mkOQT5zf6vag2lAzjgPEp",
   },
   {
@@ -79,14 +100,38 @@ const shows = [
     description:
       "Raw garage rock, blues grit, punk spirit, and backroad gospel energy.",
     tags: ["Garage", "Blues", "Rock"],
-    airTime: "Sundays, 11 AM–12 PM",
+    day: "Sunday",
+    time: "11 AM-12 PM",
+    artwork: "/artwork/shows/skull-county-garage-gospel.png",
     spotifyUrl: "https://open.spotify.com/embed/playlist/5ciTziF2CsE7ifteDHg0FW",
   },
 ];
 
+const scheduleDays = ["Thursday", "Friday", "Saturday", "Sunday"];
+
+const showArtwork = new Map(
+  generatedMixcloudArchive
+    .filter((item) => item.showName && item.artwork)
+    .map((item) => [item.showName, item.artwork]),
+);
+
+function publicAssetExists(src: string) {
+  if (!src.startsWith("/")) return true;
+
+  return existsSync(path.join(process.cwd(), "public", src));
+}
+
+function getShowArtwork(show: (typeof shows)[number]) {
+  if (publicAssetExists(show.artwork)) return show.artwork;
+
+  return (
+    showArtwork.get(show.title) || "/logos/skull-county-radio-logo.png"
+  );
+}
+
 export default function ShowsPage() {
   return (
-    <main className="min-h-screen bg-black pb-28 text-white">
+    <main className="min-h-screen bg-[#071d16] pb-28 text-white">
       {/* NAV */}
       <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-8">
         <div>
@@ -129,8 +174,8 @@ export default function ShowsPage() {
       </nav>
 
       {/* HERO */}
-      <section className="px-6 pb-20 pt-10 text-center md:pb-24">
-        <div className="mx-auto max-w-5xl">
+      <section className="px-6 pb-14 pt-8 text-center md:pb-16">
+        <div className="mx-auto max-w-4xl">
           <img
             src="/logos/skull-county-radio-logo.png"
             alt="Skull County Radio"
@@ -142,71 +187,87 @@ export default function ShowsPage() {
           </p>
 
           <h1 className="text-5xl font-black leading-none tracking-tight md:text-7xl">
-            Shows & Playlists
+            Weekly Shows
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-base leading-7 text-white/70 md:text-xl md:leading-8">
-            Curated show blocks from Skull County Radio — built for on-air
-            programming, companion listening, and future schedule expansion.
+            A simple guide to what is on the station, when to catch it, and
+            where to open each companion Spotify playlist.
           </p>
         </div>
       </section>
 
-      {/* SHOW GRID */}
-      <section className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-          {shows.map((show) => (
-            <article
-              key={show.title}
-              className="rounded-3xl border border-white/10 bg-[#17171b] p-6 shadow-2xl"
-            >
-              <p className="mb-3 inline-flex rounded-full bg-orange-400 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-black">
-                {show.airTime}
-              </p>
+      {/* SCHEDULE */}
+      <section className="mx-auto max-w-6xl px-6 pb-24">
+        <div className="overflow-hidden rounded-lg border border-white/10 bg-black/35">
+          {scheduleDays.map((day) => {
+            const dayShows = shows.filter((show) => show.day === day);
 
-              <h2 className="text-2xl font-black leading-tight text-white">
-                {show.title}
-              </h2>
-
-              <p className="mt-4 min-h-[72px] text-sm leading-6 text-white/65">
-                {show.description}
-              </p>
-
-              <div className="mt-5 flex flex-wrap gap-2">
-                {show.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-white/70"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              <div className="mt-6">
-                <a
-                  href={show.spotifyUrl.replace("/embed", "")}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mb-4 block w-full rounded-full bg-orange-400 px-5 py-3 text-center text-sm font-black text-black hover:bg-orange-300"
-                >
-                  Open in Spotify
-                </a>
-
-                <div className="overflow-hidden rounded-2xl border border-white/10 bg-black">
-                  <iframe
-                    title={`${show.title} Spotify playlist`}
-                    src={show.spotifyUrl}
-                    width="100%"
-                    height="352"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                    className="block rounded-2xl"
-                  />
+            return (
+              <section
+                key={day}
+                className="grid border-b border-white/10 last:border-b-0 md:grid-cols-[11rem_1fr]"
+              >
+                <div className="border-b border-white/10 bg-orange-400 px-5 py-5 text-black md:border-b-0 md:border-r md:border-white/10">
+                  <p className="text-xs font-black uppercase tracking-[0.18em]">
+                    On Air
+                  </p>
+                  <h2 className="mt-1 text-2xl font-black">{day}</h2>
                 </div>
-              </div>
-            </article>
-          ))}
+
+                <div>
+                  {dayShows.map((show) => (
+                    <article
+                      key={show.title}
+                      className="grid gap-4 border-b border-white/10 px-5 py-5 last:border-b-0 md:grid-cols-[7rem_1fr] md:items-center"
+                    >
+                      <div className="flex items-center gap-4 md:block">
+                        <img
+                          src={getShowArtwork(show)}
+                          alt=""
+                          className="aspect-square w-24 rounded-lg border border-white/10 bg-black object-cover md:w-28"
+                        />
+
+                        <div className="mt-0 text-sm font-black uppercase tracking-[0.14em] text-orange-300 md:mt-3">
+                          {show.time}
+                        </div>
+                      </div>
+
+                      <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+                        <div className="min-w-0">
+                          <h3 className="text-2xl font-black leading-tight text-white">
+                            {show.title}
+                          </h3>
+                          <p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">
+                            {show.description}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {show.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-white/70"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <a
+                          href={show.spotifyUrl.replace("/embed", "")}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex justify-center rounded-lg bg-orange-400 px-5 py-3 text-center text-xs font-black uppercase tracking-[0.12em] text-black transition hover:bg-orange-300 lg:min-w-[13rem]"
+                        >
+                          Open Spotify Playlist
+                        </a>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
       </section>
     </main>
