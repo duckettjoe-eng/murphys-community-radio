@@ -45,8 +45,7 @@ export default function RadioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const streamUrl =
-    "http://68.183.163.131/listen/skullcounty/radio.mp3";
-
+      "https://radio.murphyscommunityradio.com/listen/skullcounty/radio.mp3";
   const metadata = useMemo(
     () => splitMetadata(nowPlaying),
     [nowPlaying],
