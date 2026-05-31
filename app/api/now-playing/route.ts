@@ -2,14 +2,19 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const streamUrl = "https://streams.ilovemusic.de/iloveradio1.mp3";
-const fallbackTitle = "Golden Era Hip-Hop — Test Stream";
+const azuraCastNowPlayingUrl =
+  process.env.AZURACAST_NOW_PLAYING_URL ||
+  "https://radio.murphyscommunityradio.com/api/nowplaying/skullcounty";
+const streamUrl =
+  process.env.AZURACAST_STREAM_URL ||
+  "https://radio.murphyscommunityradio.com/listen/skullcounty/radio.mp3";
+const fallbackTitle = "Live Stream";
 const fallbackArtist = "Murphys Community Radio";
 
 type NowPlayingPayload = {
   title: string;
   artist: string;
-  source: "icy" | "fallback";
+  source: "azuracast" | "icy" | "fallback";
 };
 
 const fallbackPayload: NowPlayingPayload = {
@@ -30,6 +35,70 @@ function parseStreamTitle(metadata: string) {
   const title = match?.[1]?.trim();
 
   return title || null;
+}
+
+function parseSongText(songText: string) {
+  const separator = songText.includes(" — ") ? " — " : " - ";
+
+  if (!songText.includes(separator)) {
+    return {
+      artist: fallbackArtist,
+      title: songText,
+    };
+  }
+
+  const [artist, ...titleParts] = songText.split(separator);
+
+  return {
+    artist: artist?.trim() || fallbackArtist,
+    title: titleParts.join(separator).trim() || songText,
+  };
+}
+
+async function getAzuraCastNowPlaying() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const response = await fetch(azuraCastNowPlayingUrl, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+
+    if (!response.ok) return null;
+
+    const data = (await response.json()) as {
+      now_playing?: {
+        song?: {
+          artist?: string;
+          title?: string;
+          text?: string;
+        };
+      };
+    };
+
+    const song = data.now_playing?.song;
+    const title = song?.title?.trim();
+    const artist = song?.artist?.trim();
+    const text = song?.text?.trim();
+
+    if (title || artist) {
+      return {
+        title: title || text || fallbackTitle,
+        artist: artist || fallbackArtist,
+      };
+    }
+
+    if (text) {
+      return parseSongText(text);
+    }
+
+    return null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function getIcyTitle() {
@@ -92,13 +161,30 @@ async function getIcyTitle() {
 
 export async function GET() {
   try {
+    const azuraCastNowPlaying = await getAzuraCastNowPlaying();
+
+    if (azuraCastNowPlaying) {
+      return NextResponse.json(
+        {
+          ...azuraCastNowPlaying,
+          source: "azuracast",
+        } satisfies NowPlayingPayload,
+        {
+          headers: {
+            "Cache-Control": "no-store",
+          },
+        },
+      );
+    }
+
     const title = await getIcyTitle();
 
     if (title) {
+      const metadata = parseSongText(title);
+
       return NextResponse.json(
         {
-          title,
-          artist: fallbackArtist,
+          ...metadata,
           source: "icy",
         } satisfies NowPlayingPayload,
         {

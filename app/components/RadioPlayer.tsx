@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type CurrentShow = {
   name: string;
@@ -8,23 +8,10 @@ type CurrentShow = {
   source: string;
 };
 
-function splitMetadata(nowPlaying: string) {
-  const separator = nowPlaying.includes(" — ") ? " — " : " - ";
-
-  if (!nowPlaying.includes(separator)) {
-    return {
-      artist: "Skull County Radio",
-      title: nowPlaying,
-    };
-  }
-
-  const [artist, ...titleParts] = nowPlaying.split(separator);
-
-  return {
-    artist: artist?.trim() || "Skull County Radio",
-    title: titleParts.join(separator).trim() || nowPlaying,
-  };
-}
+type NowPlaying = {
+  artist: string;
+  title: string;
+};
 
 export default function RadioPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -38,18 +25,17 @@ export default function RadioPlayer() {
     source: "Live",
   });
 
-  const fallbackNowPlaying = "Skull County Radio — Live Stream";
+  const fallbackNowPlaying: NowPlaying = {
+    artist: "Murphys Community Radio",
+    title: "Live Stream",
+  };
 
   const [nowPlaying, setNowPlaying] = useState(fallbackNowPlaying);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const streamUrl =
-      "https://radio.murphyscommunityradio.com/listen/skullcounty/radio.mp3";
-  const metadata = useMemo(
-    () => splitMetadata(nowPlaying),
-    [nowPlaying],
-  );
+    "https://radio.murphyscommunityradio.com/listen/skullcounty/radio.mp3";
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -75,10 +61,14 @@ export default function RadioPlayer() {
         }
 
         const data = (await response.json()) as {
+          artist?: string;
           title?: string;
         };
 
-        setNowPlaying(data.title || fallbackNowPlaying);
+        setNowPlaying({
+          artist: data.artist || fallbackNowPlaying.artist,
+          title: data.title || fallbackNowPlaying.title,
+        });
       } catch {
         setNowPlaying(fallbackNowPlaying);
       }
@@ -206,11 +196,11 @@ export default function RadioPlayer() {
             </p>
 
             <p className="truncate text-base font-semibold text-white">
-              {metadata.title}
+              {nowPlaying.title}
             </p>
 
             <p className="truncate text-xs uppercase tracking-[0.12em] text-white/40">
-              {metadata.artist}
+              {nowPlaying.artist}
             </p>
           </div>
         </div>
