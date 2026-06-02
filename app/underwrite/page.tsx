@@ -5,22 +5,22 @@ export default function UnderwritePage() {
   const tiers = [
     {
       name: "Community Underwriter",
-      price: "$150/mo",
+      price: "$250/quarter",
       desc: "On-air acknowledgement + community support.",
-      link: "https://buy.stripe.com/3cI4gBghqccs0eC17C1gs04",
+      link: "https://buy.stripe.com/aFa28tghq1xO1iGcQk1gs07",
     },
     {
       name: "Local Amplifier",
-      price: "$250/mo",
+      price: "$500/quarter",
       desc: "Featured presence + increased visibility.",
-      link: "https://buy.stripe.com/bJecN78OY3FW5yWaIc1gs06",
+      link: "https://buy.stripe.com/8x228t0isccsbXk7w01gs08",
       featured: true,
     },
     {
       name: "Station Partner",
-      price: "$500/mo",
+      price: "$750/quarter",
       desc: "Top-tier recognition across the station.",
-      link: "https://buy.stripe.com/7sY9AVghqccs8L8g2w1gs05",
+      link: "https://buy.stripe.com/8x29AVfdm4K03qOdUo1gs09",
     },
   ];
 
