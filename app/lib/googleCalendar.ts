@@ -33,6 +33,16 @@ export async function getGoogleCalendarEvents(showDate: string) {
   const calendarId = process.env.GOOGLE_CALENDAR_ID;
   const apiKey = process.env.GOOGLE_CALENDAR_API_KEY;
   const accessToken = process.env.GOOGLE_CALENDAR_ACCESS_TOKEN;
+  const nextDate = addDays(showDate, 1);
+  const requestedStartDate = stationDateTime(showDate);
+  const requestedEndDate = stationDateTime(nextDate);
+
+  console.log("[cup-a-joe calendar import]", {
+    calendarIdPresent: Boolean(calendarId),
+    apiKeyPresent: Boolean(apiKey),
+    requestedStartDate,
+    requestedEndDate,
+  });
 
   if (!calendarId || (!apiKey && !accessToken)) {
     throw new Error(
@@ -40,12 +50,11 @@ export async function getGoogleCalendarEvents(showDate: string) {
     );
   }
 
-  const nextDate = addDays(showDate, 1);
   const params = new URLSearchParams({
     singleEvents: "true",
     orderBy: "startTime",
-    timeMin: stationDateTime(showDate),
-    timeMax: stationDateTime(nextDate),
+    timeMin: requestedStartDate,
+    timeMax: requestedEndDate,
     timeZone: stationTimeZone,
   });
 
@@ -63,6 +72,15 @@ export async function getGoogleCalendarEvents(showDate: string) {
     },
   );
   const data = (await response.json()) as GoogleCalendarResponse;
+  const eventTitles = (data.items ?? [])
+    .map((event) => event.summary?.trim())
+    .filter((title): title is string => Boolean(title));
+
+  console.log("[cup-a-joe calendar response]", {
+    status: response.status,
+    eventCount: data.items?.length ?? 0,
+    eventTitles,
+  });
 
   if (!response.ok) {
     throw new Error(

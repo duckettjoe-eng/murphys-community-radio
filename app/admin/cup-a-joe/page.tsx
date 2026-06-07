@@ -36,6 +36,7 @@ export default function CupAJoeAdminPage() {
   const [importing, setImporting] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [generatingItemId, setGeneratingItemId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadItems = useCallback(async (date: string) => {
@@ -199,6 +200,39 @@ export default function CupAJoeAdminPage() {
       );
     } finally {
       setImporting(false);
+    }
+  }
+
+  async function generateTalkingPoints(item: CupAJoeItem) {
+    setGeneratingItemId(item.id);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/cup-a-joe/talking-points", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id }),
+      });
+      const data = (await response.json()) as {
+        item?: CupAJoeItem;
+        error?: string;
+      };
+
+      if (!response.ok || !data.item) {
+        throw new Error(data.error || "Unable to generate talking points.");
+      }
+
+      setItems((current) =>
+        current.map((entry) => (entry.id === item.id ? data.item! : entry)),
+      );
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to generate talking points.",
+      );
+    } finally {
+      setGeneratingItemId(null);
     }
   }
 
@@ -450,12 +484,50 @@ export default function CupAJoeAdminPage() {
                           <strong>Joe notes:</strong> {item.joe_notes}
                         </p>
                       ) : null}
+                      {item.talking_points ? (
+                        <dl className="mt-4 grid gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm">
+                          <TalkingPoint
+                            label="Headline"
+                            value={item.talking_points.headline}
+                          />
+                          <TalkingPoint
+                            label="Summary"
+                            value={item.talking_points.summary}
+                          />
+                          <TalkingPoint
+                            label="Local relevance"
+                            value={item.talking_points.local_relevance}
+                          />
+                          <TalkingPoint
+                            label="Listener question"
+                            value={item.talking_points.listener_question}
+                          />
+                          <TalkingPoint
+                            label="Transition"
+                            value={item.talking_points.transition}
+                          />
+                        </dl>
+                      ) : null}
                       <p className="mt-4 text-sm text-zinc-500">
                         Sort {item.sort_order}
                         {item.source ? ` / ${item.source}` : ""}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 sm:justify-end">
+                      {item.use_in_show ? (
+                        <button
+                          type="button"
+                          onClick={() => generateTalkingPoints(item)}
+                          disabled={generatingItemId === item.id}
+                          className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-black text-black hover:bg-emerald-300 disabled:opacity-60"
+                        >
+                          {generatingItemId === item.id
+                            ? "Generating..."
+                            : item.talking_points
+                              ? "Regenerate Talking Points"
+                              : "Generate Talking Points"}
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         onClick={() => startEdit(item)}
@@ -479,6 +551,22 @@ export default function CupAJoeAdminPage() {
         </div>
       </section>
     </CupAJoeShell>
+  );
+}
+
+function TalkingPoint({
+  label,
+  value,
+}: Readonly<{ label: string; value: string }>) {
+  return (
+    <div>
+      <dt className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">
+        {label}
+      </dt>
+      <dd className="mt-1 whitespace-pre-wrap leading-6 text-zinc-200">
+        {value}
+      </dd>
+    </div>
   );
 }
 

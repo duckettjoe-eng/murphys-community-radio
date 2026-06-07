@@ -31,14 +31,35 @@ export type CupAJoeItem = {
   joe_notes: string | null;
   segment: string;
   sort_order: number;
+  talking_points: CupAJoeTalkingPoints | null;
 };
 
-export type CupAJoeItemInput = Omit<CupAJoeItem, "id" | "created_at">;
+export type CupAJoeTalkingPoints = {
+  headline: string;
+  summary: string;
+  local_relevance: string;
+  listener_question: string;
+  transition: string;
+};
+
+export type CupAJoeItemInput = Omit<
+  CupAJoeItem,
+  "id" | "created_at" | "talking_points"
+>;
 
 export type ScriptSegment = {
   name: string;
   text: string;
   itemIds: string[];
+};
+
+export type CupAJoeShowScript = {
+  show_date: string;
+  script: string;
+  segments: ScriptSegment[];
+  model: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export function localDateInputValue(date = new Date()) {
@@ -96,9 +117,16 @@ function segmentIndex(segment: string) {
 }
 
 function buildItemScript(item: CupAJoeItem) {
-  const lines = [item.title.trim()];
+  const lines = [
+    item.talking_points?.headline?.trim() || item.title.trim(),
+  ];
 
-  if (item.summary?.trim()) {
+  if (item.talking_points) {
+    lines.push(item.talking_points.summary.trim());
+    lines.push(`LOCAL RELEVANCE: ${item.talking_points.local_relevance.trim()}`);
+    lines.push(`LISTENER QUESTION: ${item.talking_points.listener_question.trim()}`);
+    lines.push(`TRANSITION: ${item.talking_points.transition.trim()}`);
+  } else if (item.summary?.trim()) {
     lines.push(item.summary.trim());
   }
 

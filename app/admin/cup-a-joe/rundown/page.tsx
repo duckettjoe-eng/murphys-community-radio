@@ -7,6 +7,7 @@ import {
   groupCupAJoeItems,
   localDateInputValue,
   type CupAJoeItem,
+  type CupAJoeShowScript,
 } from "@/app/lib/cupAJoe";
 import CupAJoeShell from "../CupAJoeShell";
 
@@ -14,6 +15,8 @@ export default function CupAJoeRundownPage() {
   const [showDate, setShowDate] = useState(localDateInputValue);
   const [items, setItems] = useState<CupAJoeItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [showScript, setShowScript] = useState<CupAJoeShowScript | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -22,17 +25,32 @@ export default function CupAJoeRundownPage() {
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/cup-a-joe?show_date=${encodeURIComponent(date)}`,
-        { cache: "no-store" },
-      );
-      const data = (await response.json()) as {
+      const [itemsResponse, scriptResponse] = await Promise.all([
+        fetch(`/api/cup-a-joe?show_date=${encodeURIComponent(date)}`, {
+          cache: "no-store",
+        }),
+        fetch(`/api/cup-a-joe/show-script?show_date=${encodeURIComponent(date)}`, {
+          cache: "no-store",
+        }),
+      ]);
+      const data = (await itemsResponse.json()) as {
         items?: CupAJoeItem[];
         error?: string;
       };
+      const scriptData = (await scriptResponse.json()) as {
+        show_script?: CupAJoeShowScript | null;
+        error?: string;
+      };
 
-      if (!response.ok) throw new Error(data.error || "Unable to load rundown.");
+      if (!itemsResponse.ok) {
+        throw new Error(data.error || "Unable to load rundown.");
+      }
+      if (!scriptResponse.ok) {
+        throw new Error(scriptData.error || "Unable to load the show script.");
+      }
+
       setItems((data.items ?? []).filter((item) => item.use_in_show));
+      setShowScript(scriptData.show_script ?? null);
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -49,7 +67,39 @@ export default function CupAJoeRundownPage() {
   }, [loadItems, showDate]);
 
   const groups = useMemo(() => groupCupAJoeItems(items), [items]);
-  const script = useMemo(() => buildFullScript(items), [items]);
+  const fallbackScript = useMemo(() => buildFullScript(items), [items]);
+  const script = showScript?.script || fallbackScript;
+
+  async function generateScript() {
+    setGenerating(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/cup-a-joe/show-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ show_date: showDate }),
+      });
+      const data = (await response.json()) as {
+        show_script?: CupAJoeShowScript;
+        error?: string;
+      };
+
+      if (!response.ok || !data.show_script) {
+        throw new Error(data.error || "Unable to generate the show script.");
+      }
+
+      setShowScript(data.show_script);
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to generate the show script.",
+      );
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   async function copyScript() {
     await navigator.clipboard.writeText(script);
@@ -73,12 +123,22 @@ export default function CupAJoeRundownPage() {
               className="rounded-xl border border-zinc-700 bg-black px-4 py-3 text-base font-normal text-white"
             />
           </label>
-          <Link
-            href={`/admin/cup-a-joe/prompter?show_date=${showDate}`}
-            className="rounded-full bg-orange-400 px-6 py-3 text-center font-black text-black hover:bg-orange-300"
-          >
-            Open Prompter
-          </Link>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={generateScript}
+              disabled={generating || items.length === 0}
+              className="rounded-full bg-emerald-400 px-6 py-3 text-center font-black text-black hover:bg-emerald-300 disabled:opacity-50"
+            >
+              {generating ? "Generating..." : "Generate Show Script"}
+            </button>
+            <Link
+              href={`/admin/cup-a-joe/prompter?show_date=${showDate}`}
+              className="rounded-full bg-orange-400 px-6 py-3 text-center font-black text-black hover:bg-orange-300"
+            >
+              Open Prompter
+            </Link>
+          </div>
         </div>
 
         {error ? (
@@ -141,7 +201,9 @@ export default function CupAJoeRundownPage() {
               <div>
                 <h2 className="text-2xl font-black">Generated Script</h2>
                 <p className="mt-1 text-sm text-zinc-500">
-                  Built only from saved titles, summaries, notes, and sources.
+                  {showScript
+                    ? "Saved AI script built only from approved items."
+                    : "Preview built from saved titles, talking points, notes, and sources."}
                 </p>
               </div>
               <button

@@ -7,6 +7,7 @@ import {
   buildScriptSegments,
   localDateInputValue,
   type CupAJoeItem,
+  type CupAJoeShowScript,
 } from "@/app/lib/cupAJoe";
 
 function Prompter() {
@@ -15,6 +16,7 @@ function Prompter() {
     searchParams.get("show_date") || localDateInputValue(),
   );
   const [items, setItems] = useState<CupAJoeItem[]>([]);
+  const [showScript, setShowScript] = useState<CupAJoeShowScript | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -26,7 +28,12 @@ function Prompter() {
   const frameRef = useRef<number | null>(null);
   const lastFrameRef = useRef<number | null>(null);
 
-  const segments = useMemo(() => buildScriptSegments(items), [items]);
+  const segments = useMemo(
+    () => showScript?.segments?.length
+      ? showScript.segments
+      : buildScriptSegments(items),
+    [items, showScript],
+  );
 
   const loadItems = useCallback(async (date: string) => {
     setLoading(true);
@@ -34,17 +41,32 @@ function Prompter() {
     setPlaying(false);
 
     try {
-      const response = await fetch(
-        `/api/cup-a-joe?show_date=${encodeURIComponent(date)}`,
-        { cache: "no-store" },
-      );
-      const data = (await response.json()) as {
+      const [itemsResponse, scriptResponse] = await Promise.all([
+        fetch(`/api/cup-a-joe?show_date=${encodeURIComponent(date)}`, {
+          cache: "no-store",
+        }),
+        fetch(`/api/cup-a-joe/show-script?show_date=${encodeURIComponent(date)}`, {
+          cache: "no-store",
+        }),
+      ]);
+      const data = (await itemsResponse.json()) as {
         items?: CupAJoeItem[];
         error?: string;
       };
+      const scriptData = (await scriptResponse.json()) as {
+        show_script?: CupAJoeShowScript | null;
+        error?: string;
+      };
 
-      if (!response.ok) throw new Error(data.error || "Unable to load script.");
+      if (!itemsResponse.ok) {
+        throw new Error(data.error || "Unable to load script.");
+      }
+      if (!scriptResponse.ok) {
+        throw new Error(scriptData.error || "Unable to load the saved script.");
+      }
+
       setItems((data.items ?? []).filter((item) => item.use_in_show));
+      setShowScript(scriptData.show_script ?? null);
       setSegmentIndex(0);
       setElapsedSeconds(0);
       scrollerRef.current?.scrollTo({ top: 0 });
