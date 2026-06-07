@@ -32,6 +32,10 @@ export default function CupAJoeAdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [importDate, setImportDate] = useState(localDateInputValue);
+  const [importing, setImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadItems = useCallback(async (date: string) => {
@@ -155,6 +159,46 @@ export default function CupAJoeAdminPage() {
           ? caughtError.message
           : "Unable to delete item.",
       );
+    }
+  }
+
+  async function importEvents() {
+    setImporting(true);
+    setImportStatus(null);
+    setImportError(null);
+
+    try {
+      const response = await fetch("/api/cup-a-joe/import-events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ show_date: importDate }),
+      });
+      const data = (await response.json()) as {
+        found?: number;
+        imported?: number;
+        skipped?: number;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to import events.");
+      }
+
+      setImportStatus(
+        `Imported ${data.imported ?? 0} of ${data.found ?? 0} events${
+          data.skipped ? `; skipped ${data.skipped} duplicate(s)` : ""
+        }.`,
+      );
+      changeShowDate(importDate);
+      await loadItems(importDate);
+    } catch (caughtError) {
+      setImportError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to import events.",
+      );
+    } finally {
+      setImporting(false);
     }
   }
 
@@ -303,6 +347,48 @@ export default function CupAJoeAdminPage() {
         </form>
 
         <div>
+          <section className="mb-8 rounded-3xl border border-orange-400/30 bg-orange-400/10 p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-orange-400">
+                  Google Calendar
+                </p>
+                <h2 className="mt-2 text-2xl font-black">Import Events</h2>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-400">
+                  Add calendar events to the selected show date. Existing
+                  Google Calendar items with the same title are skipped.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <Field label="Event date" compact>
+                  <input
+                    type="date"
+                    value={importDate}
+                    onChange={(event) => setImportDate(event.target.value)}
+                  />
+                </Field>
+                <button
+                  type="button"
+                  onClick={importEvents}
+                  disabled={importing}
+                  className="rounded-full bg-orange-400 px-6 py-3 font-black text-black hover:bg-orange-300 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {importing ? "Importing..." : "Import Events"}
+                </button>
+              </div>
+            </div>
+            {importStatus ? (
+              <p className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">
+                {importStatus}
+              </p>
+            ) : null}
+            {importError ? (
+              <p className="mt-4 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+                {importError}
+              </p>
+            ) : null}
+          </section>
+
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.2em] text-orange-400">
