@@ -9,7 +9,7 @@
     "archive:mixcloud": "node scripts/sync-mixcloud-archive.mjs",
     "archive:upload": "node scripts/build-and-upload-radio-archive.mjs",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",

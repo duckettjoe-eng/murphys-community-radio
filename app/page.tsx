@@ -13,8 +13,28 @@ export const dynamic = "force-dynamic";
 
 const hostPortalUrl = "https://kmcr-host-portal.base44.app/";
 
-// Add future community backers here when they are ready to publish.
-const underwriters: string[] = [];
+const foundingSupporters = [
+  {
+    name: "Murphys Irish Pub",
+    logo: "/partners/murphys-irish-pub.png",
+  },
+  {
+    name: "Murphys Grade",
+    logo: "/partners/murphys-grade-logo.webp",
+  },
+  {
+    name: "The Pourhouse",
+    logo: "/partners/murphys-pourhouse-logo.jpg",
+  },
+  {
+    name: "Pure Aloha",
+    logo: "/partners/pure-aloha.png",
+  },
+  {
+    name: "Murphys Mystical Emporium",
+    logo: null,
+  },
+];
 
 const spotifyMap: Record<string, string> = {
   "Golden Hour Groove":
@@ -341,25 +361,56 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* UNDERWRITERS */}
+      {/* FOUNDING SUPPORTERS */}
       <section className="px-6 py-20">
-        <div className="mx-auto max-w-7xl rounded-3xl border border-zinc-800 bg-zinc-950 p-10">
-          <h2 className="text-4xl font-black">Community Backers</h2>
+        <div className="mx-auto max-w-7xl rounded-3xl border border-zinc-800 bg-zinc-950 p-8 text-center sm:p-10">
+          <p className="text-sm font-black uppercase tracking-[0.35em] text-orange-400">
+            Founding Supporters
+          </p>
 
-          <p className="mt-6 text-zinc-300">Supporters coming soon.</p>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-zinc-300">
+            Local businesses helping launch independent community radio in
+            Calaveras County.
+          </p>
 
-          {underwriters.length > 0 && (
-            <div className="mt-8 grid gap-3 md:grid-cols-3">
-              {underwriters.map((name) => (
-                <div
-                  key={name}
-                  className="rounded-2xl bg-black px-5 py-4 text-sm font-bold text-zinc-300"
-                >
-                  {name}
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {foundingSupporters.map((supporter) => (
+              <div
+                key={supporter.name}
+                className="flex min-h-40 items-center justify-center rounded-2xl border border-zinc-800 bg-black p-6"
+              >
+                {supporter.logo ? (
+                  <img
+                    src={supporter.logo}
+                    alt={supporter.name}
+                    className="max-h-24 w-full object-contain"
+                  />
+                ) : (
+                  <div className="text-center">
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">
+                      Murphys
+                    </p>
+                    <p className="mt-2 text-xl font-black leading-tight text-white">
+                      Mystical Emporium
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 border-t border-zinc-800 pt-8">
+            <p className="text-xl font-black">
+              Interested in becoming a founding underwriter?
+            </p>
+
+            <Link
+              href="/underwrite"
+              className="mt-6 inline-flex rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300"
+            >
+              Contact Us
+            </Link>
+          </div>
         </div>
       </section>
 
