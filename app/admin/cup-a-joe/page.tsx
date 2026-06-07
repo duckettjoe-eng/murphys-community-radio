@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
   CUP_A_JOE_CATEGORIES,
   CUP_A_JOE_SEGMENTS,
+  defaultEstimatedMinutes,
   localDateInputValue,
   type CupAJoeItem,
   type CupAJoeItemInput,
@@ -21,6 +22,8 @@ const emptyItem = (showDate: string): CupAJoeItemInput => ({
   joe_notes: "",
   segment: "Local Headlines",
   sort_order: 0,
+  estimated_minutes: defaultEstimatedMinutes("Local Headlines"),
+  completed_at: null,
 });
 
 export default function CupAJoeAdminPage() {
@@ -36,6 +39,13 @@ export default function CupAJoeAdminPage() {
   const [importing, setImporting] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [newsImportDate, setNewsImportDate] = useState(localDateInputValue);
+  const [importingNews, setImportingNews] = useState(false);
+  const [newsImportStatus, setNewsImportStatus] = useState<string | null>(null);
+  const [newsImportErrors, setNewsImportErrors] = useState<string[]>([]);
+  const [creatingBlock, setCreatingBlock] = useState<
+    "weather" | "calendar" | null
+  >(null);
   const [generatingItemId, setGeneratingItemId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,6 +106,8 @@ export default function CupAJoeAdminPage() {
       joe_notes: item.joe_notes,
       segment: item.segment,
       sort_order: item.sort_order,
+      estimated_minutes: item.estimated_minutes,
+      completed_at: item.completed_at,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -216,6 +228,7 @@ export default function CupAJoeAdminPage() {
       const data = (await response.json()) as {
         item?: CupAJoeItem;
         error?: string;
+        warning?: string;
       };
 
       if (!response.ok || !data.item) {
@@ -225,6 +238,7 @@ export default function CupAJoeAdminPage() {
       setItems((current) =>
         current.map((entry) => (entry.id === item.id ? data.item! : entry)),
       );
+      if (data.warning) setError(data.warning);
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -233,6 +247,115 @@ export default function CupAJoeAdminPage() {
       );
     } finally {
       setGeneratingItemId(null);
+    }
+  }
+
+  async function importLocalNews(source?: string) {
+    setImportingNews(true);
+    setNewsImportStatus(null);
+    setNewsImportErrors([]);
+
+    try {
+      const response = await fetch("/api/cup-a-joe/import-local-news", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ show_date: newsImportDate, source }),
+      });
+      const data = (await response.json()) as {
+        found?: number;
+        imported?: number;
+        skipped?: number;
+        source_errors?: Array<{ source: string; error: string }>;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to import local news.");
+      }
+
+      setNewsImportStatus(
+        `${source || "All local sources"}: found ${data.found ?? 0}; imported ${data.imported ?? 0}; skipped ${data.skipped ?? 0} duplicate(s).`,
+      );
+      setNewsImportErrors(
+        (data.source_errors ?? []).map(
+          (sourceError) => `${sourceError.source}: ${sourceError.error}`,
+        ),
+      );
+      changeShowDate(newsImportDate);
+      await loadItems(newsImportDate);
+    } catch (caughtError) {
+      setNewsImportErrors([
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to import local news.",
+      ]);
+    } finally {
+      setImportingNews(false);
+    }
+  }
+
+  async function createBlock(action: "weather" | "calendar") {
+    setCreatingBlock(action);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/cup-a-joe/blocks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, show_date: showDate }),
+      });
+      const data = (await response.json()) as {
+        item?: CupAJoeItem;
+        error?: string;
+      };
+
+      if (!response.ok || !data.item) {
+        throw new Error(data.error || "Unable to create block.");
+      }
+
+      await loadItems(showDate);
+      startEdit(data.item);
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to create block.",
+      );
+    } finally {
+      setCreatingBlock(null);
+    }
+  }
+
+  async function toggleUseInShow(item: CupAJoeItem) {
+    setError(null);
+
+    try {
+      const response = await fetch("/api/cup-a-joe", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...item,
+          use_in_show: !item.use_in_show,
+        }),
+      });
+      const data = (await response.json()) as {
+        item?: CupAJoeItem;
+        error?: string;
+      };
+
+      if (!response.ok || !data.item) {
+        throw new Error(data.error || "Unable to update approval.");
+      }
+
+      setItems((current) =>
+        current.map((entry) => (entry.id === item.id ? data.item! : entry)),
+      );
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to update approval.",
+      );
     }
   }
 
@@ -307,9 +430,14 @@ export default function CupAJoeAdminPage() {
               <Field label="Segment">
                 <select
                   value={form.segment}
-                  onChange={(event) =>
-                    updateField("segment", event.target.value)
-                  }
+                  onChange={(event) => {
+                    const segment = event.target.value;
+                    setForm((current) => ({
+                      ...current,
+                      segment,
+                      estimated_minutes: defaultEstimatedMinutes(segment),
+                    }));
+                  }}
                 >
                   {CUP_A_JOE_SEGMENTS.map((segment) => (
                     <option key={segment}>{segment}</option>
@@ -363,6 +491,20 @@ export default function CupAJoeAdminPage() {
                 }
               />
             </Field>
+            <Field label="Estimated minutes">
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                value={form.estimated_minutes}
+                onChange={(event) =>
+                  updateField(
+                    "estimated_minutes",
+                    Math.max(0, Number(event.target.value)),
+                  )
+                }
+              />
+            </Field>
           </div>
 
           {error ? (
@@ -381,6 +523,109 @@ export default function CupAJoeAdminPage() {
         </form>
 
         <div>
+          <section className="mb-8 rounded-3xl border border-sky-500/30 bg-sky-500/10 p-5">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-300">
+              Quick Blocks
+            </p>
+            <h2 className="mt-2 text-2xl font-black">
+              Weather and Community Calendar
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-zinc-400">
+              Creates an editable draft for {showDate}. Calendar blocks use
+              only Google Calendar items already imported into Cup a Joe.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => createBlock("weather")}
+                disabled={creatingBlock !== null}
+                className="rounded-full bg-sky-300 px-5 py-3 font-black text-black disabled:opacity-60"
+              >
+                {creatingBlock === "weather"
+                  ? "Adding..."
+                  : "Add Weather Block"}
+              </button>
+              <button
+                type="button"
+                onClick={() => createBlock("calendar")}
+                disabled={creatingBlock !== null}
+                className="rounded-full border border-sky-400 px-5 py-3 font-black text-sky-100 disabled:opacity-60"
+              >
+                {creatingBlock === "calendar"
+                  ? "Generating..."
+                  : "Generate Calendar Block"}
+              </button>
+            </div>
+          </section>
+
+          <section className="mb-8 rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-300">
+                  Review Queue
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  Import Local News
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-400">
+                  Pull candidate stories from approved local publishers.
+                  Imported stories require your approval before entering the
+                  rundown.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <Field label="Show date" compact>
+                  <input
+                    type="date"
+                    value={newsImportDate}
+                    onChange={(event) => setNewsImportDate(event.target.value)}
+                  />
+                </Field>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[
+                "myMotherLode",
+                "Calaveras Enterprise",
+                "Union Democrat",
+                "Ledger Dispatch",
+              ].map((source) => (
+                <button
+                  key={source}
+                  type="button"
+                  onClick={() => importLocalNews(source)}
+                  disabled={importingNews}
+                  className="rounded-full border border-emerald-500/50 px-4 py-2 text-sm font-black text-emerald-100 hover:bg-emerald-400 hover:text-black disabled:opacity-50"
+                >
+                  Import {source}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => importLocalNews()}
+                disabled={importingNews}
+                className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-black text-black hover:bg-emerald-300 disabled:opacity-50"
+              >
+                {importingNews ? "Importing..." : "Import All Local News"}
+              </button>
+            </div>
+            {newsImportStatus ? (
+              <p className="mt-4 rounded-xl border border-emerald-500/30 bg-black/20 p-3 text-sm text-emerald-100">
+                {newsImportStatus}
+              </p>
+            ) : null}
+            {newsImportErrors.length > 0 ? (
+              <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-100">
+                <p className="font-black">Source errors</p>
+                <ul className="mt-2 space-y-1">
+                  {newsImportErrors.map((sourceError) => (
+                    <li key={sourceError}>{sourceError}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </section>
+
           <section className="mb-8 rounded-3xl border border-orange-400/30 bg-orange-400/10 p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -462,7 +707,7 @@ export default function CupAJoeAdminPage() {
                               : "text-zinc-600"
                           }
                         >
-                          {item.use_in_show ? "In Show" : "Not Selected"}
+                          {item.use_in_show ? "In Show" : "Needs Approval"}
                         </span>
                         <span className="text-zinc-600">/</span>
                         <span className="text-zinc-400">{item.segment}</span>
@@ -514,6 +759,19 @@ export default function CupAJoeAdminPage() {
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2 sm:justify-end">
+                      <button
+                        type="button"
+                        onClick={() => toggleUseInShow(item)}
+                        className={
+                          item.use_in_show
+                            ? "rounded-full border border-zinc-700 px-4 py-2 text-sm font-black hover:border-orange-400"
+                            : "rounded-full bg-orange-400 px-4 py-2 text-sm font-black text-black hover:bg-orange-300"
+                        }
+                      >
+                        {item.use_in_show
+                          ? "Remove from Show"
+                          : "Approve for Show"}
+                      </button>
                       {item.use_in_show ? (
                         <button
                           type="button"

@@ -12,6 +12,7 @@ export const CUP_A_JOE_CATEGORIES = [
 export const CUP_A_JOE_SEGMENTS = [
   "Opening",
   "Local Headlines",
+  "Weather",
   "Events",
   "Community Notes",
   "Music Breaks",
@@ -31,6 +32,8 @@ export type CupAJoeItem = {
   joe_notes: string | null;
   segment: string;
   sort_order: number;
+  estimated_minutes: number;
+  completed_at: string | null;
   talking_points: CupAJoeTalkingPoints | null;
 };
 
@@ -68,6 +71,30 @@ export function localDateInputValue(date = new Date()) {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
+}
+
+export function defaultEstimatedMinutes(segment: string) {
+  switch (segment) {
+    case "Local Headlines":
+      return 2;
+    case "Music Breaks":
+      return 0;
+    default:
+      return 1;
+  }
+}
+
+export function totalEstimatedMinutes(items: CupAJoeItem[]) {
+  return items.reduce(
+    (total, item) => total + Number(item.estimated_minutes || 0),
+    0,
+  );
+}
+
+export function formatEstimatedMinutes(minutes: number) {
+  return `${Number(minutes || 0).toLocaleString(undefined, {
+    maximumFractionDigits: 1,
+  })} min`;
 }
 
 export function sortCupAJoeItems(items: CupAJoeItem[]) {

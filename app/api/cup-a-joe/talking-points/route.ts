@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { generateTalkingPoints } from "@/app/lib/cupAJoeAi";
+import { generateTalkingPointsFromSource } from "@/app/lib/cupAJoeAi";
 import { getCupAJoeSupabase } from "@/app/lib/cupAJoeServer";
+import { extractWebArticle } from "@/app/lib/webArticle";
 
 export const dynamic = "force-dynamic";
 
@@ -24,17 +25,58 @@ export async function POST(request: Request) {
 
     if (itemError) throw itemError;
 
-    const { value: talkingPoints } = await generateTalkingPoints(item);
+    let webpage:
+      | {
+          title: string;
+          content: string;
+          url: string;
+        }
+      | undefined;
+    let extractionWarning: string | undefined;
+
+    if (item.url?.trim() && !item.summary?.trim()) {
+      try {
+        const extracted = await extractWebArticle(item.url.trim());
+        webpage = {
+          title: extracted.title,
+          content: extracted.content,
+          url: extracted.finalUrl,
+        };
+      } catch (error) {
+        const reason =
+          error instanceof Error ? error.message : "Unknown extraction error.";
+        extractionWarning = `Could not extract the webpage: ${reason} Talking points were generated from the saved item fields instead.`;
+      }
+    }
+
+    const { value: talkingPoints } = await generateTalkingPointsFromSource(
+      item,
+      webpage,
+    );
+    const update: {
+      talking_points: typeof talkingPoints;
+      summary?: string;
+    } = {
+      talking_points: talkingPoints,
+    };
+
+    if (!item.summary?.trim() && talkingPoints.summary.trim()) {
+      update.summary = talkingPoints.summary.trim();
+    }
+
     const { data: updatedItem, error: updateError } = await supabase
       .from("cup_a_joe_items")
-      .update({ talking_points: talkingPoints })
+      .update(update)
       .eq("id", id)
       .select("*")
       .single();
 
     if (updateError) throw updateError;
 
-    return NextResponse.json({ item: updatedItem });
+    return NextResponse.json({
+      item: updatedItem,
+      warning: extractionWarning,
+    });
   } catch (error) {
     return errorResponse(error);
   }

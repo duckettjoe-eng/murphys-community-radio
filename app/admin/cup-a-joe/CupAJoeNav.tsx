@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
-  { href: "/admin/cup-a-joe", label: "Prep" },
+  { href: "/admin/cup-a-joe", label: "Admin" },
   { href: "/admin/cup-a-joe/rundown", label: "Rundown" },
-  { href: "/admin/cup-a-joe/prompter", label: "Prompter" },
+  { href: "/admin/cup-a-joe/prompter", label: "Presenter" },
+  { href: "/admin/cup-a-joe/on-air", label: "On Air" },
 ];
 
 export default function CupAJoeNav() {

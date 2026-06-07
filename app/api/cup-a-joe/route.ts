@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   CUP_A_JOE_CATEGORIES,
   CUP_A_JOE_SEGMENTS,
+  defaultEstimatedMinutes,
   type CupAJoeItemInput,
 } from "@/app/lib/cupAJoe";
 import { getCupAJoeSupabase } from "@/app/lib/cupAJoeServer";
@@ -93,6 +94,13 @@ function cleanInput(input: Partial<CupAJoeItemInput>): CupAJoeItemInput {
     sort_order: Number.isFinite(Number(input.sort_order))
       ? Number(input.sort_order)
       : 0,
+    estimated_minutes: Number.isFinite(Number(input.estimated_minutes))
+      ? Math.max(0, Number(input.estimated_minutes))
+      : defaultEstimatedMinutes(segment),
+    completed_at:
+      typeof input.completed_at === "string" && input.completed_at
+        ? input.completed_at
+        : null,
   };
 }
 

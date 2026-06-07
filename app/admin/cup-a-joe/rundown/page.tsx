@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   buildFullScript,
+  formatEstimatedMinutes,
   groupCupAJoeItems,
   localDateInputValue,
+  totalEstimatedMinutes,
   type CupAJoeItem,
   type CupAJoeShowScript,
 } from "@/app/lib/cupAJoe";
@@ -69,6 +71,7 @@ export default function CupAJoeRundownPage() {
   const groups = useMemo(() => groupCupAJoeItems(items), [items]);
   const fallbackScript = useMemo(() => buildFullScript(items), [items]);
   const script = showScript?.script || fallbackScript;
+  const totalMinutes = useMemo(() => totalEstimatedMinutes(items), [items]);
 
   async function generateScript() {
     setGenerating(true);
@@ -107,6 +110,53 @@ export default function CupAJoeRundownPage() {
     window.setTimeout(() => setCopied(false), 1500);
   }
 
+  async function moveItem(
+    groupItems: CupAJoeItem[],
+    itemIndex: number,
+    direction: -1 | 1,
+  ) {
+    const targetIndex = itemIndex + direction;
+    if (targetIndex < 0 || targetIndex >= groupItems.length) return;
+
+    const reordered = [...groupItems];
+    [reordered[itemIndex], reordered[targetIndex]] = [
+      reordered[targetIndex],
+      reordered[itemIndex],
+    ];
+    const updates = reordered.map((item, index) => ({
+      id: item.id,
+      sort_order: (index + 1) * 10,
+    }));
+
+    setError(null);
+
+    try {
+      const response = await fetch("/api/cup-a-joe/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: updates }),
+      });
+      const data = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to save rundown order.");
+      }
+
+      setItems((current) =>
+        current.map((item) => {
+          const update = updates.find((candidate) => candidate.id === item.id);
+          return update ? { ...item, sort_order: update.sort_order } : item;
+        }),
+      );
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to save rundown order.",
+      );
+    }
+  }
+
   return (
     <CupAJoeShell
       title="Show Rundown"
@@ -138,6 +188,12 @@ export default function CupAJoeRundownPage() {
             >
               Open Prompter
             </Link>
+            <Link
+              href={`/admin/cup-a-joe/on-air?show_date=${showDate}`}
+              className="rounded-full border border-orange-400 px-6 py-3 text-center font-black text-orange-200 hover:bg-orange-400 hover:text-black"
+            >
+              On Air
+            </Link>
           </div>
         </div>
 
@@ -149,7 +205,12 @@ export default function CupAJoeRundownPage() {
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_1fr]">
           <div>
-            <h2 className="text-2xl font-black">Rundown</h2>
+            <div className="flex items-end justify-between gap-4">
+              <h2 className="text-2xl font-black">Rundown</h2>
+              <p className="font-black text-orange-400">
+                Total {formatEstimatedMinutes(totalMinutes)}
+              </p>
+            </div>
             <div className="mt-5 grid gap-5">
               {loading ? (
                 <p className="text-zinc-400">Loading rundown...</p>
@@ -167,14 +228,21 @@ export default function CupAJoeRundownPage() {
                       {group.segment}
                     </h3>
                     <ol className="divide-y divide-zinc-800">
-                      {group.items.map((item) => (
+                      {group.items.map((item, itemIndex) => (
                         <li key={item.id} className="p-5">
                           <div className="flex gap-4">
                             <span className="font-black text-orange-400">
                               {item.sort_order}
                             </span>
-                            <div>
-                              <h4 className="font-black">{item.title}</h4>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center justify-between gap-3">
+                                <h4 className="font-black">{item.title}</h4>
+                                <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-black text-zinc-300">
+                                  {formatEstimatedMinutes(
+                                    item.estimated_minutes,
+                                  )}
+                                </span>
+                              </div>
                               {item.summary ? (
                                 <p className="mt-2 leading-6 text-zinc-400">
                                   {item.summary}
@@ -185,6 +253,30 @@ export default function CupAJoeRundownPage() {
                                   Joe notes: {item.joe_notes}
                                 </p>
                               ) : null}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  moveItem(group.items, itemIndex, -1)
+                                }
+                                disabled={itemIndex === 0}
+                                aria-label={`Move ${item.title} up`}
+                                className="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-black disabled:opacity-25"
+                              >
+                                Up
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  moveItem(group.items, itemIndex, 1)
+                                }
+                                disabled={itemIndex === group.items.length - 1}
+                                aria-label={`Move ${item.title} down`}
+                                className="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-black disabled:opacity-25"
+                              >
+                                Down
+                              </button>
                             </div>
                           </div>
                         </li>

@@ -56,6 +56,17 @@ type GeminiRequest = {
 };
 
 export async function generateTalkingPoints(item: CupAJoeItem) {
+  return generateTalkingPointsFromSource(item);
+}
+
+export async function generateTalkingPointsFromSource(
+  item: CupAJoeItem,
+  webpage?: {
+    title: string;
+    content: string;
+    url: string;
+  },
+) {
   const result = await requestStructuredOutput<CupAJoeTalkingPoints>({
     schema: {
       type: "object",
@@ -79,13 +90,25 @@ export async function generateTalkingPoints(item: CupAJoeItem) {
     input: JSON.stringify({
       task: "Create concise on-air talking points for this approved item.",
       rules: [
-        "Use only the supplied item fields.",
+        webpage
+          ? "Use only the supplied webpage title and webpage content."
+          : "Use only the supplied item fields.",
         "Do not add or infer facts, people, dates, places, causes, outcomes, or event details.",
-        "If local relevance is not supported by the item, say that it is not specified in the saved item.",
+        "If local relevance is not supported by the supplied source, say that it is not specified in the supplied source.",
         "The listener question may invite opinion but must not assert a new fact.",
         "The transition must be a neutral segue and must not introduce new information.",
       ],
-      item: sourceItem(item),
+      source: webpage
+        ? {
+            type: "webpage",
+            title: webpage.title,
+            url: webpage.url,
+            content: webpage.content,
+          }
+        : {
+            type: "saved_item",
+            item: sourceItem(item),
+          },
     }),
   });
 
