@@ -60,7 +60,7 @@ type GeneratedMixcloudArchiveItem = {
 
 export const beatDownArchive: MusicArchiveItem[] = [];
 
-export const mixcloudArchive: MusicArchiveItem[] = (
+export const generatedMixcloudFallback: MusicArchiveItem[] = (
   generatedMixcloudArchive as GeneratedMixcloudArchiveItem[]
 ).map((item) => ({
   id: item.id,
@@ -108,7 +108,12 @@ const generatedBeatDownArchive: MusicArchiveItem[] = (
   }));
 
 export const localMusicArchive = [
-  ...mixcloudArchive,
+  ...generatedMixcloudFallback,
+  ...beatDownArchive,
+  ...generatedBeatDownArchive,
+];
+
+export const nonMixcloudLocalArchive = [
   ...beatDownArchive,
   ...generatedBeatDownArchive,
 ];

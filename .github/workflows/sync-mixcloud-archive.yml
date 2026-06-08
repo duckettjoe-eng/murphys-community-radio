@@ -3,11 +3,10 @@ name: Sync Mixcloud Archive
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 10 * * *"
     - cron: "0 11 * * *"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: sync-mixcloud-archive
@@ -18,50 +17,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check local run time
-        id: local-time
-        run: |
-          hour="$(TZ=America/Los_Angeles date +%H)"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$hour" = "03" ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "should_run=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Checkout
-        if: steps.local-time.outputs.should_run == 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node
-        if: steps.local-time.outputs.should_run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
-        if: steps.local-time.outputs.should_run == 'true'
         run: npm ci
 
       - name: Sync Mixcloud archive
-        if: steps.local-time.outputs.should_run == 'true'
-        # Mixcloud source usernames are configured in scripts/sync-mixcloud-archive.mjs.
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MIXCLOUD_ARCHIVE_SLUGS: ${{ vars.MIXCLOUD_ARCHIVE_SLUGS || 'skullcountyradio' }}
         run: npm run archive:mixcloud
-
-      - name: Build
-        if: steps.local-time.outputs.should_run == 'true'
-        run: npm run build
-
-      - name: Commit archive updates
-        if: steps.local-time.outputs.should_run == 'true'
-        run: |
-          if git diff --quiet -- app/lib/generatedMixcloudArchive.ts; then
-            echo "No Mixcloud archive updates to commit."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/lib/generatedMixcloudArchive.ts
-          git commit -m "sync mixcloud archive"
-          git push

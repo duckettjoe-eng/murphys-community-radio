@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "archive:build": "node scripts/build-radio-archive.mjs",
-    "archive:mixcloud": "node scripts/sync-mixcloud-archive.mjs",
+    "archive:mixcloud": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/sync-mixcloud-archive.mjs",
     "archive:upload": "node scripts/build-and-upload-radio-archive.mjs",
     "start": "next start",
     "lint": "eslint ."

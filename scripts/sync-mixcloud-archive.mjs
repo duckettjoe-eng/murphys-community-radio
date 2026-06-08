@@ -1,42 +1,38 @@
 #!/usr/bin/env node
 
-import { writeFile } from "node:fs/promises";
-import path from "node:path";
+import { createClient } from "@supabase/supabase-js";
 
 const MIXCLOUD_LIMIT = 100;
+const DEFAULT_SLUGS = ["skullcountyradio"];
 
-// Update Mixcloud usernames here when station or DJ source pages change.
-const MIXCLOUD_SOURCES = [
-  {
-    id: "skull-county-radio",
-    label: "Skull County Radio",
-    username: "skullcountyradio",
-    djName: "DJ Hello Joey",
-    includeAllUploads: true,
+const sourceProfiles = {
+  skullcountyradio: {
+    stationName: "Skull County Radio",
   },
-  {
-    id: "dj-hello-joey",
-    label: "DJ Hello Joey",
-    username: "djhellojoey",
-    djName: "DJ Hello Joey",
-    includeAllUploads: true,
-  },
-  {
-    id: "dj-aquarobotics",
-    label: "DJ Aquarobotics",
-    username: "gdyken",
-    djName: "DJ Aquarobotics",
-    includeAllUploads: true,
-  },
-];
+};
 
-const projectRoot = process.cwd();
-const archiveOutputPath = path.join(
-  projectRoot,
-  "app",
-  "lib",
-  "generatedMixcloudArchive.ts",
-);
+const hostProfiles = {
+  djhellojoey: {
+    displayName: "DJ Hello Joey",
+    patterns: [/\bdj\s*hello\s*joey\b/i, /\bdjhellojoey\b/i],
+  },
+  gdyken: {
+    displayName: "DJ Aquarobotics",
+    patterns: [/\baquarobotics\b/i],
+  },
+  dj_donette_g: {
+    displayName: "DJ Donette G",
+    patterns: [
+      /\bdj\s*donette\s*g\b/i,
+      /\bdj[_\s-]*donette[_\s-]*g\b/i,
+      /\blife\s+of\s+a\s+g\b/i,
+    ],
+  },
+  "g-dyken": {
+    displayName: "G Dyken",
+    patterns: [/\bg\s*dyken\b/i],
+  },
+};
 
 const showMatchers = [
   {
@@ -62,7 +58,7 @@ const showMatchers = [
   {
     showSlug: "weird-late-night-fm",
     showName: "Weird Late-Night FM",
-    patterns: [/weird\s+late\s*night/i],
+    patterns: [/weird\s+late[-\s]*night/i],
   },
   {
     showSlug: "cali-sun-reggae-ride",
@@ -91,70 +87,37 @@ const showMatchers = [
   },
 ];
 
-// Add DJ title/slug patterns here when a station/source account hosts mixes
-// from multiple DJs. These overrides are applied every time the archive syncs.
-const uploadHostMatchers = [
-  {
-    djName: "DJ Aquarobotics",
-    patterns: [/deep\s+diving/i, /reflections/i, /innaminnit/i],
-  },
-];
+function configuredSlugs() {
+  const configured = process.env.MIXCLOUD_ARCHIVE_SLUGS?.split(",")
+    .map((slug) => slug.trim())
+    .filter(Boolean);
 
-const slugFromKey = (key) => key.split("/").filter(Boolean).at(-1) || "";
-
-const slugify = (value) =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-const formatDate = (value) => {
-  if (!value) return "Archive";
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "America/Los_Angeles",
-  }).format(new Date(value));
-};
-
-const matchShow = (cloudcast) =>
-  showMatchers.find((show) =>
-    show.patterns.some(
-      (pattern) => pattern.test(cloudcast.name) || pattern.test(cloudcast.slug),
-    ),
+  const slugs = configured?.length ? configured : DEFAULT_SLUGS;
+  const uniqueSlugs = new Map(
+    slugs.map((slug) => [slug.toLowerCase(), slug]),
   );
 
-const matchUploadHost = (cloudcast) =>
-  uploadHostMatchers.find((host) =>
-    host.patterns.some(
-      (pattern) =>
-        pattern.test(cloudcast.name || "") ||
-        pattern.test(cloudcast.slug || "") ||
-        pattern.test(cloudcast.key || ""),
-    ),
-  );
+  return Array.from(uniqueSlugs.values());
+}
 
-const getImageUrl = (cloudcast) =>
-  cloudcast.pictures?.extra_large ||
-  cloudcast.pictures?.["640wx640h"] ||
-  cloudcast.pictures?.large ||
-  cloudcast.pictures?.medium ||
-  cloudcast.pictures?.thumbnail ||
-  "";
+function sourceForSlug(accountSlug) {
+  const profile = sourceProfiles[accountSlug.toLowerCase()];
+  const fallbackLabel = accountSlug
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 
-const getPublishedAt = (cloudcast) =>
-  cloudcast.publish_date ||
-  cloudcast.published_time ||
-  cloudcast.created_time ||
-  "";
+  return {
+    accountSlug,
+    stationName: profile?.stationName || fallbackLabel,
+  };
+}
 
-const fetchCloudcastsForSource = async (source) => {
+async function fetchCloudcasts(accountSlug) {
   const cloudcasts = [];
   let nextUrl = new URL(
-    `https://api.mixcloud.com/${source.username}/cloudcasts/`,
+    `https://api.mixcloud.com/${encodeURIComponent(accountSlug)}/cloudcasts/`,
   );
   nextUrl.searchParams.set("limit", String(MIXCLOUD_LIMIT));
 
@@ -163,114 +126,219 @@ const fetchCloudcastsForSource = async (source) => {
 
     if (!response.ok) {
       throw new Error(
-        `Mixcloud cloudcasts fetch failed for ${source.username}: ${response.status} ${response.statusText}`,
+        `Mixcloud fetch failed for ${accountSlug}: ${response.status} ${response.statusText}`,
       );
     }
 
     const data = await response.json();
-    if (Array.isArray(data.data)) {
-      cloudcasts.push(...data.data);
-    }
-
+    if (Array.isArray(data.data)) cloudcasts.push(...data.data);
     nextUrl = data.paging?.next ? new URL(data.paging.next) : null;
   }
 
-  return cloudcasts;
-};
+  return Promise.all(
+    cloudcasts.map(async (cloudcast) => {
+      const response = await fetch(`https://api.mixcloud.com${cloudcast.key}`);
 
-const buildArchiveItem = (source, cloudcast) => {
+      if (!response.ok) {
+        throw new Error(
+          `Mixcloud detail fetch failed for ${cloudcast.key}: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      return response.json();
+    }),
+  );
+}
+
+function buildEpisode(source, cloudcast) {
+  const mixcloudKey = clean(cloudcast.key);
+  const episodeUrl = clean(cloudcast.url);
+
+  if (!mixcloudKey || !episodeUrl) return null;
+
   const matchedShow = matchShow(cloudcast);
-  const matchedUploadHost = matchUploadHost(cloudcast);
-  if (!source.includeAllUploads && !matchedShow) return null;
-
-  const mixcloudKey = cloudcast.key || "";
-  const mixcloudUrl = cloudcast.url || "";
-  const cloudcastSlug = cloudcast.slug || slugFromKey(mixcloudKey);
-  const title = cloudcast.name || "Untitled Mixcloud Upload";
-  const showName = matchedShow?.showName || title;
-  const showSlug = matchedShow?.showSlug || slugify(showName || cloudcastSlug);
-  const imageUrl = getImageUrl(cloudcast);
+  const stationName =
+    clean(cloudcast.user?.name) || source.stationName || "Skull County Radio";
+  const host = getHost(cloudcast);
+  const cloudcastSlug =
+    clean(cloudcast.slug) || mixcloudKey.split("/").filter(Boolean).at(-1) || "";
+  const episodeTitle = clean(cloudcast.name) || "Untitled Mixcloud Upload";
+  const showName = matchedShow?.showName || episodeTitle;
+  const artworkUrl = getImageUrl(cloudcast);
   const publishedAt = getPublishedAt(cloudcast);
-  const createdAt = cloudcast.created_time || publishedAt;
-  const hostName = matchedUploadHost?.djName || source.djName;
 
   return {
-    id: `${source.id}-${cloudcastSlug || slugify(title)}`,
-    title,
-    showName,
-    showSlug,
-    host: hostName,
-    djName: hostName,
-    sourceId: source.id,
-    sourceLabel: source.label,
-    mixcloudUsername: source.username,
-    mixcloudKey,
-    mixcloudUrl,
-    embedUrl: cloudcast.embed_url || cloudcast.embedUrl || "",
-    imageUrl,
-    publishedAt,
-    createdAt,
-    date: formatDate(publishedAt || createdAt),
-    artwork: imageUrl || "/artwork/dj-hello-joey.jpg",
-    externalUrl: mixcloudUrl,
+    status: "published",
     platform: "Mixcloud",
+    account_slug:
+      clean(cloudcast.user?.username) || source.accountSlug,
+    station_name: stationName,
+    source_id: slugify(host.displayName),
+    source_label: stationName,
+    host_name: host.displayName,
+    host_username: host.username || null,
+    show_name: showName,
+    show_slug: matchedShow?.showSlug || slugify(showName || cloudcastSlug),
+    episode_title: episodeTitle,
+    episode_url: episodeUrl,
+    mixcloud_key: mixcloudKey,
+    published_at: publishedAt || null,
+    source_created_at: clean(cloudcast.created_time) || publishedAt || null,
+    artwork_url: artworkUrl || null,
+    embed_url: clean(cloudcast.embed_url || cloudcast.embedUrl) || null,
+    description: clean(cloudcast.description) || null,
+    tags: Array.isArray(cloudcast.tags)
+      ? cloudcast.tags.map((tag) => clean(tag.name)).filter(Boolean)
+      : [],
+    synced_at: new Date().toISOString(),
   };
-};
+}
 
-const dedupeArchiveItems = (items) => {
-  const seenKeys = new Set();
-  const seenUrls = new Set();
-  const dedupedItems = [];
+function matchShow(cloudcast) {
+  return showMatchers.find((show) =>
+    show.patterns.some(
+      (pattern) =>
+        pattern.test(cloudcast.name || "") ||
+        pattern.test(cloudcast.slug || ""),
+    ),
+  );
+}
 
-  for (const item of items) {
-    const key = item.mixcloudKey || "";
-    const url = item.mixcloudUrl || "";
-    if ((key && seenKeys.has(key)) || (url && seenUrls.has(url))) continue;
+function getHost(cloudcast) {
+  const directHost = Array.isArray(cloudcast.hosts)
+    ? cloudcast.hosts.find((host) => host?.username || host?.name)
+    : null;
 
-    if (key) seenKeys.add(key);
-    if (url) seenUrls.add(url);
-    dedupedItems.push(item);
+  if (directHost) {
+    const username = clean(directHost.username);
+    const profile = hostProfiles[username.toLowerCase()];
+
+    return {
+      username,
+      displayName:
+        profile?.displayName ||
+        clean(directHost.name) ||
+        formatDisplayName(username),
+    };
   }
 
-  return dedupedItems;
-};
+  const searchableText = [
+    cloudcast.name,
+    cloudcast.description,
+    ...(Array.isArray(cloudcast.tags)
+      ? cloudcast.tags.map((tag) => tag?.name)
+      : []),
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-const renderArchiveFile = (items) => `export const generatedMixcloudArchive = ${JSON.stringify(
-  items,
-  null,
-  2,
-)};
-`;
+  for (const [username, profile] of Object.entries(hostProfiles)) {
+    if (profile.patterns.some((pattern) => pattern.test(searchableText))) {
+      return {
+        username,
+        displayName: profile.displayName,
+      };
+    }
+  }
 
-const main = async () => {
-  const sourceResults = await Promise.all(
-    MIXCLOUD_SOURCES.map(async (source) => ({
-      source,
-      cloudcasts: await fetchCloudcastsForSource(source),
-    })),
+  return {
+    username: "",
+    displayName: "Unknown Host",
+  };
+}
+
+function formatDisplayName(value) {
+  return value
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getImageUrl(cloudcast) {
+  return clean(
+    cloudcast.pictures?.extra_large ||
+      cloudcast.pictures?.["640wx640h"] ||
+      cloudcast.pictures?.large ||
+      cloudcast.pictures?.medium ||
+      cloudcast.pictures?.thumbnail,
   );
+}
 
-  const archiveItems = sourceResults
+function getPublishedAt(cloudcast) {
+  return clean(
+    cloudcast.publish_date ||
+      cloudcast.published_time ||
+      cloudcast.created_time,
+  );
+}
+
+function clean(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function slugify(value) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+async function main() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error(
+      "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.",
+    );
+  }
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+  const slugs = configuredSlugs();
+  const sourceResults = await Promise.all(
+    slugs.map(async (accountSlug) => {
+      const source = sourceForSlug(accountSlug);
+      const cloudcasts = await fetchCloudcasts(accountSlug);
+      return { source, cloudcasts };
+    }),
+  );
+  const fetchedEpisodes = sourceResults
     .flatMap(({ source, cloudcasts }) =>
-      cloudcasts.map((cloudcast) => buildArchiveItem(source, cloudcast)),
+      cloudcasts.map((cloudcast) => buildEpisode(source, cloudcast)),
     )
     .filter(Boolean);
-
-  const nextItems = dedupeArchiveItems(archiveItems).sort((a, b) => {
-    const aTime = Date.parse(a.publishedAt || a.createdAt || "") || 0;
-    const bTime = Date.parse(b.publishedAt || b.createdAt || "") || 0;
-    return bTime - aTime;
-  });
-
-  await writeFile(archiveOutputPath, renderArchiveFile(nextItems));
-
-  console.log(`Generated ${nextItems.length} Mixcloud archive item(s).`);
-  sourceResults.forEach(({ source, cloudcasts }) =>
-    console.log(`- ${source.label}: ${cloudcasts.length} upload(s)`),
+  const uniqueEpisodes = Array.from(
+    new Map(
+      fetchedEpisodes.map((episode) => [episode.mixcloud_key, episode]),
+    ).values(),
   );
-};
+
+  if (uniqueEpisodes.length > 0) {
+    const { error: upsertError } = await supabase
+      .from("archive_episodes")
+      .upsert(uniqueEpisodes, {
+        onConflict: "mixcloud_key",
+      });
+
+    if (upsertError) throw upsertError;
+  }
+
+  console.log(
+    `Mixcloud archive sync: ${fetchedEpisodes.length} fetched, ${uniqueEpisodes.length} stored.`,
+  );
+  sourceResults.forEach(({ source, cloudcasts }) => {
+    console.log(`- ${source.accountSlug}: ${cloudcasts.length} upload(s)`);
+  });
+}
 
 main().catch((error) => {
-  console.error(error);
+  console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;
 });

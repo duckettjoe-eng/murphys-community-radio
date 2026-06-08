@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import LiveBroadcastButton from "@/app/components/LiveBroadcastButton";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { MusicArchiveItem } from "@/app/lib/localMusicArchive";
 
 type ShowArchiveCard = {
@@ -14,11 +14,12 @@ type ShowArchiveCard = {
   items: MusicArchiveItem[];
 };
 
-const sourceFilters = [
+const defaultSourceFilters = [
   { id: "all", label: "All DJs" },
   { id: "skull-county-radio", label: "Skull County Radio" },
   { id: "dj-hello-joey", label: "DJ Hello Joey" },
   { id: "dj-aquarobotics", label: "DJ Aquarobotics" },
+  { id: "dj-donette-g", label: "DJ Donette G" },
 ];
 
 function getHostLabel(item: MusicArchiveItem) {
@@ -39,20 +40,40 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+function getShowTitle(item: MusicArchiveItem) {
+  return (item.showName || item.title || "Archived Show").trim();
+}
+
+function getShowGroupKey(item: MusicArchiveItem) {
+  return getShowTitle(item).toLocaleLowerCase();
+}
+
 export default function ArchivePage() {
   const [archiveItems, setArchiveItems] = useState<MusicArchiveItem[]>([]);
   const [expandedShowSlug, setExpandedShowSlug] = useState<string | null>(null);
-  const [activeItem, setActiveItem] = useState<MusicArchiveItem | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [selectedSourceId, setSelectedSourceId] = useState("skull-county-radio");
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     fetch("/api/music-archive")
       .then((res) => res.json())
       .then((data) => setArchiveItems(data));
   }, []);
+
+  const sourceFilters = useMemo(() => {
+    const filters = new Map(
+      defaultSourceFilters.map((filter) => [filter.id, filter]),
+    );
+
+    archiveItems.forEach((item) => {
+      if (!item.sourceId || filters.has(item.sourceId)) return;
+      filters.set(item.sourceId, {
+        id: item.sourceId,
+        label: item.sourceLabel || item.djName || item.sourceId,
+      });
+    });
+
+    return Array.from(filters.values());
+  }, [archiveItems]);
 
   const filteredArchiveItems = useMemo(() => {
     if (selectedSourceId === "all") return archiveItems;
@@ -70,18 +91,18 @@ export default function ArchivePage() {
         item.sourceLabel === selectedFilter.label
       );
     });
-  }, [archiveItems, selectedSourceId]);
+  }, [archiveItems, selectedSourceId, sourceFilters]);
 
   const showCards = useMemo<ShowArchiveCard[]>(() => {
     const map = new Map<string, ShowArchiveCard>();
 
     filteredArchiveItems.forEach((item) => {
-      const name = item.showName || item.title || "Archived Show";
-      const slug = item.showSlug || slugify(name);
+      const name = getShowTitle(item);
+      const groupKey = getShowGroupKey(item);
 
-      if (!map.has(slug)) {
-        map.set(slug, {
-          slug,
+      if (!map.has(groupKey)) {
+        map.set(groupKey, {
+          slug: slugify(name),
           name,
           host: getHostLabel(item),
           sourceLabel: getSourceLabel(item),
@@ -90,7 +111,7 @@ export default function ArchivePage() {
         });
       }
 
-      map.get(slug)?.items.push(item);
+      map.get(groupKey)?.items.push(item);
     });
 
     return Array.from(map.values()).map((show) => {
@@ -103,34 +124,22 @@ export default function ArchivePage() {
         ),
       );
 
+      const items = [...show.items].sort((a, b) => {
+        const aTime = Date.parse(a.publishedAt || a.createdAt || "");
+        const bTime = Date.parse(b.publishedAt || b.createdAt || "");
+        return (Number.isNaN(bTime) ? 0 : bTime) -
+          (Number.isNaN(aTime) ? 0 : aTime);
+      });
+
       return {
         ...show,
+        artwork: items[0]?.artwork || show.artwork,
+        items,
         host: hostLabels.join(" / ") || show.host,
         sourceLabel: sourceLabels.join(" / ") || show.sourceLabel,
       };
     });
   }, [filteredArchiveItems]);
-
-  const playItem = (item: MusicArchiveItem) => {
-    setActiveItem(item);
-
-    setTimeout(() => {
-      audioRef.current?.play();
-      setIsPlaying(true);
-    }, 100);
-  };
-
-  const togglePlayback = () => {
-    if (!audioRef.current) return;
-
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current.play();
-      setIsPlaying(true);
-    }
-  };
 
   return (
     <main className="min-h-screen bg-black text-white pb-32">
@@ -193,31 +202,6 @@ export default function ArchivePage() {
         </p>
       </section>
 
-      {/* PLAYER */}
-      <section className="px-6 mb-12">
-        <div className="mx-auto max-w-5xl rounded-3xl border border-white/10 bg-[#17171b] p-6">
-          {activeItem ? (
-            <>
-              <h2 className="text-2xl font-black">{activeItem.title}</h2>
-              <p className="text-sm text-orange-300 mt-1">
-                {activeItem.host}
-              </p>
-
-              <button
-                onClick={togglePlayback}
-                className="mt-4 rounded-full bg-orange-400 px-6 py-3 font-black text-black"
-              >
-                {isPlaying ? "Pause" : "Play"}
-              </button>
-            </>
-          ) : (
-            <p className="text-white/60">
-              Select an archived show to listen on Mixcloud.
-            </p>
-          )}
-        </div>
-      </section>
-
       {/* SOURCE FILTER */}
       <section className="px-6 mb-8">
         <div className="mx-auto flex max-w-7xl flex-wrap gap-3">
@@ -257,20 +241,13 @@ export default function ArchivePage() {
                   key={show.slug}
                   className="overflow-hidden rounded-3xl border border-white/10 bg-[#17171b]"
                 >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setExpandedShowSlug(isExpanded ? null : show.slug)
-                    }
-                    className="block w-full text-left"
-                    aria-expanded={isExpanded}
-                  >
+                  <div className="block w-full">
                     <img
                       src={show.artwork}
                       className="aspect-square w-full object-cover"
                       alt={show.name}
                     />
-                  </button>
+                  </div>
 
                   <div className="p-6">
                     <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-300">
@@ -286,6 +263,19 @@ export default function ArchivePage() {
                         {show.sourceLabel}
                       </p>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedShowSlug(isExpanded ? null : show.slug)
+                      }
+                      className="mt-6 w-full rounded-full border border-white/15 px-5 py-3 font-black hover:bg-white/10"
+                      aria-expanded={isExpanded}
+                    >
+                      {isExpanded
+                        ? "Hide Episodes"
+                        : `View All Episodes (${show.items.length})`}
+                    </button>
 
                     {isExpanded && (
                       <div className="mt-6 space-y-3">
@@ -308,22 +298,15 @@ export default function ArchivePage() {
                               </p>
                             )}
 
-                            {item.externalUrl ? (
+                            {item.externalUrl && (
                               <a
                                 href={item.externalUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="mt-4 block w-full rounded-full bg-orange-400 px-5 py-3 text-center font-black text-black"
                               >
-                                Open on {item.platform || "Mixcloud"}
+                                Open on Mixcloud
                               </a>
-                            ) : (
-                              <button
-                                onClick={() => playItem(item)}
-                                className="mt-4 w-full rounded-full bg-orange-400 px-5 py-3 font-black text-black"
-                              >
-                                Play Episode
-                              </button>
                             )}
                           </div>
                         ))}
@@ -351,9 +334,6 @@ export default function ArchivePage() {
           </div>
         )}
       </section>
-
-      {activeItem && <audio ref={audioRef} src={activeItem.audioUrl} />}
-
     </main>
   );
 }
