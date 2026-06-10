@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+// Legacy AzuraCast integration retained for fallback.
 const azuraCastNowPlayingUrl =
   process.env.AZURACAST_NOW_PLAYING_URL ||
   "https://radio.murphyscommunityradio.com/api/nowplaying/skullcounty";

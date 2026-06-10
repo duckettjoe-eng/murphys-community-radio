@@ -12,6 +12,7 @@ import { getStationDateParts } from "@/app/lib/stationTime";
 export const dynamic = "force-dynamic";
 
 const hostPortalUrl = "https://kmcr-host-portal.base44.app/";
+const live365Url = process.env.NEXT_PUBLIC_LIVE365_PLAYER_URL;
 
 const foundingSupporters = [
   {
@@ -441,7 +442,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <RadioPlayer />
+      <RadioPlayer embedUrl={live365Url} />
     </main>
   );
 }
