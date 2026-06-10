@@ -6,29 +6,33 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Underwriter = {
   name: string;
   description: string;
-  image?: string;
+  image: string;
   website?: string;
-  initials: string;
+  imageClassName?: string;
 };
 
-// Replace placeholder underwriter details here as photos and links become available.
+// Add website URLs here when the underwriter destinations are confirmed.
 const underwriters: Underwriter[] = [
   {
     name: "Pure Aloha",
-    description: "Local flavor and community spirit from the heart of Murphys.",
-    image: "/partners/pure-aloha.png",
-    initials: "PA",
-  },
-  {
-    name: "Underwriter 2",
-    description: "Proudly supporting local voices, music, and community radio.",
-    initials: "U2",
-  },
-  {
-    name: "Underwriter 3",
     description:
-      "Helping keep independent programming on the air in Calaveras County.",
-    initials: "U3",
+      "Pure Aloha Cannabis Dispensary, proudly supporting community radio in Calaveras County.",
+    image: "/partners/pure-aloha-current.png",
+    imageClassName: "object-contain p-3",
+  },
+  {
+    name: "Xtra Good Labs",
+    description:
+      "Creative support for independent local voices, music, and community programming.",
+    image: "/partners/xtra-good-labs.jpg",
+    imageClassName: "object-contain p-4",
+  },
+  {
+    name: "Punch Creations",
+    description:
+      "Helping keep Murphys Community Radio creative, local, and on the air.",
+    image: "/partners/punch-creations.png",
+    imageClassName: "object-contain p-4",
   },
 ];
 
@@ -115,21 +119,13 @@ export default function CurrentUnderwritersCarousel() {
           const content = (
             <>
               <div className="relative h-40 overflow-hidden rounded-xl border border-white/10 bg-[linear-gradient(135deg,#27150d,#090909_55%,#3a220d)]">
-                {underwriter.image ? (
-                  <Image
-                    src={underwriter.image}
-                    alt={underwriter.name}
-                    fill
-                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                    className="object-contain p-5"
-                  />
-                ) : (
-                  <div className="grid h-full place-items-center">
-                    <span className="text-4xl font-black tracking-[0.12em] text-orange-200/80">
-                      {underwriter.initials}
-                    </span>
-                  </div>
-                )}
+                <Image
+                  src={underwriter.image}
+                  alt={`${underwriter.name} logo`}
+                  fill
+                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  className={underwriter.imageClassName || "object-contain p-4"}
+                />
               </div>
               <h4 className="mt-5 text-xl font-black text-white">
                 {underwriter.name}
