@@ -6,17 +6,28 @@ type RadioPlayerProps = {
 
 export default function RadioPlayer({ embedUrl }: RadioPlayerProps) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 max-h-[75vh] overflow-y-auto border-t border-orange-400/20 bg-black/95 px-4 py-4 backdrop-blur">
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-4 text-center">
-          <h2 className="text-xl font-black text-white">Listen Live</h2>
-          <p className="mt-1 text-sm font-semibold text-orange-300">
+    <section className="relative overflow-hidden border-t border-gold/45 bg-[#050806] px-6 py-20 shadow-[0_-18px_70px_rgba(201,155,59,0.12)] sm:py-24">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-light to-transparent opacity-80" />
+      <div className="absolute left-1/2 top-0 h-48 w-[42rem] max-w-full -translate-x-1/2 rounded-full bg-gold/10 blur-3xl" />
+
+      <div className="relative mx-auto max-w-[1100px] text-center">
+        <div>
+          <h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+            Listen Live
+          </h2>
+          <p className="mt-3 text-sm font-black uppercase tracking-[0.24em] text-gold-light sm:text-base">
             Murphys Community Radio
+          </p>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">
+            Streaming local music, DJs, stories, and community programming from
+            Calaveras County.
           </p>
         </div>
 
-        <Live365Player embedUrl={embedUrl} />
+        <div className="mx-auto mt-10 max-w-[900px] overflow-hidden rounded-2xl border border-gold/40 bg-black shadow-[0_24px_80px_rgba(201,155,59,0.18)]">
+          <Live365Player embedUrl={embedUrl} />
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -146,7 +146,7 @@ export default async function Home() {
   const nextShows = getNextShows();
 
   return (
-    <main className="min-h-screen bg-black pb-28 text-white">
+    <main className="min-h-screen bg-black text-white">
       {/* HERO */}
       <section className="relative overflow-hidden px-6 py-20">
         <div className="absolute left-[-120px] top-[-120px] h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
