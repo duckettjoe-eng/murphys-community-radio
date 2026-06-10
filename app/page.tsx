@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 
 const hostPortalUrl = "https://kmcr-host-portal.base44.app/";
 const live365Url = process.env.NEXT_PUBLIC_LIVE365_PLAYER_URL;
+const SHOW_FOUNDING_SUPPORTERS = false;
 
 const foundingSupporters = [
   {
@@ -146,7 +147,7 @@ export default async function Home() {
   const nextShows = getNextShows();
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-black pb-56 text-white sm:pb-40">
       {/* HERO */}
       <section className="relative overflow-hidden px-6 py-20">
         <div className="absolute left-[-120px] top-[-120px] h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
@@ -240,6 +241,11 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <RadioPlayer
+        live365Url={live365Url}
+        initialShow={currentScheduledShow}
+      />
 
       {/* SUPPORT */}
       <section className="px-6 py-20">
@@ -362,58 +368,62 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* FOUNDING SUPPORTERS */}
-      <section className="px-6 py-20">
-        <div className="mx-auto max-w-7xl rounded-3xl border border-zinc-800 bg-zinc-950 p-8 text-center sm:p-10">
-          <p className="text-sm font-black uppercase tracking-[0.35em] text-orange-400">
-            Founding Supporters
-          </p>
+      {SHOW_FOUNDING_SUPPORTERS ? (
+        <>
+          {/* FOUNDING SUPPORTERS */}
+          <section className="px-6 py-20">
+            <div className="mx-auto max-w-7xl rounded-3xl border border-zinc-800 bg-zinc-950 p-8 text-center sm:p-10">
+              <p className="text-sm font-black uppercase tracking-[0.35em] text-orange-400">
+                Founding Supporters
+              </p>
 
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-zinc-300">
-            Local businesses helping launch independent community radio in
-            Calaveras County.
-          </p>
+              <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-zinc-300">
+                Local businesses helping launch independent community radio in
+                Calaveras County.
+              </p>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {foundingSupporters.map((supporter) => (
-              <div
-                key={supporter.name}
-                className="flex min-h-40 items-center justify-center rounded-2xl border border-zinc-800 bg-black p-6"
-              >
-                {supporter.logo ? (
-                  <img
-                    src={supporter.logo}
-                    alt={supporter.name}
-                    className="max-h-24 w-full object-contain"
-                  />
-                ) : (
-                  <div className="text-center">
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">
-                      Murphys
-                    </p>
-                    <p className="mt-2 text-xl font-black leading-tight text-white">
-                      Mystical Emporium
-                    </p>
+              <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                {foundingSupporters.map((supporter) => (
+                  <div
+                    key={supporter.name}
+                    className="flex min-h-40 items-center justify-center rounded-2xl border border-zinc-800 bg-black p-6"
+                  >
+                    {supporter.logo ? (
+                      <img
+                        src={supporter.logo}
+                        alt={supporter.name}
+                        className="max-h-24 w-full object-contain"
+                      />
+                    ) : (
+                      <div className="text-center">
+                        <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">
+                          Murphys
+                        </p>
+                        <p className="mt-2 text-xl font-black leading-tight text-white">
+                          Mystical Emporium
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="mt-10 border-t border-zinc-800 pt-8">
-            <p className="text-xl font-black">
-              Interested in becoming a founding underwriter?
-            </p>
+              <div className="mt-10 border-t border-zinc-800 pt-8">
+                <p className="text-xl font-black">
+                  Interested in becoming a founding underwriter?
+                </p>
 
-            <Link
-              href="/underwrite"
-              className="mt-6 inline-flex rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300"
-            >
-              Contact Us
-            </Link>
-          </div>
-        </div>
-      </section>
+                <Link
+                  href="/underwrite"
+                  className="mt-6 inline-flex rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300"
+                >
+                  Contact Us
+                </Link>
+              </div>
+            </div>
+          </section>
+        </>
+      ) : null}
 
       {/* SUBMIT */}
       <section className="px-6 py-20">
@@ -441,8 +451,6 @@ export default async function Home() {
           </a>
         </div>
       </section>
-
-      <RadioPlayer embedUrl={live365Url} />
     </main>
   );
 }
