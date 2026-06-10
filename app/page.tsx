@@ -159,8 +159,8 @@ export default async function Home() {
             </div>
           </nav>
 
-          <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(480px,0.9fr)] lg:grid-rows-[1fr_auto] lg:items-center xl:gap-x-16">
-            <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
+          <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(480px,0.9fr)] lg:items-center xl:gap-x-16">
+            <div>
               <p className="mb-5 text-sm font-black uppercase tracking-[0.35em] text-orange-400">
                 Local voices. Real signal. Community radio.
               </p>
@@ -175,7 +175,7 @@ export default async function Home() {
               </p>
             </div>
 
-            <div className="flex min-w-0 flex-col items-center lg:col-start-2 lg:row-span-2 lg:row-start-1">
+            <div className="flex min-w-0 flex-col items-center">
               <img
                 src="/logos/murphys-radio-logo-color.png"
                 alt="Murphys Community Radio"
@@ -183,31 +183,6 @@ export default async function Home() {
               />
 
               <RadioPlayer embedUrl={live365Url} />
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:col-start-1 lg:row-start-2 lg:self-start">
-              <Link
-                href="/archive"
-                className="rounded-full bg-orange-400 px-7 py-4 text-center font-black text-black hover:bg-orange-300"
-              >
-                Listen to the Archive
-              </Link>
-
-              <a
-                href={hostPortalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-full border border-orange-400 px-7 py-4 text-center font-black text-orange-300 hover:bg-orange-400 hover:text-black"
-              >
-                Submit a Show
-              </a>
-
-              <Link
-                href="/underwrite"
-                className="rounded-full border border-zinc-700 px-7 py-4 text-center font-black text-white hover:bg-zinc-900"
-              >
-                Become a Sponsor
-              </Link>
             </div>
           </div>
         </div>
@@ -274,6 +249,37 @@ export default async function Home() {
       {/* PROGRAMMING */}
       <section className="px-6 py-20">
         <div className="mx-auto max-w-7xl">
+          <div className="mb-16 border-b border-zinc-800 pb-12">
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-zinc-500">
+              Explore the Station
+            </p>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <Link
+                href="/archive"
+                className="rounded-full bg-orange-400 px-6 py-3 text-center text-sm font-black text-black hover:bg-orange-300 sm:py-4 sm:text-base"
+              >
+                Listen to the Archive
+              </Link>
+
+              <a
+                href={hostPortalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-orange-400 px-6 py-3 text-center text-sm font-black text-orange-300 hover:bg-orange-400 hover:text-black sm:py-4 sm:text-base"
+              >
+                Submit a Show
+              </a>
+
+              <Link
+                href="/underwrite"
+                className="rounded-full border border-zinc-700 px-6 py-3 text-center text-sm font-black text-white hover:bg-zinc-900 sm:py-4 sm:text-base"
+              >
+                Become a Sponsor
+              </Link>
+            </div>
+          </div>
+
           <p className="text-sm font-black uppercase tracking-[0.35em] text-orange-400">
             Programming
           </p>
