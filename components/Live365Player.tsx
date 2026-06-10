@@ -44,7 +44,7 @@ export default function Live365Player({
   if (!embedUrl || !isValidEmbedUrl(embedUrl)) {
     return (
       <div
-        className="grid h-[316px] place-items-center bg-black/40 px-6 text-center text-sm font-semibold text-zinc-300 sm:h-[336px]"
+        className="grid h-[220px] place-items-center bg-black/40 px-6 text-center text-sm font-semibold text-zinc-300 sm:h-[236px]"
         role="status"
       >
         Live365 player is not configured yet.
@@ -53,19 +53,25 @@ export default function Live365Player({
   }
 
   const playerUrl = getPlayerUrl(embedUrl, playerSize);
-  const playerHeight = playerSize === "lg" ? 336 : 316;
+  const sourceHeight = playerSize === "lg" ? 336 : 316;
+  const displayHeight = playerSize === "lg" ? 236 : 220;
+  const playerScale = displayHeight / sourceHeight;
 
   return (
-    <div className="overflow-hidden">
+    <div
+      className="overflow-hidden"
+      style={{ height: `${displayHeight}px` }}
+    >
       <iframe
         title="Murphys Community Radio Live365 Player"
         src={playerUrl}
-        width="100%"
-        height={playerHeight}
+        width={`${100 / playerScale}%`}
+        height={sourceHeight}
         frameBorder="0"
         allow="autoplay"
         loading="lazy"
-        className="block h-[316px] w-full max-w-full overflow-hidden border-0 sm:h-[336px]"
+        className="block max-w-none origin-top-left overflow-hidden border-0"
+        style={{ transform: `scale(${playerScale})` }}
       />
     </div>
   );

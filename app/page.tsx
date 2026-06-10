@@ -1,5 +1,6 @@
 import Link from "next/link";
 import LiveBroadcastButton from "@/app/components/LiveBroadcastButton";
+import CurrentUnderwritersCarousel from "./components/CurrentUnderwritersCarousel";
 import RadioPlayer from "./components/RadioPlayer";
 import { localSchedule } from "@/app/lib/localSchedule";
 import { getStationDateParts } from "@/app/lib/stationTime";
@@ -117,12 +118,12 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-black text-white">
       {/* HERO */}
-      <section className="relative overflow-hidden px-6 py-20">
+      <section className="relative overflow-hidden border-b border-orange-400/20 px-6 pb-12 pt-8 sm:pb-16 sm:pt-10">
         <div className="absolute left-[-120px] top-[-120px] h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
         <div className="absolute bottom-[-160px] right-[-120px] h-96 w-96 rounded-full bg-yellow-500/10 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl">
-          <nav className="mb-16 flex flex-wrap items-center justify-between gap-4">
+          <nav className="mb-10 flex flex-wrap items-center justify-between gap-4 lg:mb-12">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.35em] text-orange-400">
                 Murphys Community Radio
@@ -158,59 +159,68 @@ export default async function Home() {
             </div>
           </nav>
 
-          <div className="grid gap-12 lg:grid-cols-[1fr_1fr] lg:items-center">
-            <div>
+          <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(480px,0.9fr)] lg:grid-rows-[1fr_auto] lg:items-center xl:gap-x-16">
+            <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
               <p className="mb-5 text-sm font-black uppercase tracking-[0.35em] text-orange-400">
                 Local voices. Real signal. Community radio.
               </p>
 
-              <h1 className="max-w-4xl text-6xl font-black leading-none tracking-tight md:text-8xl">
+              <h1 className="max-w-4xl text-5xl font-black leading-none tracking-tight sm:text-6xl md:text-7xl xl:text-8xl">
                 Murphys Community Radio
               </h1>
 
-              <p className="mt-8 max-w-2xl text-xl leading-8 text-zinc-300">
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-xl">
                 A community-built radio platform for local music, DJs,
                 storytellers, artists, events, and Calaveras County culture.
               </p>
-
-              <div className="mt-10 flex flex-wrap gap-4">
-                <Link
-                  href="/archive"
-                  className="rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300"
-                >
-                  Listen to the Archive
-                </Link>
-
-                <a
-                  href={hostPortalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
-                >
-                  Submit a Show
-                </a>
-
-                <Link
-                  href="/underwrite"
-                  className="rounded-full border border-zinc-700 px-7 py-4 font-black text-white hover:bg-zinc-900"
-                >
-                  Become a Sponsor
-                </Link>
-              </div>
             </div>
 
-            <div className="flex justify-center lg:justify-end">
+            <div className="flex min-w-0 flex-col items-center lg:col-start-2 lg:row-span-2 lg:row-start-1">
               <img
                 src="/logos/murphys-radio-logo-color.png"
                 alt="Murphys Community Radio"
-                className="w-[300px] drop-shadow-[0_30px_80px_rgba(0,0,0,0.9)] md:w-[500px] lg:w-[620px] xl:w-[700px]"
+                className="w-[280px] max-w-full drop-shadow-[0_24px_65px_rgba(0,0,0,0.9)] sm:w-[360px] lg:w-[420px]"
               />
+
+              <RadioPlayer embedUrl={live365Url} />
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:col-start-1 lg:row-start-2 lg:self-start">
+              <Link
+                href="/archive"
+                className="rounded-full bg-orange-400 px-7 py-4 text-center font-black text-black hover:bg-orange-300"
+              >
+                Listen to the Archive
+              </Link>
+
+              <a
+                href={hostPortalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-orange-400 px-7 py-4 text-center font-black text-orange-300 hover:bg-orange-400 hover:text-black"
+              >
+                Submit a Show
+              </a>
+
+              <Link
+                href="/underwrite"
+                className="rounded-full border border-zinc-700 px-7 py-4 text-center font-black text-white hover:bg-zinc-900"
+              >
+                Become a Sponsor
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      <RadioPlayer embedUrl={live365Url} />
+      <section
+        aria-label="Current underwriters"
+        className="border-b border-white/10 bg-[#070707] px-6 py-10 sm:py-12"
+      >
+        <div className="mx-auto max-w-7xl">
+          <CurrentUnderwritersCarousel />
+        </div>
+      </section>
 
       {/* SUPPORT */}
       <section className="px-6 py-20">

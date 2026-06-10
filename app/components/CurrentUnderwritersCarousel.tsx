@@ -78,18 +78,18 @@ export default function CurrentUnderwritersCarousel() {
   };
 
   return (
-    <div className="mt-16 border-t border-white/10 pt-12">
+    <div>
       <div className="flex flex-col gap-5 text-left sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h3 className="text-3xl font-black text-white">
+          <h3 className="text-2xl font-black text-white sm:text-3xl">
             Current Underwriters
           </h3>
-          <p className="mt-3 max-w-2xl leading-7 text-zinc-400">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base">
             Local businesses helping keep Murphys Community Radio on the air.
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 lg:hidden">
           <button
             type="button"
             onClick={() => scroll(-1)}
@@ -113,12 +113,12 @@ export default function CurrentUnderwritersCarousel() {
 
       <div
         ref={trackRef}
-        className="mt-8 grid snap-x snap-mandatory auto-cols-[100%] grid-flow-col gap-5 overflow-x-auto overscroll-x-contain scroll-smooth [scrollbar-width:none] sm:auto-cols-[calc((100%_-_1.25rem)/2)] lg:auto-cols-[calc((100%_-_2.5rem)/3)] [&::-webkit-scrollbar]:hidden"
+        className="mt-6 grid snap-x snap-mandatory auto-cols-[88%] grid-flow-col gap-4 overflow-x-auto overscroll-x-contain scroll-smooth [scrollbar-width:none] sm:auto-cols-[calc((100%_-_1rem)/2)] lg:grid-flow-row lg:grid-cols-3 lg:overflow-visible [&::-webkit-scrollbar]:hidden"
       >
         {underwriters.map((underwriter) => {
           const content = (
             <>
-              <div className="relative h-40 overflow-hidden rounded-xl border border-white/10 bg-[linear-gradient(135deg,#27150d,#090909_55%,#3a220d)]">
+              <div className="relative h-32 overflow-hidden rounded-xl border border-white/10 bg-[linear-gradient(135deg,#27150d,#090909_55%,#3a220d)] sm:h-36">
                 <Image
                   src={underwriter.image}
                   alt={`${underwriter.name} logo`}
@@ -127,7 +127,7 @@ export default function CurrentUnderwritersCarousel() {
                   className={underwriter.imageClassName || "object-contain p-4"}
                 />
               </div>
-              <h4 className="mt-5 text-xl font-black text-white">
+              <h4 className="mt-4 text-lg font-black text-white">
                 {underwriter.name}
               </h4>
               <p className="mt-2 text-sm leading-6 text-zinc-400">
@@ -142,14 +142,14 @@ export default function CurrentUnderwritersCarousel() {
               href={underwriter.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="snap-start rounded-2xl border border-white/10 bg-zinc-950 p-5 text-left transition hover:border-orange-400/45"
+              className="snap-start rounded-2xl border border-white/10 bg-zinc-950 p-4 text-left transition hover:border-orange-400/45"
             >
               {content}
             </a>
           ) : (
             <article
               key={underwriter.name}
-              className="snap-start rounded-2xl border border-white/10 bg-zinc-950 p-5 text-left"
+              className="snap-start rounded-2xl border border-white/10 bg-zinc-950 p-4 text-left"
             >
               {content}
             </article>
