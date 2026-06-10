@@ -1,4 +1,5 @@
 import Live365Player from "@/components/Live365Player";
+import CurrentUnderwritersCarousel from "./CurrentUnderwritersCarousel";
 
 type RadioPlayerProps = {
   embedUrl?: string;
@@ -28,11 +29,13 @@ export default function RadioPlayer({ embedUrl }: RadioPlayerProps) {
           Calaveras County.
         </p>
 
-        <div className="mx-auto mt-10 max-w-[860px] rounded-2xl border border-orange-400/35 bg-zinc-950 p-3 shadow-[0_24px_80px_rgba(249,115,22,0.16)] sm:p-5">
+        <div className="mx-auto mt-9 max-w-[620px] rounded-2xl border border-orange-400/35 bg-zinc-950 p-2 shadow-[0_24px_70px_rgba(249,115,22,0.16)] sm:p-3">
           <div className="overflow-hidden rounded-xl bg-black">
             <Live365Player embedUrl={embedUrl} />
           </div>
         </div>
+
+        <CurrentUnderwritersCarousel />
       </div>
     </section>
   );

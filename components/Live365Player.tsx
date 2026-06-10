@@ -18,7 +18,7 @@ export default function Live365Player({
   if (!isValidEmbedUrl(embedUrl)) {
     return (
       <div
-        className="grid h-[300px] place-items-center bg-black/40 px-6 text-center text-sm font-semibold text-zinc-300 md:h-[320px]"
+        className="grid h-[220px] place-items-center bg-black/40 px-6 text-center text-sm font-semibold text-zinc-300 md:h-[230px]"
         role="status"
       >
         Live365 player is not configured yet.
@@ -32,11 +32,11 @@ export default function Live365Player({
         title="Murphys Community Radio Live365 Player"
         src={embedUrl}
         width="100%"
-        height="320"
+        height="230"
         frameBorder="0"
         allow="autoplay"
         loading="lazy"
-        className="block h-[300px] w-full max-w-full overflow-hidden border-0 md:h-[320px]"
+        className="block h-[220px] w-full max-w-full overflow-hidden border-0 md:h-[230px]"
       />
     </div>
   );

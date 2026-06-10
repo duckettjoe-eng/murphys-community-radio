@@ -1,0 +1,165 @@
+"use client";
+
+import Image from "next/image";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+type Underwriter = {
+  name: string;
+  description: string;
+  image?: string;
+  website?: string;
+  initials: string;
+};
+
+// Replace placeholder underwriter details here as photos and links become available.
+const underwriters: Underwriter[] = [
+  {
+    name: "Pure Aloha",
+    description: "Local flavor and community spirit from the heart of Murphys.",
+    image: "/partners/pure-aloha.png",
+    initials: "PA",
+  },
+  {
+    name: "Underwriter 2",
+    description: "Proudly supporting local voices, music, and community radio.",
+    initials: "U2",
+  },
+  {
+    name: "Underwriter 3",
+    description:
+      "Helping keep independent programming on the air in Calaveras County.",
+    initials: "U3",
+  },
+];
+
+export default function CurrentUnderwritersCarousel() {
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const [canScrollBack, setCanScrollBack] = useState(false);
+  const [canScrollForward, setCanScrollForward] = useState(false);
+
+  const updateControls = useCallback(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    setCanScrollBack(track.scrollLeft > 4);
+    setCanScrollForward(
+      track.scrollLeft + track.clientWidth < track.scrollWidth - 4,
+    );
+  }, []);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    updateControls();
+    track.addEventListener("scroll", updateControls, { passive: true });
+
+    const resizeObserver = new ResizeObserver(updateControls);
+    resizeObserver.observe(track);
+
+    return () => {
+      track.removeEventListener("scroll", updateControls);
+      resizeObserver.disconnect();
+    };
+  }, [updateControls]);
+
+  const scroll = (direction: -1 | 1) => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    track.scrollBy({
+      left: direction * track.clientWidth,
+      behavior: "smooth",
+    });
+  };
+
+  return (
+    <div className="mt-16 border-t border-white/10 pt-12">
+      <div className="flex flex-col gap-5 text-left sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h3 className="text-3xl font-black text-white">
+            Current Underwriters
+          </h3>
+          <p className="mt-3 max-w-2xl leading-7 text-zinc-400">
+            Local businesses helping keep Murphys Community Radio on the air.
+          </p>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => scroll(-1)}
+            disabled={!canScrollBack}
+            aria-label="Previous underwriters"
+            className="grid h-11 w-11 place-items-center rounded-full border border-orange-400/40 bg-black text-xl text-orange-300 transition hover:border-orange-300 hover:bg-orange-400 hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <span aria-hidden="true">&larr;</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => scroll(1)}
+            disabled={!canScrollForward}
+            aria-label="Next underwriters"
+            className="grid h-11 w-11 place-items-center rounded-full border border-orange-400/40 bg-black text-xl text-orange-300 transition hover:border-orange-300 hover:bg-orange-400 hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <span aria-hidden="true">&rarr;</span>
+          </button>
+        </div>
+      </div>
+
+      <div
+        ref={trackRef}
+        className="mt-8 grid snap-x snap-mandatory auto-cols-[100%] grid-flow-col gap-5 overflow-x-auto overscroll-x-contain scroll-smooth [scrollbar-width:none] sm:auto-cols-[calc((100%_-_1.25rem)/2)] lg:auto-cols-[calc((100%_-_2.5rem)/3)] [&::-webkit-scrollbar]:hidden"
+      >
+        {underwriters.map((underwriter) => {
+          const content = (
+            <>
+              <div className="relative h-40 overflow-hidden rounded-xl border border-white/10 bg-[linear-gradient(135deg,#27150d,#090909_55%,#3a220d)]">
+                {underwriter.image ? (
+                  <Image
+                    src={underwriter.image}
+                    alt={underwriter.name}
+                    fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    className="object-contain p-5"
+                  />
+                ) : (
+                  <div className="grid h-full place-items-center">
+                    <span className="text-4xl font-black tracking-[0.12em] text-orange-200/80">
+                      {underwriter.initials}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <h4 className="mt-5 text-xl font-black text-white">
+                {underwriter.name}
+              </h4>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">
+                {underwriter.description}
+              </p>
+            </>
+          );
+
+          return underwriter.website ? (
+            <a
+              key={underwriter.name}
+              href={underwriter.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="snap-start rounded-2xl border border-white/10 bg-zinc-950 p-5 text-left transition hover:border-orange-400/45"
+            >
+              {content}
+            </a>
+          ) : (
+            <article
+              key={underwriter.name}
+              className="snap-start rounded-2xl border border-white/10 bg-zinc-950 p-5 text-left"
+            >
+              {content}
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
