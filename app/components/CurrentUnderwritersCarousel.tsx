@@ -18,21 +18,21 @@ const underwriters: Underwriter[] = [
     description:
       "Pure Aloha Cannabis Dispensary, proudly supporting community radio in Calaveras County.",
     image: "/partners/pure-aloha-current.png",
-    imageClassName: "object-contain p-3",
+    imageClassName: "object-contain scale-110",
   },
   {
     name: "Xtra Good Labs",
     description:
       "Creative support for independent local voices, music, and community programming.",
     image: "/partners/xtra-good-labs.jpg",
-    imageClassName: "object-contain p-4",
+    imageClassName: "object-contain",
   },
   {
     name: "Punch Creations",
     description:
       "Helping keep Murphys Community Radio creative, local, and on the air.",
     image: "/partners/punch-creations.png",
-    imageClassName: "object-contain p-4",
+    imageClassName: "object-contain p-2",
   },
 ];
 
@@ -118,21 +118,23 @@ export default function CurrentUnderwritersCarousel() {
         {underwriters.map((underwriter) => {
           const content = (
             <>
-              <div className="relative h-32 overflow-hidden rounded-xl border border-white/10 bg-[linear-gradient(135deg,#27150d,#090909_55%,#3a220d)] sm:h-36">
+              <div className="relative h-56 overflow-hidden border-b border-orange-400/20 bg-[linear-gradient(135deg,#27150d,#090909_55%,#3a220d)] sm:h-60">
                 <Image
                   src={underwriter.image}
                   alt={`${underwriter.name} logo`}
                   fill
                   sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                  className={underwriter.imageClassName || "object-contain p-4"}
+                  className={underwriter.imageClassName || "object-contain"}
                 />
               </div>
-              <h4 className="mt-4 text-lg font-black text-white">
-                {underwriter.name}
-              </h4>
-              <p className="mt-2 text-sm leading-6 text-zinc-400">
-                {underwriter.description}
-              </p>
+              <div className="p-5">
+                <h4 className="text-xl font-black text-white">
+                  {underwriter.name}
+                </h4>
+                <p className="mt-2 text-sm leading-6 text-zinc-400">
+                  {underwriter.description}
+                </p>
+              </div>
             </>
           );
 
@@ -142,14 +144,14 @@ export default function CurrentUnderwritersCarousel() {
               href={underwriter.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="snap-start rounded-2xl border border-white/10 bg-zinc-950 p-4 text-left transition hover:border-orange-400/45"
+              className="snap-start overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 text-left transition hover:border-orange-400/45"
             >
               {content}
             </a>
           ) : (
             <article
               key={underwriter.name}
-              className="snap-start rounded-2xl border border-white/10 bg-zinc-950 p-4 text-left"
+              className="snap-start overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 text-left"
             >
               {content}
             </article>
