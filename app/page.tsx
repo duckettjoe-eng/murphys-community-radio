@@ -1,12 +1,7 @@
 import Link from "next/link";
 import LiveBroadcastButton from "@/app/components/LiveBroadcastButton";
 import RadioPlayer from "./components/RadioPlayer";
-import { getLiveOverrideShow } from "@/app/lib/liveOverride";
 import { localSchedule } from "@/app/lib/localSchedule";
-import {
-  getManualLiveStatus,
-  manualStatusToShow,
-} from "@/app/lib/manualLiveStatus";
 import { getStationDateParts } from "@/app/lib/stationTime";
 
 export const dynamic = "force-dynamic";
@@ -88,32 +83,6 @@ function formatTime(time: string) {
   return `${displayHour}${displayMinute} ${suffix}`;
 }
 
-function isCurrentShow(show: (typeof localSchedule)[number]) {
-  const { day: currentDay, minutes: currentMinutes } = getStationDateParts();
-
-  if (show.day !== currentDay) return false;
-
-  const start = toMinutes(show.start);
-  const end = toMinutes(show.end);
-  const isFullDay = show.start === "00:00" && show.end === "23:59";
-
-  return (
-    currentMinutes >= start &&
-    (isFullDay ? currentMinutes <= end : currentMinutes < end)
-  );
-}
-
-async function getCurrentScheduledShow() {
-  const manualLiveStatus = await getManualLiveStatus();
-
-  return (
-    manualStatusToShow(manualLiveStatus) ||
-    getLiveOverrideShow() ||
-    localSchedule.find(isCurrentShow) ||
-    null
-  );
-}
-
 function getNextShows() {
   const { day: currentDay, minutes: currentMinutes } = getStationDateParts();
 
@@ -143,11 +112,10 @@ function getNextShows() {
 }
 
 export default async function Home() {
-  const currentScheduledShow = await getCurrentScheduledShow();
   const nextShows = getNextShows();
 
   return (
-    <main className="min-h-screen bg-black pb-56 text-white sm:pb-40">
+    <main className="min-h-screen bg-black text-white">
       {/* HERO */}
       <section className="relative overflow-hidden px-6 py-20">
         <div className="absolute left-[-120px] top-[-120px] h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
@@ -242,10 +210,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <RadioPlayer
-        live365Url={live365Url}
-        initialShow={currentScheduledShow}
-      />
+      <RadioPlayer embedUrl={live365Url} />
 
       {/* SUPPORT */}
       <section className="px-6 py-20">
