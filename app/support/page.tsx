@@ -98,16 +98,35 @@ export default function SupportPage() {
         <section className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 sm:p-10">
           <h2 className="text-3xl font-black">MCR Merch</h2>
           <p className="mt-4 leading-7 text-zinc-300">
-            We’re working on MCR shirts, stickers, mugs, and other station
-            merch. Proceeds will help support the station and spread the word
-            around Calaveras County.
+            Shop MCR merch and help support the station while spreading the
+            word around Calaveras County.
           </p>
-          <a
-            href="#merch-placeholder"
-            className="mt-8 inline-flex rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300"
-          >
-            Merch Coming Soon
-          </a>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a
+              href="https://xtra-good-7479.myshopify.com/products/mcr-trucker"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300"
+            >
+              MCR Trucker
+            </a>
+            <a
+              href="https://xtra-good-7479.myshopify.com/products/mcr-broadcaster"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
+            >
+              MCR Broadcaster
+            </a>
+            <a
+              href="https://xtra-good-7479.myshopify.com/products/halo-hear-rose"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
+            >
+              Halo Hear Rose
+            </a>
+          </div>
         </section>
 
         <section className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 sm:p-10">
