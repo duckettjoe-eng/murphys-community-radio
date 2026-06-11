@@ -71,26 +71,57 @@ export default function SupportPage() {
         <section className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 sm:p-10">
           <h2 className="text-3xl font-black">Listener Support</h2>
           <p className="mt-4 leading-7 text-zinc-300">
-            Soon you’ll be able to make a one-time contribution or become a
-            recurring listener supporter. These contributions will help cover
-            streaming, licensing, equipment, and community programming costs.
+            Make a one-time contribution to help cover streaming, licensing,
+            equipment, and community programming costs.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="https://buy.stripe.com/28E14p6GQekA1iG9E81gs0a"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300"
-            >
-              Contribute $10
-            </a>
             <a
               href="https://buy.stripe.com/14A3cx5CM5O48L8bMg1gs0b"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
+              className="inline-flex rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300"
             >
               Contribute $5
+            </a>
+            <a
+              href="https://buy.stripe.com/28E14p6GQekA1iG9E81gs0a"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
+            >
+              Contribute $10
+            </a>
+            <a
+              href="https://buy.stripe.com/9B66oJ5CM0tKbXk03y1gs00"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
+            >
+              Contribute $25
+            </a>
+            <a
+              href="https://buy.stripe.com/00wbJ31mw2BS4uS2bG1gs02"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
+            >
+              Contribute $100
+            </a>
+            <a
+              href="https://buy.stripe.com/bJe00lghqekA8L8eYs1gs03"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
+            >
+              Contribute $250
+            </a>
+            <a
+              href="https://buy.stripe.com/aFa8wR0isa4k2mK03y1gs01"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
+            >
+              Contribute $500
             </a>
           </div>
         </section>
@@ -101,30 +132,36 @@ export default function SupportPage() {
             Shop MCR merch and help support the station while spreading the
             word around Calaveras County.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <a
               href="https://xtra-good-7479.myshopify.com/products/mcr-trucker"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300"
+              className="group overflow-hidden rounded-2xl border border-zinc-800 bg-black transition hover:border-orange-400"
             >
-              MCR Trucker
+              <img
+                src="/images/merch/mcr-trucker.webp"
+                alt="MCR Trucker cap"
+                className="aspect-square w-full object-cover transition duration-300 group-hover:scale-105"
+              />
+              <span className="block px-5 py-4 text-center font-black text-orange-300">
+                Shop MCR Trucker
+              </span>
             </a>
             <a
               href="https://xtra-good-7479.myshopify.com/products/mcr-broadcaster"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
+              className="group overflow-hidden rounded-2xl border border-zinc-800 bg-black transition hover:border-orange-400"
             >
-              MCR Broadcaster
-            </a>
-            <a
-              href="https://xtra-good-7479.myshopify.com/products/halo-hear-rose"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex rounded-full border border-orange-400 px-7 py-4 font-black text-orange-300 hover:bg-orange-400 hover:text-black"
-            >
-              Halo Hear Rose
+              <img
+                src="/images/merch/mcr-broadcaster.webp"
+                alt="MCR Broadcaster shirt"
+                className="aspect-square w-full object-cover transition duration-300 group-hover:scale-105"
+              />
+              <span className="block px-5 py-4 text-center font-black text-orange-300">
+                Shop MCR Broadcaster
+              </span>
             </a>
           </div>
         </section>
