@@ -141,7 +141,7 @@ export default function SupportPage() {
             >
               <img
                 src="/images/merch/mcr-trucker.webp"
-                alt="MCR Trucker cap"
+                alt="Black MCR Trucker cap"
                 className="aspect-square w-full object-cover transition duration-300 group-hover:scale-105"
               />
               <span className="block px-5 py-4 text-center font-black text-orange-300">
@@ -156,7 +156,7 @@ export default function SupportPage() {
             >
               <img
                 src="/images/merch/mcr-broadcaster.webp"
-                alt="MCR Broadcaster shirt"
+                alt="Tennessee orange MCR Broadcaster shirt"
                 className="aspect-square w-full object-cover transition duration-300 group-hover:scale-105"
               />
               <span className="block px-5 py-4 text-center font-black text-orange-300">
