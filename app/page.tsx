@@ -9,30 +9,6 @@ export const dynamic = "force-dynamic";
 
 const hostPortalUrl = "https://kmcr-host-portal.base44.app/";
 const live365Url = process.env.NEXT_PUBLIC_LIVE365_PLAYER_URL;
-const SHOW_FOUNDING_SUPPORTERS = false;
-
-const foundingSupporters = [
-  {
-    name: "Murphys Irish Pub",
-    logo: "/partners/murphys-irish-pub.png",
-  },
-  {
-    name: "Murphys Grade",
-    logo: "/partners/murphys-grade-logo.webp",
-  },
-  {
-    name: "The Pourhouse",
-    logo: "/partners/murphys-pourhouse-logo.jpg",
-  },
-  {
-    name: "Pure Aloha",
-    logo: "/partners/pure-aloha.png",
-  },
-  {
-    name: "Murphys Mystical Emporium",
-    logo: null,
-  },
-];
 
 const spotifyMap: Record<string, string> = {
   "Golden Hour Groove":
@@ -189,6 +165,7 @@ export default async function Home() {
       </section>
 
       <section
+        id="underwriters"
         aria-label="Current underwriters"
         className="border-b border-white/10 bg-[#070707] px-6 py-10 sm:py-12"
       >
@@ -348,63 +325,6 @@ export default async function Home() {
           </div>
         </div>
       </section>
-
-      {SHOW_FOUNDING_SUPPORTERS ? (
-        <>
-          {/* FOUNDING SUPPORTERS */}
-          <section className="px-6 py-20">
-            <div className="mx-auto max-w-7xl rounded-3xl border border-zinc-800 bg-zinc-950 p-8 text-center sm:p-10">
-              <p className="text-sm font-black uppercase tracking-[0.35em] text-orange-400">
-                Founding Supporters
-              </p>
-
-              <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-zinc-300">
-                Local businesses helping launch independent community radio in
-                Calaveras County.
-              </p>
-
-              <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                {foundingSupporters.map((supporter) => (
-                  <div
-                    key={supporter.name}
-                    className="flex min-h-40 items-center justify-center rounded-2xl border border-zinc-800 bg-black p-6"
-                  >
-                    {supporter.logo ? (
-                      <img
-                        src={supporter.logo}
-                        alt={supporter.name}
-                        className="max-h-24 w-full object-contain"
-                      />
-                    ) : (
-                      <div className="text-center">
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">
-                          Murphys
-                        </p>
-                        <p className="mt-2 text-xl font-black leading-tight text-white">
-                          Mystical Emporium
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-10 border-t border-zinc-800 pt-8">
-                <p className="text-xl font-black">
-                  Interested in becoming a founding underwriter?
-                </p>
-
-                <Link
-                  href="/underwrite"
-                  className="mt-6 inline-flex rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300"
-                >
-                  Contact Us
-                </Link>
-              </div>
-            </div>
-          </section>
-        </>
-      ) : null}
 
       {/* SUBMIT */}
       <section className="px-6 py-20">
