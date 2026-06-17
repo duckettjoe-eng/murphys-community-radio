@@ -4,34 +4,12 @@ import CurrentUnderwritersCarousel from "./components/CurrentUnderwritersCarouse
 import RadioPlayer from "./components/RadioPlayer";
 import { localSchedule } from "@/app/lib/localSchedule";
 import { getStationDateParts } from "@/app/lib/stationTime";
+import { getSpotifyEmbedUrl, getSpotifyOpenUrl } from "@/app/lib/spotifyPlaylists";
 
 export const dynamic = "force-dynamic";
 
 const hostPortalUrl = "https://kmcr-host-portal.base44.app/";
 const live365Url = process.env.NEXT_PUBLIC_LIVE365_PLAYER_URL;
-
-const spotifyMap: Record<string, string> = {
-  "Golden Hour Groove":
-    "https://open.spotify.com/embed/playlist/6MmSFo11AbLLGuXx8iUQI8",
-  "Dusty Crate Hip-Hop Hour":
-    "https://open.spotify.com/embed/playlist/31SuOU4Vbv7xjdtYlW4PE1",
-  "Cali Sun Reggae Ride":
-    "https://open.spotify.com/embed/playlist/0mf1PWxgjPUG8abErI67tC",
-  "Alt-Rock Barroom Radio":
-    "https://open.spotify.com/embed/playlist/4LCviG4Etf6sfoQNNWbRfs",
-  "Weird Late-Night FM":
-    "https://open.spotify.com/embed/playlist/5bChhr0FAb32b2oevGyUAv",
-  "House Party Frequency":
-    "https://open.spotify.com/embed/playlist/24x2HGar6r7xStbu7VktN4",
-  "Lowrider Soul Sunday":
-    "https://open.spotify.com/embed/playlist/5mkOQT5zf6vag2lAzjgPEp",
-  "Campfire Americana":
-    "https://open.spotify.com/embed/playlist/27dShIERXqZ5HZG3gVIuRX",
-  "Mashup Crate Hour":
-    "https://open.spotify.com/embed/playlist/5wIMxNuCrHLXbGcnN6e4eb",
-  "Skull County Garage Gospel":
-    "https://open.spotify.com/embed/playlist/5ciTziF2CsE7ifteDHg0FW",
-};
 
 const dayNames = [
   "Sunday",
@@ -264,14 +242,14 @@ export default async function Home() {
           <h2 className="mt-4 text-5xl font-black">Up Next</h2>
 
           <p className="mt-4 max-w-2xl leading-7 text-zinc-400">
-            The next three scheduled Skull County Radio shows, linked to their
-            companion Spotify playlists.
+            The next three scheduled Skull County Radio shows, with companion
+            Spotify playlists when they are available.
           </p>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {nextShows.map((show, index) => {
-              const spotifyEmbedUrl = spotifyMap[show.name];
-              const spotifyOpenUrl = spotifyEmbedUrl.replace("/embed", "");
+              const spotifyEmbedUrl = getSpotifyEmbedUrl(show.name);
+              const spotifyOpenUrl = getSpotifyOpenUrl(show.name);
 
               return (
                 <div
@@ -290,26 +268,40 @@ export default async function Home() {
 
                   <p className="mt-2 text-sm text-zinc-500">{show.host}</p>
 
-                  <a
-                    href={spotifyOpenUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-5 block w-full rounded-full bg-orange-400 px-5 py-3 text-center text-sm font-black text-black hover:bg-orange-300"
-                  >
-                    Open in Spotify
-                  </a>
+                  {show.description && (
+                    <p className="mt-4 text-sm leading-6 text-zinc-400">
+                      {show.description}
+                    </p>
+                  )}
 
-                  <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-800 bg-black">
-                    <iframe
-                      title={`${show.name} Spotify playlist`}
-                      src={spotifyEmbedUrl}
-                      width="100%"
-                      height="152"
-                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                      loading="lazy"
-                      className="block rounded-2xl"
-                    />
-                  </div>
+                  {spotifyEmbedUrl && spotifyOpenUrl ? (
+                    <>
+                      <a
+                        href={spotifyOpenUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-5 block w-full rounded-full bg-orange-400 px-5 py-3 text-center text-sm font-black text-black hover:bg-orange-300"
+                      >
+                        Open in Spotify
+                      </a>
+
+                      <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-800 bg-black">
+                        <iframe
+                          title={`${show.name} Spotify playlist`}
+                          src={spotifyEmbedUrl}
+                          width="100%"
+                          height="152"
+                          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                          loading="lazy"
+                          className="block rounded-2xl"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <p className="mt-5 rounded-2xl border border-zinc-800 bg-black px-5 py-4 text-sm font-bold text-zinc-500">
+                      Spotify playlist coming soon.
+                    </p>
+                  )}
                 </div>
               );
             })}

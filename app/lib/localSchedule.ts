@@ -1,6 +1,7 @@
 export type Show = {
   name: string;
   host: string;
+  description?: string;
   day: number;
   start: string;
   end: string;
@@ -14,6 +15,8 @@ export const localSchedule: Show[] = [
   {
     name: "Golden Hour Groove",
     host: "Skull County Radio",
+    description:
+      "Golden era hip hop and classic soul for the warmest hour of the day.",
     day: 4,
     start: "18:00",
     end: "19:00",

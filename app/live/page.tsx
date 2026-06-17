@@ -1,34 +1,12 @@
 import Link from "next/link";
 import { localSchedule, type Show } from "@/app/lib/localSchedule";
 import { getStationDateParts } from "@/app/lib/stationTime";
+import { getSpotifyEmbedUrl, getSpotifyOpenUrl } from "@/app/lib/spotifyPlaylists";
 
 export const dynamic = "force-dynamic";
 
 const mixcloudLiveUrl = "https://www.mixcloud.com/live/skullcountyradio/";
 const skullCountyHost = "DJ Hello Joey";
-
-const spotifyMap: Record<string, string> = {
-  "Golden Hour Groove":
-    "https://open.spotify.com/embed/playlist/6MmSFo11AbLLGuXx8iUQI8",
-  "Dusty Crate Hip-Hop Hour":
-    "https://open.spotify.com/embed/playlist/31SuOU4Vbv7xjdtYlW4PE1",
-  "Cali Sun Reggae Ride":
-    "https://open.spotify.com/embed/playlist/0mf1PWxgjPUG8abErI67tC",
-  "Alt-Rock Barroom Radio":
-    "https://open.spotify.com/embed/playlist/4LCviG4Etf6sfoQNNWbRfs",
-  "Weird Late-Night FM":
-    "https://open.spotify.com/embed/playlist/5bChhr0FAb32b2oevGyUAv",
-  "House Party Frequency":
-    "https://open.spotify.com/embed/playlist/24x2HGar6r7xStbu7VktN4",
-  "Lowrider Soul Sunday":
-    "https://open.spotify.com/embed/playlist/5mkOQT5zf6vag2lAzjgPEp",
-  "Campfire Americana":
-    "https://open.spotify.com/embed/playlist/27dShIERXqZ5HZG3gVIuRX",
-  "Mashup Crate Hour":
-    "https://open.spotify.com/embed/playlist/5wIMxNuCrHLXbGcnN6e4eb",
-  "Skull County Garage Gospel":
-    "https://open.spotify.com/embed/playlist/5ciTziF2CsE7ifteDHg0FW",
-};
 
 const dayNames = [
   "Sunday",
@@ -80,12 +58,13 @@ function getCurrentShow() {
       name: "Skull County Radio",
       host: skullCountyHost,
       time: "Programming from Murphys, California",
+      description: null,
       spotifyEmbedUrl: null,
       spotifyUrl: null,
     };
   }
 
-  const spotifyEmbedUrl = spotifyMap[show.name] || null;
+  const spotifyEmbedUrl = getSpotifyEmbedUrl(show.name);
 
   return {
     name: show.name,
@@ -93,8 +72,9 @@ function getCurrentShow() {
     time: `${dayNames[show.day]}, ${formatTime(show.start)}-${formatTime(
       show.end,
     )}`,
+    description: show.description || null,
     spotifyEmbedUrl,
-    spotifyUrl: spotifyEmbedUrl?.replace("/embed", "") || null,
+    spotifyUrl: getSpotifyOpenUrl(show.name),
   };
 }
 
@@ -120,8 +100,9 @@ function getUpcomingShows() {
         time: `${dayNames[show.day]}, ${formatTime(show.start)}-${formatTime(
           show.end,
         )}`,
-        spotifyEmbedUrl: spotifyMap[show.name] || null,
-        spotifyUrl: spotifyMap[show.name]?.replace("/embed", "") || null,
+        description: show.description || null,
+        spotifyEmbedUrl: getSpotifyEmbedUrl(show.name),
+        spotifyUrl: getSpotifyOpenUrl(show.name),
       };
     })
     .sort((a, b) => a.totalMinutes - b.totalMinutes)
@@ -131,9 +112,9 @@ function getUpcomingShows() {
 export default function LivePage() {
   const currentShow = getCurrentShow();
   const upcomingShows = getUpcomingShows();
-  const nextPlaylistShow = upcomingShows.find((show) => spotifyMap[show.name]);
+  const nextPlaylistShow = upcomingShows.find((show) => show.spotifyEmbedUrl);
   const fallbackSpotifyEmbedUrl = nextPlaylistShow
-    ? spotifyMap[nextPlaylistShow.name]
+    ? nextPlaylistShow.spotifyEmbedUrl
     : null;
   const playlistShow = currentShow.spotifyEmbedUrl
     ? currentShow
@@ -239,6 +220,11 @@ export default function LivePage() {
               <p className="mt-4 border-t border-[#152017]/10 pt-4 text-sm leading-6 text-[#152017]/72">
                 {currentShow.time}
               </p>
+              {currentShow.description && (
+                <p className="mt-3 text-sm leading-6 text-[#152017]/72">
+                  {currentShow.description}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -363,7 +349,8 @@ export default function LivePage() {
                       {show.time}
                     </p>
                     <p className="mt-2 text-sm text-[#f8efd8]/52">
-                      Playlist-driven broadcast block, refreshed weekly.
+                      {show.description ||
+                        "Playlist-driven broadcast block, refreshed weekly."}
                     </p>
                     <p className="mt-3 text-xs font-black uppercase tracking-[0.18em] text-[#f3c866]">
                       {show.spotifyUrl ? "Open playlist" : "Playlist coming soon"}

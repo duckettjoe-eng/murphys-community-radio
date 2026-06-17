@@ -3,17 +3,17 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import LiveBroadcastButton from "@/app/components/LiveBroadcastButton";
 import { generatedMixcloudArchive } from "@/app/lib/generatedMixcloudArchive";
+import { getSpotifyOpenUrl } from "@/app/lib/spotifyPlaylists";
 
 const shows = [
   {
     title: "Golden Hour Groove",
     description:
-      "Warm soul, funk, yacht rock, and sunset selections for golden-hour listening.",
-    tags: ["Soul", "Funk", "Sunset"],
+      "Golden Hour Groove blends golden era hip hop with classic soul — Nas, A Tribe Called Quest, Gang Starr, Bill Withers, Al Green, Curtis Mayfield, Marvin Gaye, and the warm crate-digging records that connect them.",
+    tags: ["Golden Era Hip-Hop", "Classic Soul", "Crates"],
     day: "Thursday",
     time: "6-7 PM",
     artwork: "/artwork/shows/golden-era-groove.png",
-    spotifyUrl: "https://open.spotify.com/embed/playlist/6MmSFo11AbLLGuXx8iUQI8",
   },
   {
     title: "Alt-Rock Barroom Radio",
@@ -23,7 +23,6 @@ const shows = [
     day: "Thursday",
     time: "7-8 PM",
     artwork: "/artwork/shows/alt-rock-bar-room-radio.png",
-    spotifyUrl: "https://open.spotify.com/embed/playlist/4LCviG4Etf6sfoQNNWbRfs",
   },
   {
     title: "Dusty Crate Hip-Hop Hour",
@@ -33,7 +32,6 @@ const shows = [
     day: "Friday",
     time: "6-7 PM",
     artwork: "/artwork/shows/dusty-crate-hip-hop-hour.png",
-    spotifyUrl: "https://open.spotify.com/embed/playlist/31SuOU4Vbv7xjdtYlW4PE1",
   },
   {
     title: "House Party Frequency",
@@ -43,7 +41,6 @@ const shows = [
     day: "Friday",
     time: "7-8 PM",
     artwork: "/artwork/shows/house-party-frequency.png",
-    spotifyUrl: "https://open.spotify.com/embed/playlist/24x2HGar6r7xStbu7VktN4",
   },
   {
     title: "Weird Late-Night FM",
@@ -53,7 +50,6 @@ const shows = [
     day: "Friday",
     time: "8-9 PM",
     artwork: "/artwork/shows/weird-late-night-fm.png",
-    spotifyUrl: "https://open.spotify.com/embed/playlist/5bChhr0FAb32b2oevGyUAv",
   },
   {
     title: "Cali Sun Reggae Ride",
@@ -63,7 +59,6 @@ const shows = [
     day: "Saturday",
     time: "5-6 PM",
     artwork: "/artwork/shows/cali-sun-reggae-ride.png",
-    spotifyUrl: "https://open.spotify.com/embed/playlist/0mf1PWxgjPUG8abErI67tC",
   },
   {
     title: "Mashup Crate Hour",
@@ -73,7 +68,6 @@ const shows = [
     day: "Saturday",
     time: "6-7 PM",
     artwork: "/artwork/shows/mashup-crate-hour.png",
-    spotifyUrl: "https://open.spotify.com/embed/playlist/5wIMxNuCrHLXbGcnN6e4eb",
   },
   {
     title: "Campfire Americana",
@@ -83,7 +77,6 @@ const shows = [
     day: "Saturday",
     time: "7-8 PM",
     artwork: "/artwork/shows/campfire-americana.png",
-    spotifyUrl: "https://open.spotify.com/embed/playlist/27dShIERXqZ5HZG3gVIuRX",
   },
   {
     title: "Lowrider Soul Sunday",
@@ -93,7 +86,6 @@ const shows = [
     day: "Sunday",
     time: "10-11 AM",
     artwork: "/artwork/shows/low-rider-soul-sunday.png",
-    spotifyUrl: "https://open.spotify.com/embed/playlist/5mkOQT5zf6vag2lAzjgPEp",
   },
   {
     title: "Skull County Garage Gospel",
@@ -103,7 +95,6 @@ const shows = [
     day: "Sunday",
     time: "11 AM-12 PM",
     artwork: "/artwork/shows/skull-county-garage-gospel.png",
-    spotifyUrl: "https://open.spotify.com/embed/playlist/5ciTziF2CsE7ifteDHg0FW",
   },
 ];
 
@@ -253,14 +244,20 @@ export default function ShowsPage() {
                           </div>
                         </div>
 
-                        <a
-                          href={show.spotifyUrl.replace("/embed", "")}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex justify-center rounded-lg bg-orange-400 px-5 py-3 text-center text-xs font-black uppercase tracking-[0.12em] text-black transition hover:bg-orange-300 lg:min-w-[13rem]"
-                        >
-                          Open Spotify Playlist
-                        </a>
+                        {getSpotifyOpenUrl(show.title) ? (
+                          <a
+                            href={getSpotifyOpenUrl(show.title) || undefined}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex justify-center rounded-lg bg-orange-400 px-5 py-3 text-center text-xs font-black uppercase tracking-[0.12em] text-black transition hover:bg-orange-300 lg:min-w-[13rem]"
+                          >
+                            Open Spotify Playlist
+                          </a>
+                        ) : (
+                          <span className="inline-flex justify-center rounded-lg border border-white/10 px-5 py-3 text-center text-xs font-black uppercase tracking-[0.12em] text-white/45 lg:min-w-[13rem]">
+                            Playlist Coming Soon
+                          </span>
+                        )}
                       </div>
                     </article>
                   ))}
