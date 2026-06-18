@@ -8,7 +8,7 @@ export default function RadioPlayer({ embedUrl }: RadioPlayerProps) {
   return (
     <section
       aria-labelledby="listen-live-heading"
-      className="relative mt-2 w-full max-w-[800px] overflow-hidden rounded-2xl border border-orange-400/40 bg-zinc-950 p-2 shadow-[0_20px_60px_rgba(249,115,22,0.18)] sm:p-3"
+      className="relative mt-2 w-full max-w-[826px] overflow-hidden rounded-2xl border border-orange-400/40 bg-zinc-950 p-2 shadow-[0_20px_60px_rgba(249,115,22,0.18)] sm:p-3"
     >
       <div className="absolute left-1/2 top-0 h-24 w-4/5 -translate-x-1/2 rounded-full bg-orange-400/15 blur-3xl" />
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-300/80 to-transparent" />

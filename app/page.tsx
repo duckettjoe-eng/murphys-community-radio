@@ -113,7 +113,7 @@ export default async function Home() {
             </div>
           </nav>
 
-          <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(760px,800px)] lg:items-center xl:gap-x-16">
+          <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(826px,860px)] lg:items-center xl:gap-x-16">
             <div>
               <p className="mb-5 text-sm font-black uppercase tracking-[0.35em] text-orange-400">
                 Local voices. Real signal. Community radio.

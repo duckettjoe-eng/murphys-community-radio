@@ -31,7 +31,7 @@ export default function Live365Player({
   useEffect(() => {
     const updatePlayerSize = () => {
       const width = playerRef.current?.clientWidth ?? window.innerWidth;
-      setPlayerSize(width >= 800 ? "xl" : "md");
+      setPlayerSize(width >= 700 ? "xl" : "md");
     };
 
     updatePlayerSize();
