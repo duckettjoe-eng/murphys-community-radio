@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Live365PlayerProps {
   embedUrl?: string;
@@ -25,19 +25,23 @@ function getPlayerUrl(embedUrl: string, size: "md" | "xl") {
 export default function Live365Player({
   embedUrl,
 }: Live365PlayerProps) {
+  const playerRef = useRef<HTMLDivElement>(null);
   const [playerSize, setPlayerSize] = useState<"md" | "xl">("xl");
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 760px)");
     const updatePlayerSize = () => {
-      setPlayerSize(mediaQuery.matches ? "xl" : "md");
+      const width = playerRef.current?.clientWidth ?? window.innerWidth;
+      setPlayerSize(width >= 800 ? "xl" : "md");
     };
 
     updatePlayerSize();
-    mediaQuery.addEventListener("change", updatePlayerSize);
+    const observer = new ResizeObserver(updatePlayerSize);
+    if (playerRef.current) observer.observe(playerRef.current);
+    window.addEventListener("resize", updatePlayerSize);
 
     return () => {
-      mediaQuery.removeEventListener("change", updatePlayerSize);
+      observer.disconnect();
+      window.removeEventListener("resize", updatePlayerSize);
     };
   }, []);
 
@@ -57,13 +61,14 @@ export default function Live365Player({
 
   return (
     <div
+      ref={playerRef}
       className="overflow-hidden"
       style={{ height: `${sourceHeight}px` }}
     >
       <iframe
         title="Murphys Community Radio Live365 Player"
         src={playerUrl}
-        width={playerSize === "xl" ? 800 : "100%"}
+        width="100%"
         height={sourceHeight}
         frameBorder="0"
         allow="autoplay"

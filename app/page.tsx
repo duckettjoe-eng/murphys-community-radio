@@ -76,7 +76,7 @@ export default async function Home() {
         <div className="absolute left-[-120px] top-[-120px] h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
         <div className="absolute bottom-[-160px] right-[-120px] h-96 w-96 rounded-full bg-yellow-500/10 blur-3xl" />
 
-        <div className="relative mx-auto max-w-7xl">
+        <div className="relative mx-auto max-w-[1500px]">
           <nav className="mb-10 flex flex-wrap items-center justify-between gap-4 lg:mb-12">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.35em] text-orange-400">
@@ -113,7 +113,7 @@ export default async function Home() {
             </div>
           </nav>
 
-          <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(480px,0.9fr)] lg:items-center xl:gap-x-16">
+          <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(760px,800px)] lg:items-center xl:gap-x-16">
             <div>
               <p className="mb-5 text-sm font-black uppercase tracking-[0.35em] text-orange-400">
                 Local voices. Real signal. Community radio.
