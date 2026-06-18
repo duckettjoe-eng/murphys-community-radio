@@ -16,7 +16,7 @@ function isValidEmbedUrl(embedUrl?: string) {
   }
 }
 
-function getPlayerUrl(embedUrl: string, size: "md" | "lg") {
+function getPlayerUrl(embedUrl: string, size: "md" | "xl") {
   const url = new URL(embedUrl);
   url.searchParams.set("s", size);
   return url.toString();
@@ -25,12 +25,12 @@ function getPlayerUrl(embedUrl: string, size: "md" | "lg") {
 export default function Live365Player({
   embedUrl,
 }: Live365PlayerProps) {
-  const [playerSize, setPlayerSize] = useState<"md" | "lg">("md");
+  const [playerSize, setPlayerSize] = useState<"md" | "xl">("xl");
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 640px)");
+    const mediaQuery = window.matchMedia("(min-width: 760px)");
     const updatePlayerSize = () => {
-      setPlayerSize(mediaQuery.matches ? "lg" : "md");
+      setPlayerSize(mediaQuery.matches ? "xl" : "md");
     };
 
     updatePlayerSize();
@@ -53,25 +53,22 @@ export default function Live365Player({
   }
 
   const playerUrl = getPlayerUrl(embedUrl, playerSize);
-  const sourceHeight = playerSize === "lg" ? 336 : 316;
-  const displayHeight = playerSize === "lg" ? 236 : 220;
-  const playerScale = displayHeight / sourceHeight;
+  const sourceHeight = playerSize === "xl" ? 296 : 316;
 
   return (
     <div
       className="overflow-hidden"
-      style={{ height: `${displayHeight}px` }}
+      style={{ height: `${sourceHeight}px` }}
     >
       <iframe
         title="Murphys Community Radio Live365 Player"
         src={playerUrl}
-        width={`${100 / playerScale}%`}
+        width={playerSize === "xl" ? 800 : "100%"}
         height={sourceHeight}
         frameBorder="0"
         allow="autoplay"
         loading="lazy"
-        className="block max-w-none origin-top-left overflow-hidden border-0"
-        style={{ transform: `scale(${playerScale})` }}
+        className="block w-full overflow-hidden border-0"
       />
     </div>
   );
