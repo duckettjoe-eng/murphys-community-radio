@@ -14,25 +14,32 @@ type Underwriter = {
 // Add website URLs here when the underwriter destinations are confirmed.
 const underwriters: Underwriter[] = [
   {
+    name: "Murphys Irish Pub",
+    description:
+      "Murphys Irish Pub, supporting local music, community voices, and Calaveras County radio.",
+    image: "/partners/murphys-irish-pub-transparent.png",
+    imageClassName: "object-contain p-2",
+  },
+  {
     name: "Pure Aloha",
     description:
       "Pure Aloha Cannabis Dispensary, proudly supporting community radio in Calaveras County.",
-    image: "/partners/pure-aloha-current.png",
-    imageClassName: "object-contain scale-110",
+    image: "/partners/pure-aloha-transparent.png",
+    imageClassName: "object-contain",
   },
   {
-    name: "Xtra Good Labs",
+    name: "XTRA GOOD LABS",
     description:
       "Creative support for independent local voices, music, and community programming.",
-    image: "/partners/xtra-good-labs.jpg",
-    imageClassName: "object-contain",
+    image: "/partners/xtra-good-labs-transparent.png",
+    imageClassName: "object-contain p-8",
   },
   {
     name: "Punch Creations",
     description:
       "Helping keep Murphys Community Radio creative, local, and on the air.",
-    image: "/partners/punch-creations.png",
-    imageClassName: "object-contain p-2",
+    image: "/partners/punch-logo.png",
+    imageClassName: "object-contain p-4",
   },
 ];
 
@@ -113,7 +120,7 @@ export default function CurrentUnderwritersCarousel() {
 
       <div
         ref={trackRef}
-        className="mt-6 grid snap-x snap-mandatory auto-cols-[88%] grid-flow-col gap-4 overflow-x-auto overscroll-x-contain scroll-smooth [scrollbar-width:none] sm:auto-cols-[calc((100%_-_1rem)/2)] lg:grid-flow-row lg:grid-cols-3 lg:overflow-visible [&::-webkit-scrollbar]:hidden"
+        className="mt-6 grid snap-x snap-mandatory auto-cols-[88%] grid-flow-col gap-4 overflow-x-auto overscroll-x-contain scroll-smooth [scrollbar-width:none] sm:auto-cols-[calc((100%_-_1rem)/2)] lg:grid-flow-row lg:grid-cols-4 lg:overflow-visible [&::-webkit-scrollbar]:hidden"
       >
         {underwriters.map((underwriter) => {
           const content = (
