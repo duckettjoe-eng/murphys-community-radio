@@ -70,6 +70,28 @@ const LONGFORM_TERMS = [
   "speech",
   "talk",
 ];
+const MIXTAPE_DJ_EDIT_TERMS = [
+  "blood diamonds cocaine",
+  "blood, diamonds & cocaine",
+  "blogspot",
+  "bumsquaddjz",
+  "dj action pac",
+  "dj green lantern",
+  "dj symphony",
+  "hip hop is read",
+  "hosted by",
+  "j love",
+  "lights out mixed by dj green lantern",
+  "mixed by dj",
+  "mixtape",
+  "mixtapes",
+  "monster mixtapes",
+  "monstermixtapes",
+  "staten we go hard",
+  "the columbian necktie",
+  "the grey album",
+  "the tape deck",
+];
 
 const args = parseArgs(process.argv.slice(2));
 const root = args.root || DEFAULT_ROOT;
@@ -246,6 +268,7 @@ function classify(row) {
     .toLowerCase();
 
   if (duration > 4 * 60 * 60) return "too_long_for_live365_review";
+  if (shouldBlockMixtapeDjEdit(haystack)) return "mixtape_dj_edit_review";
   if (duration > 30 * 60 || includesAny(haystack, LONGFORM_TERMS)) return "longform_early_sunday";
   if (duration > 0 && duration < 45) return "short_audio_review";
   if (includesAny(haystack, CLUB_TERMS)) return "club_late_night";
@@ -255,6 +278,17 @@ function classify(row) {
 
 function live365Status(row) {
   const duration = Number.parseFloat(row.duration_seconds || "0");
+  const haystack = [
+    row.path,
+    row.filename,
+    row.artist,
+    row.title,
+    row.album,
+    row.genre,
+  ]
+    .join(" ")
+    .toLowerCase();
+  if (shouldBlockMixtapeDjEdit(haystack)) return "skip_mixtape_dj_edit_review";
   if (!row.duration_seconds) return "metadata_review_before_upload";
   if (duration > 4 * 60 * 60) return "skip_live365_over_4_hours";
   if (duration < 45) return "skip_short_audio_review";
@@ -263,6 +297,12 @@ function live365Status(row) {
 
 function includesAny(value, terms) {
   return terms.some((term) => value.includes(term));
+}
+
+function shouldBlockMixtapeDjEdit(haystack) {
+  if (haystack.includes("dj hello joey")) return false;
+  const comparable = haystack.replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+  return MIXTAPE_DJ_EDIT_TERMS.some((term) => comparable.includes(term.replace(/[^a-z0-9]+/g, " ").trim()));
 }
 
 function pickTag(tags, keys) {

@@ -25,6 +25,7 @@ const CATEGORY_BY_BUCKET = {
   club_late_night: "MCR Club Late Night",
   longform_early_sunday: "MCR Early Sunday Longform",
   quarantine_spoken_word: "MCR Quarantine - Spoken Word Review",
+  mixtape_dj_edit_review: "MCR Mixtape / DJ Edit Review",
 };
 const NORMAL_ROTATION_BUCKETS = ["day_safe", "day_safe_review", "club_late_night"];
 const CLUB_TERMS = [
@@ -99,6 +100,28 @@ const SPOKEN_WORD_QUARANTINE_TERMS = [
   "sermon",
   "speech",
   "spoken word",
+];
+const MIXTAPE_DJ_EDIT_TERMS = [
+  "blood diamonds cocaine",
+  "blood, diamonds & cocaine",
+  "blogspot",
+  "bumsquaddjz",
+  "dj action pac",
+  "dj green lantern",
+  "dj symphony",
+  "hip hop is read",
+  "hosted by",
+  "j love",
+  "lights out mixed by dj green lantern",
+  "mixed by dj",
+  "mixtape",
+  "mixtapes",
+  "monster mixtapes",
+  "monstermixtapes",
+  "staten we go hard",
+  "the columbian necktie",
+  "the grey album",
+  "the tape deck",
 ];
 
 const CLOCKWHEELS = [
@@ -378,6 +401,12 @@ function normalizeInventoryRow(row) {
     live365_upload_status: row.live365_upload_status || "",
     parse_error: row.parse_error || "",
   };
+  const haystack = metadataHaystack(normalized);
+  if (shouldBlockMixtapeDjEdit(haystack)) {
+    normalized.proposed_bucket = "mixtape_dj_edit_review";
+    normalized.live365_upload_status = "skip_mixtape_dj_edit_review";
+    return normalized;
+  }
   if (!normalized.proposed_bucket) normalized.proposed_bucket = classifyBucket(normalized);
   if (!normalized.live365_upload_status) normalized.live365_upload_status = live365Status(normalized);
   return normalized;
@@ -392,19 +421,11 @@ function mountedMacbookPath(filePath) {
 
 function classifyBucket(row) {
   const duration = Number.parseFloat(row.duration_seconds || "0");
-  const haystack = [
-    row.path,
-    row.filename,
-    row.artist,
-    row.title,
-    row.album,
-    row.genre,
-  ]
-    .join(" ")
-    .toLowerCase();
+  const haystack = metadataHaystack(row);
 
   if (duration > MAX_LIVE365_SECONDS) return "too_long_for_live365_review";
   if (shouldQuarantineMetadata(haystack, duration)) return "quarantine_spoken_word";
+  if (shouldBlockMixtapeDjEdit(haystack)) return "mixtape_dj_edit_review";
   if (duration > 30 * 60 || includesTerm(haystack, LONGFORM_TERMS)) return "longform_early_sunday";
   if (duration > 0 && duration < MIN_BROADCAST_SECONDS) return "short_audio_review";
   if (includesTerm(haystack, CLUB_TERMS)) return "club_late_night";
@@ -414,12 +435,26 @@ function classifyBucket(row) {
 
 function live365Status(row) {
   const duration = Number.parseFloat(row.duration_seconds || "0");
+  if (shouldBlockMixtapeDjEdit(metadataHaystack(row))) return "skip_mixtape_dj_edit_review";
   if (!row.path) return "skip_missing_file_path";
   if (!row.artist || !row.title) return "skip_missing_metadata";
   if (!row.duration_seconds) return "metadata_review_before_upload";
   if (duration > MAX_LIVE365_SECONDS) return "skip_live365_over_4_hours";
   if (duration < MIN_BROADCAST_SECONDS) return "skip_short_audio_review";
   return "eligible_reviewed_by_bucket";
+}
+
+function metadataHaystack(row) {
+  return [
+    row.path,
+    row.filename,
+    row.artist,
+    row.title,
+    row.album,
+    row.genre,
+  ]
+    .join(" ")
+    .toLowerCase();
 }
 
 async function uploadMusicTrack({ token, mediaServiceUuid, filePath }) {
@@ -831,6 +866,11 @@ function shouldQuarantineTrack(track) {
     attributes.original_filename,
   ].join(" ");
   return shouldQuarantineMetadata(haystack, duration);
+}
+
+function shouldBlockMixtapeDjEdit(haystack) {
+  if (haystack.includes("dj hello joey")) return false;
+  return includesTerm(cleanComparable(haystack), MIXTAPE_DJ_EDIT_TERMS);
 }
 
 function shouldQuarantineMetadata(value, duration) {
