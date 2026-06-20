@@ -153,7 +153,7 @@ export default function Live365Player({
   return (
     <div
       ref={playerRef}
-      className="grid place-items-center overflow-hidden bg-[#171321] px-5 py-5"
+      className="grid place-items-center overflow-hidden bg-[#171321] px-3 py-4 sm:px-5 sm:py-5"
       style={{ height: `${sourceHeight}px` }}
     >
       <audio
@@ -167,36 +167,36 @@ export default function Live365Player({
           setError("Stream unavailable");
         }}
       />
-      <div className="flex w-full max-w-2xl items-center justify-between gap-5 sm:gap-6">
+      <div className="grid w-full max-w-2xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between sm:gap-6">
         {artwork ? (
           <img
             src={artwork}
             alt=""
-            className="h-28 w-28 flex-none rounded-md border border-white/10 object-cover shadow-[0_18px_40px_rgba(0,0,0,0.35)] sm:h-36 sm:w-36"
+            className="h-20 w-20 flex-none rounded-md border border-white/10 object-cover shadow-[0_18px_40px_rgba(0,0,0,0.35)] sm:h-36 sm:w-36"
           />
         ) : null}
-        <div className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-[0.28em] text-orange-300">
+        <div className="min-w-0 self-center">
+          <p className="truncate text-[11px] font-black uppercase tracking-[0.16em] text-orange-300 sm:tracking-[0.28em]">
             {nowPlaying.playlistName || "DJ Hello Joey"}
           </p>
-          <h3 className="mt-2 truncate text-2xl font-black text-white">
+          <h3 className="mt-2 truncate text-xl font-black text-white sm:text-2xl">
             {nowPlaying.showName}
           </h3>
           <p className="mt-2 text-sm font-semibold text-zinc-400">
             {error || (isPlaying ? "Live now" : "Ready")}
           </p>
-          <p className="mt-2 truncate text-sm font-bold text-zinc-200">
-            {nowPlaying.artist} - {nowPlaying.title}
-          </p>
         </div>
         <button
           type="button"
           onClick={togglePlayback}
-          className="grid h-16 w-16 flex-none place-items-center rounded-full bg-orange-400 text-sm font-black uppercase tracking-normal text-zinc-950 shadow-[0_0_30px_rgba(251,146,60,0.35)] transition hover:scale-105 hover:bg-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200"
+          className="grid h-14 w-14 flex-none place-items-center rounded-full bg-orange-400 text-xs font-black uppercase tracking-normal text-zinc-950 shadow-[0_0_30px_rgba(251,146,60,0.35)] transition hover:scale-105 hover:bg-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200 sm:h-16 sm:w-16 sm:text-sm"
           aria-label={isPlaying ? "Pause live stream" : "Play live stream"}
         >
           {isPlaying ? "Pause" : "Play"}
         </button>
+        <p className="col-span-3 truncate text-sm font-bold text-zinc-200 sm:col-span-1 sm:mt-2">
+          {nowPlaying.artist} - {nowPlaying.title}
+        </p>
       </div>
     </div>
   );
