@@ -4,12 +4,14 @@ import { productByline, productName } from "../brand.js";
 import { tracksToCsv } from "../core/csv.js";
 import { formatScanReport } from "../core/report.js";
 import { scanLibrary } from "../core/scanner.js";
+import { defaultStorePath, saveScan } from "../core/store.js";
 
 const args = parseArgs(process.argv.slice(2));
 const root = String(args.root ?? "");
 const out = String(args.out ?? "exports/library-scan.csv");
 const reportOut = String(args.report ?? out.replace(/\.csv$/i, ".report.txt"));
 const limit = args.limit ? Number.parseInt(String(args.limit), 10) : undefined;
+const store = String(args.store ?? defaultStorePath);
 
 if (!root) {
   console.error(`Usage: node dist/cli/scan.js --root /path/to/music [--out exports/library.csv] [--skip-metadata] [--limit 100]`);
@@ -39,6 +41,11 @@ await fs.writeFile(reportOut, formatScanReport(result.summary));
 
 console.log(`Wrote CSV: ${out}`);
 console.log(`Wrote report: ${reportOut}`);
+if (args.save) {
+  const savedScan = await saveScan(result, store);
+  console.log(`Saved scan: ${savedScan.id}`);
+  console.log(`Store: ${store}`);
+}
 console.log(formatScanReport(result.summary));
 
 function parseArgs(raw: string[]) {

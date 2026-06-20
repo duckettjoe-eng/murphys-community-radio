@@ -1,3 +1,4 @@
 dist/
 exports/
+.crate-os/
 *.tsbuildinfo

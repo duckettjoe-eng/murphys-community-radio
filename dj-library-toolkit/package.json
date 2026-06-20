@@ -6,7 +6,8 @@
   "description": "Crate OS by XTRAGOODLABS: a local-first command center for large DJ libraries.",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "scan": "node dist/cli/scan.js"
+    "scan": "node dist/cli/scan.js",
+    "serve": "node dist/cli/serve.js"
   },
   "engines": {
     "node": ">=20"

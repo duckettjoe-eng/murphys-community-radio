@@ -62,3 +62,15 @@ export type ScanResult = {
   tracks: LibraryTrack[];
   summary: ScanSummary;
 };
+
+export type SavedScan = {
+  id: string;
+  createdAt: string;
+  summary: ScanSummary;
+  tracks: LibraryTrack[];
+};
+
+export type LibraryDatabase = {
+  schemaVersion: "0.1.0";
+  scans: SavedScan[];
+};
