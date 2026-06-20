@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://murphyscommunityradio.com/schemas/station-package.schema.json",
+  "title": "DJ Library Toolkit Station Package",
+  "type": "object",
+  "required": ["schemaVersion", "station", "shows", "schedule", "archive"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "station": {
+      "type": "object",
+      "required": ["name", "timezone"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "tagline": { "type": "string" },
+        "streamUrl": { "type": "string" },
+        "timezone": { "type": "string" },
+        "logo": { "type": "string" },
+        "websiteUrl": { "type": "string" }
+      }
+    },
+    "shows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "host": { "type": "string" },
+          "artwork": { "type": "string" },
+          "description": { "type": "string" },
+          "genre": { "type": "string" }
+        }
+      }
+    },
+    "schedule": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["showId", "day", "start", "end"],
+        "additionalProperties": false,
+        "properties": {
+          "showId": { "type": "string" },
+          "day": {
+            "type": "string",
+            "enum": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday",
+              "sunday"
+            ]
+          },
+          "start": {
+            "type": "string",
+            "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          },
+          "end": {
+            "type": "string",
+            "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          }
+        }
+      }
+    },
+    "archive": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "showId", "title"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "showId": { "type": "string" },
+          "title": { "type": "string" },
+          "publishedAt": { "type": "string" },
+          "audioUrl": { "type": "string" },
+          "image": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "support": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "donationUrl": { "type": "string" },
+        "underwriteUrl": { "type": "string" },
+        "contactEmail": { "type": "string" }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primaryColor": { "type": "string" },
+        "accentColor": { "type": "string" },
+        "backgroundColor": { "type": "string" }
+      }
+    }
+  }
+}
