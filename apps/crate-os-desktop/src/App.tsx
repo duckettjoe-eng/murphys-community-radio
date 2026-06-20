@@ -105,9 +105,8 @@ export default function App() {
           <img src="/crate-os-logo.png" alt="Crate OS" className="brand-logo" />
           <div>
             <p className="topline">Local Library Command Center</p>
-            <h1>
-              {productName} <span>{productByline}</span>
-            </h1>
+            <h1>{productName}</h1>
+            <p className="product-byline">{productByline}</p>
             <p className="tagline">{productTagline}</p>
           </div>
         </div>
