@@ -46,4 +46,4 @@ macOS app bundle without the DMG wrapper:
 npm run tauri:build:app
 ```
 
-The current scanner walks audio folders, reads runtime, preserves editable metadata across rescans, stores scan summaries and tracks in SQLite, and emits progress.
+The current scanner walks audio folders, reads runtime, preserves editable metadata across rescans, stores scan summaries and tracks in SQLite, and emits progress. Exports can target selected tracks, the active folder, or the full latest scan as CSV, DJ prep CSV, or M3U8 playlist; JSON backup and Live365 CSV are supporter-gated.

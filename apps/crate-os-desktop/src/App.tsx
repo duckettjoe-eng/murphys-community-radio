@@ -219,11 +219,18 @@ export default function App() {
     setMetadataStatus(`Updated ${paths.length.toLocaleString()} selected tracks`);
   }
 
-  async function exportScan(format: "csv" | "json" | "live365") {
+  async function exportScan(format: "csv" | "djprep" | "m3u" | "json" | "live365") {
     setExportStatus("");
     try {
+      const selected = Array.from(selectedPaths);
       const result = await invoke<{ path: string }>("export_latest_scan", {
-        args: { format, tier: currentTier },
+        args: {
+          format,
+          tier: currentTier,
+          paths: selected.length > 0 ? selected : null,
+          folder: selected.length > 0 ? null : folderFilter,
+          status: statusFilter,
+        },
       });
       setExportStatus(`Exported ${result.path}`);
     } catch (error) {
@@ -234,6 +241,14 @@ export default function App() {
   function selectFolder(folderName: string) {
     setFolderFilter(folderName);
     setSelectedPaths(new Set());
+  }
+
+  async function openExportsFolder() {
+    try {
+      await invoke("open_exports_folder");
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : String(error));
+    }
   }
 
   const folderRollups = (() => {
@@ -356,13 +371,19 @@ export default function App() {
           <div className="label">Exports</div>
           <strong>Station package prep</strong>
           <p className="status">
-            CSV is available for everyday library work. JSON backup and Live365-ready exports stay
-            locked until supporter.
+            Exports use selected tracks first, otherwise the active folder and status filters. JSON
+            backup and Live365-ready exports stay locked until supporter.
           </p>
           {exportStatus ? <p className="status">{exportStatus}</p> : null}
         </div>
         <button type="button" disabled={!summary} onClick={() => exportScan("csv")}>
           Export CSV
+        </button>
+        <button type="button" disabled={!summary} onClick={() => exportScan("djprep")}>
+          DJ Prep CSV
+        </button>
+        <button type="button" disabled={!summary} onClick={() => exportScan("m3u")}>
+          M3U8 Playlist
         </button>
         <button
           type="button"
@@ -377,6 +398,9 @@ export default function App() {
           onClick={() => exportScan("live365")}
         >
           Live365 CSV
+        </button>
+        <button type="button" onClick={openExportsFolder}>
+          Open Exports
         </button>
       </section>
 
@@ -552,7 +576,6 @@ export default function App() {
                       ))}
                     </select>
                   </td>
-                  <td className={`status-pill ${track.scan_status}`}>{track.scan_status}</td>
                   <td>
                     <select
                       value={track.live365_readiness}
@@ -567,6 +590,7 @@ export default function App() {
                       ))}
                     </select>
                   </td>
+                  <td className={`status-pill ${track.scan_status}`}>{track.scan_status}</td>
                   <td>
                     <button type="button" className="small-button" onClick={() => saveTrack(track)}>
                       Save

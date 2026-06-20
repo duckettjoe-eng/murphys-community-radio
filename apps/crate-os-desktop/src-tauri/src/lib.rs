@@ -6,6 +6,7 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use symphonia::core::errors::Error as SymphoniaError;
 use symphonia::core::formats::FormatOptions;
 use symphonia::core::io::MediaSourceStream;
@@ -85,6 +86,9 @@ struct BulkMetadataUpdate {
 struct ExportArgs {
     format: String,
     tier: String,
+    paths: Option<Vec<String>>,
+    folder: Option<String>,
+    status: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -138,29 +142,39 @@ fn export_latest_scan(app: AppHandle, args: ExportArgs) -> Result<ExportResponse
     init_database(&conn)?;
     let summary =
         latest_summary(&conn)?.ok_or_else(|| "Scan a folder before exporting.".to_string())?;
-    let tracks = tracks_for_scan(&conn, &summary.scan_id)?;
-    let export_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|error| error.to_string())?
-        .join("exports");
+    let tracks = filtered_export_tracks(tracks_for_scan(&conn, &summary.scan_id)?, &args);
+    if tracks.is_empty() {
+        return Err("No tracks match the current export scope.".to_string());
+    }
+    let export_dir = exports_dir(&app)?;
     fs::create_dir_all(&export_dir).map_err(|error| error.to_string())?;
 
     let stamp = Utc::now().format("%Y%m%d-%H%M%S");
+    let scope = export_scope_slug(&args);
     let path = match args.format.as_str() {
         "json" => {
-            let path = export_dir.join(format!("crate-os-scan-{stamp}.json"));
+            let path = export_dir.join(format!("crate-os-{scope}-{stamp}.json"));
             let body = serde_json::to_string_pretty(&tracks).map_err(|error| error.to_string())?;
             fs::write(&path, body).map_err(|error| error.to_string())?;
             path
         }
         "live365" => {
-            let path = export_dir.join(format!("crate-os-live365-{stamp}.csv"));
+            let path = export_dir.join(format!("crate-os-live365-{scope}-{stamp}.csv"));
             write_csv_export(&path, &tracks)?;
             path
         }
+        "djprep" => {
+            let path = export_dir.join(format!("crate-os-dj-prep-{scope}-{stamp}.csv"));
+            write_dj_prep_export(&path, &tracks)?;
+            path
+        }
+        "m3u" => {
+            let path = export_dir.join(format!("crate-os-playlist-{scope}-{stamp}.m3u8"));
+            write_m3u_export(&path, &tracks)?;
+            path
+        }
         _ => {
-            let path = export_dir.join(format!("crate-os-library-{stamp}.csv"));
+            let path = export_dir.join(format!("crate-os-library-{scope}-{stamp}.csv"));
             write_csv_export(&path, &tracks)?;
             path
         }
@@ -169,6 +183,13 @@ fn export_latest_scan(app: AppHandle, args: ExportArgs) -> Result<ExportResponse
     Ok(ExportResponse {
         path: path.to_string_lossy().to_string(),
     })
+}
+
+#[tauri::command]
+fn open_exports_folder(app: AppHandle) -> Result<(), String> {
+    let export_dir = exports_dir(&app)?;
+    fs::create_dir_all(&export_dir).map_err(|error| error.to_string())?;
+    open_path(&export_dir)
 }
 
 #[tauri::command]
@@ -508,6 +529,14 @@ fn open_database(app: &AppHandle) -> Result<Connection, String> {
     Connection::open(data_dir.join("crate-os.sqlite3")).map_err(|error| error.to_string())
 }
 
+fn exports_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    Ok(app
+        .path()
+        .app_data_dir()
+        .map_err(|error| error.to_string())?
+        .join("exports"))
+}
+
 fn init_database(conn: &Connection) -> Result<(), String> {
     conn.execute_batch(include_str!("../migrations/001_init.sql"))
         .map_err(|error| error.to_string())?;
@@ -675,8 +704,156 @@ fn write_csv_export(path: &Path, tracks: &[TrackRow]) -> Result<(), String> {
     Ok(())
 }
 
+fn write_dj_prep_export(path: &Path, tracks: &[TrackRow]) -> Result<(), String> {
+    let mut file = File::create(path).map_err(|error| error.to_string())?;
+    writeln!(
+        file,
+        "artist,title,album,genre,year,duration,location,comments,crate,readiness,status"
+    )
+    .map_err(|error| error.to_string())?;
+    for track in tracks.iter().filter(|track| track.scan_status != "missing") {
+        writeln!(
+            file,
+            "{},{},{},{},{},{},{},{},{},{},{}",
+            csv_field(&track.artist),
+            csv_field(&track.title),
+            csv_field(&track.album),
+            csv_field(&track.genre),
+            csv_field(&track.year),
+            csv_field(&format_duration_colon(track.duration_seconds)),
+            csv_field(&track.path),
+            csv_field(&format!("{} | {}", track.proposed_bucket, track.filename)),
+            csv_field(&track.relative_folder),
+            csv_field(&track.live365_readiness),
+            csv_field(&track.scan_status),
+        )
+        .map_err(|error| error.to_string())?;
+    }
+    Ok(())
+}
+
+fn write_m3u_export(path: &Path, tracks: &[TrackRow]) -> Result<(), String> {
+    let mut file = File::create(path).map_err(|error| error.to_string())?;
+    writeln!(file, "#EXTM3U").map_err(|error| error.to_string())?;
+    for track in tracks.iter().filter(|track| track.scan_status != "missing") {
+        let duration = track
+            .duration_seconds
+            .map(|value| value.round() as i64)
+            .unwrap_or(-1);
+        let artist = if track.artist.trim().is_empty() {
+            "Unknown Artist"
+        } else {
+            track.artist.as_str()
+        };
+        let title = if track.title.trim().is_empty() {
+            track.filename.as_str()
+        } else {
+            track.title.as_str()
+        };
+        writeln!(file, "#EXTINF:{duration},{artist} - {title}")
+            .map_err(|error| error.to_string())?;
+        writeln!(file, "{}", track.path).map_err(|error| error.to_string())?;
+    }
+    Ok(())
+}
+
+fn filtered_export_tracks(tracks: Vec<TrackRow>, args: &ExportArgs) -> Vec<TrackRow> {
+    let selected_paths = args
+        .paths
+        .as_ref()
+        .map(|paths| paths.iter().cloned().collect::<HashSet<_>>())
+        .unwrap_or_default();
+    let folder_filter = args
+        .folder
+        .as_ref()
+        .filter(|folder| !folder.is_empty() && folder.as_str() != "all");
+    let status_filter = args
+        .status
+        .as_ref()
+        .filter(|status| !status.is_empty() && status.as_str() != "all");
+
+    tracks
+        .into_iter()
+        .filter(|track| {
+            if selected_paths.is_empty() {
+                true
+            } else {
+                selected_paths.contains(&track.path)
+            }
+        })
+        .filter(|track| {
+            if selected_paths.is_empty() {
+                folder_filter.is_none_or(|folder| track.relative_folder == *folder)
+            } else {
+                true
+            }
+        })
+        .filter(|track| status_filter.is_none_or(|status| track.scan_status == *status))
+        .collect()
+}
+
+fn export_scope_slug(args: &ExportArgs) -> String {
+    if args.paths.as_ref().is_some_and(|paths| !paths.is_empty()) {
+        return "selected".to_string();
+    }
+    args.folder
+        .as_ref()
+        .filter(|folder| !folder.is_empty() && folder.as_str() != "all")
+        .map(|folder| slugify(folder))
+        .unwrap_or_else(|| "latest".to_string())
+}
+
+fn slugify(value: &str) -> String {
+    let mut slug = value
+        .chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() {
+                ch.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
+        .collect::<String>();
+    while slug.contains("--") {
+        slug = slug.replace("--", "-");
+    }
+    slug.trim_matches('-').chars().take(48).collect::<String>()
+}
+
 fn csv_field(value: &str) -> String {
     format!("\"{}\"", value.replace('"', "\"\""))
+}
+
+fn format_duration_colon(seconds: Option<f64>) -> String {
+    let Some(seconds) = seconds else {
+        return String::new();
+    };
+    let rounded = seconds.round() as i64;
+    let hours = rounded / 3600;
+    let minutes = (rounded % 3600) / 60;
+    let secs = rounded % 60;
+    if hours > 0 {
+        format!("{hours}:{minutes:02}:{secs:02}")
+    } else {
+        format!("{minutes}:{secs:02}")
+    }
+}
+
+fn open_path(path: &Path) -> Result<(), String> {
+    let status = if cfg!(target_os = "macos") {
+        Command::new("open").arg(path).status()
+    } else if cfg!(target_os = "windows") {
+        Command::new("explorer").arg(path).status()
+    } else {
+        Command::new("xdg-open").arg(path).status()
+    }
+    .map_err(|error| error.to_string())?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err("Could not open exports folder.".to_string())
+    }
 }
 
 pub fn run() {
@@ -687,7 +864,8 @@ pub fn run() {
             scan_library,
             update_track_metadata,
             bulk_update_tracks,
-            export_latest_scan
+            export_latest_scan,
+            open_exports_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running Crate OS");
