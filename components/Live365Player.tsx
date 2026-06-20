@@ -114,7 +114,7 @@ export default function Live365Player({
   }
 
   const streamUrl = getStreamUrl(embedUrl);
-  const sourceHeight = playerSize === "xl" ? 190 : 176;
+  const sourceHeight = playerSize === "xl" ? 224 : 200;
   const artwork = nowPlaying.showArt || nowPlaying.art || fallbackNowPlaying.showArt;
 
   const togglePlayback = async () => {
@@ -167,12 +167,12 @@ export default function Live365Player({
           setError("Stream unavailable");
         }}
       />
-      <div className="flex w-full max-w-xl items-center justify-between gap-5">
+      <div className="flex w-full max-w-2xl items-center justify-between gap-5 sm:gap-6">
         {artwork ? (
           <img
             src={artwork}
             alt=""
-            className="h-24 w-24 flex-none rounded-md border border-white/10 object-cover shadow-[0_18px_40px_rgba(0,0,0,0.35)] sm:h-28 sm:w-28"
+            className="h-28 w-28 flex-none rounded-md border border-white/10 object-cover shadow-[0_18px_40px_rgba(0,0,0,0.35)] sm:h-36 sm:w-36"
           />
         ) : null}
         <div className="min-w-0">
