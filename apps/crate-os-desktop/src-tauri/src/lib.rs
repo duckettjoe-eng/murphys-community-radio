@@ -42,7 +42,7 @@ struct ScanSummary {
     unknown_runtime_count: usize,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 struct TrackRow {
     path: String,
     relative_folder: String,
@@ -110,6 +110,18 @@ struct WriteTagsArgs {
 #[derive(Debug, Serialize)]
 struct WriteTagsResponse {
     written_count: usize,
+    failed_count: usize,
+    backup_path: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct RestoreTagsArgs {
+    scan_id: String,
+}
+
+#[derive(Debug, Serialize)]
+struct RestoreTagsResponse {
+    restored_count: usize,
     failed_count: usize,
     backup_path: String,
 }
@@ -334,6 +346,49 @@ fn write_tags_to_files(app: AppHandle, args: WriteTagsArgs) -> Result<WriteTagsR
 
     Ok(WriteTagsResponse {
         written_count,
+        failed_count,
+        backup_path: backup_path.to_string_lossy().to_string(),
+    })
+}
+
+#[tauri::command]
+fn restore_latest_tag_backup(
+    app: AppHandle,
+    args: RestoreTagsArgs,
+) -> Result<RestoreTagsResponse, String> {
+    let backup_path =
+        latest_tag_backup_path(&app)?.ok_or_else(|| "No tag backup exists yet.".to_string())?;
+    let body = fs::read_to_string(&backup_path).map_err(|error| error.to_string())?;
+    let tracks: Vec<TrackRow> = serde_json::from_str(&body).map_err(|error| error.to_string())?;
+    if tracks.is_empty() {
+        return Err("Latest tag backup is empty.".to_string());
+    }
+
+    let conn = open_database(&app)?;
+    init_database(&conn)?;
+    let mut restored_count = 0_usize;
+    let mut failed_count = 0_usize;
+
+    for track in tracks {
+        if track.scan_status == "missing" {
+            failed_count += 1;
+            continue;
+        }
+
+        match write_track_tags(&track) {
+            Ok(()) => {
+                restored_count += 1;
+                restore_catalog_metadata(&conn, &args.scan_id, &track)?;
+            }
+            Err(_) => {
+                failed_count += 1;
+                set_tag_write_status(&conn, &args.scan_id, &track.path, true, "restore_failed")?;
+            }
+        }
+    }
+
+    Ok(RestoreTagsResponse {
+        restored_count,
         failed_count,
         backup_path: backup_path.to_string_lossy().to_string(),
     })
@@ -852,6 +907,61 @@ fn write_tag_backup(app: &AppHandle, tracks: &[TrackRow]) -> Result<PathBuf, Str
     Ok(backup_path)
 }
 
+fn latest_tag_backup_path(app: &AppHandle) -> Result<Option<PathBuf>, String> {
+    let backup_dir = exports_dir(app)?.join("tag-backups");
+    if !backup_dir.exists() {
+        return Ok(None);
+    }
+
+    let mut backups = fs::read_dir(&backup_dir)
+        .map_err(|error| error.to_string())?
+        .filter_map(Result::ok)
+        .filter(|entry| {
+            entry
+                .path()
+                .file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| {
+                    name.starts_with("crate-os-tag-backup-") && name.ends_with(".json")
+                })
+        })
+        .filter_map(|entry| {
+            let modified = entry.metadata().ok()?.modified().ok()?;
+            Some((modified, entry.path()))
+        })
+        .collect::<Vec<_>>();
+
+    backups.sort_by_key(|(modified, _)| *modified);
+    Ok(backups.pop().map(|(_, path)| path))
+}
+
+fn restore_catalog_metadata(
+    conn: &Connection,
+    scan_id: &str,
+    track: &TrackRow,
+) -> Result<(), String> {
+    conn.execute(
+        "update tracks
+         set title = ?1, artist = ?2, album = ?3, genre = ?4, year = ?5,
+             proposed_bucket = ?6, live365_readiness = ?7,
+             metadata_dirty = 0, tag_write_status = 'restored'
+         where scan_id = ?8 and path = ?9",
+        params![
+            track.title,
+            track.artist,
+            track.album,
+            track.genre,
+            track.year,
+            track.proposed_bucket,
+            track.live365_readiness,
+            scan_id,
+            track.path,
+        ],
+    )
+    .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
 fn write_track_tags(track: &TrackRow) -> Result<(), String> {
     let path = Path::new(&track.path);
     let mut tagged_file = lofty::read_from_path(path).map_err(|error| error.to_string())?;
@@ -1094,7 +1204,8 @@ pub fn run() {
             bulk_update_tracks,
             export_latest_scan,
             open_exports_folder,
-            write_tags_to_files
+            write_tags_to_files,
+            restore_latest_tag_backup
         ])
         .run(tauri::generate_context!())
         .expect("error while running Crate OS");

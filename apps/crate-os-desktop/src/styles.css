@@ -250,7 +250,7 @@ button:disabled {
   border-radius: 8px;
   display: grid;
   gap: 10px;
-  grid-template-columns: 150px repeat(4, minmax(0, 1fr)) 110px 130px;
+  grid-template-columns: 150px repeat(4, minmax(0, 1fr)) 110px 130px 150px;
   margin-bottom: 14px;
   padding: 12px;
 }
@@ -267,7 +267,7 @@ button:disabled {
 
 table {
   border-collapse: collapse;
-  min-width: 1540px;
+  min-width: 1580px;
   table-layout: fixed;
   width: 100%;
 }

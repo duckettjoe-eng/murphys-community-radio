@@ -103,6 +103,7 @@ export default function App() {
   const [metadataStatus, setMetadataStatus] = useState("");
   const [exportStatus, setExportStatus] = useState("");
   const [isWritingTags, setIsWritingTags] = useState(false);
+  const [isRestoringTags, setIsRestoringTags] = useState(false);
   const currentTier: ToolkitTier = "free";
   const gate = checkFeature(currentTier, "live365.upload.apply");
   const advancedExportGate = checkFeature(currentTier, "live365.upload.apply");
@@ -286,6 +287,31 @@ export default function App() {
       setMetadataStatus(error instanceof Error ? error.message : String(error));
     } finally {
       setIsWritingTags(false);
+    }
+  }
+
+  async function restoreLatestTagBackup() {
+    if (!summary) return;
+    setIsRestoringTags(true);
+    setMetadataStatus("");
+    try {
+      const result = await invoke<{
+        restored_count: number;
+        failed_count: number;
+        backup_path: string;
+      }>("restore_latest_tag_backup", {
+        args: {
+          scan_id: summary.scan_id,
+        },
+      });
+      setMetadataStatus(
+        `Restored ${result.restored_count.toLocaleString()} files, ${result.failed_count.toLocaleString()} failed. Backup: ${result.backup_path}`,
+      );
+      await refreshLatest();
+    } catch (error) {
+      setMetadataStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsRestoringTags(false);
     }
   }
 
@@ -532,6 +558,13 @@ export default function App() {
             onClick={writeSelectedTags}
           >
             {isWritingTags ? "Writing..." : "Write Tags"}
+          </button>
+          <button
+            type="button"
+            disabled={!summary || isRestoringTags}
+            onClick={restoreLatestTagBackup}
+          >
+            {isRestoringTags ? "Restoring..." : "Restore Backup"}
           </button>
         </div>
         {metadataStatus ? <p className="status">{metadataStatus}</p> : null}
