@@ -27,12 +27,21 @@ export type AudioMetadata = {
 
 export type LibraryTrack = AudioMetadata & {
   path: string;
+  relativeFolder: string;
   filename: string;
   extension: string;
   fileSizeBytes: number | null;
   proposedBucket: TrackBucket;
   live365Readiness: Live365Readiness;
   duplicateKey: string;
+};
+
+export type FolderSummary = {
+  folder: string;
+  trackCount: number;
+  totalBytes: number;
+  knownRuntimeSeconds: number;
+  unknownRuntimeCount: number;
 };
 
 export type ScanOptions = {
@@ -52,10 +61,13 @@ export type ScanSummary = {
   root: string;
   trackCount: number;
   totalBytes: number;
+  knownRuntimeSeconds: number;
+  unknownRuntimeCount: number;
   extensionCounts: Record<string, number>;
   bucketCounts: Record<TrackBucket, number>;
   duplicateCandidateGroups: number;
   parseErrorCount: number;
+  folderSummaries: FolderSummary[];
 };
 
 export type ScanResult = {

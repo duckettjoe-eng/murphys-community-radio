@@ -89,7 +89,7 @@ export function renderDashboard(scan: SavedScan | null) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
       margin-bottom: 16px;
     }
-    .stat, .gate, .controls, .scan-panel {
+    .stat, .gate, .controls, .scan-panel, .folders {
       border: 1px solid var(--line);
       background: rgba(9, 11, 9, 0.84);
       border-radius: 8px;
@@ -116,6 +116,15 @@ export function renderDashboard(scan: SavedScan | null) {
       grid-template-columns: minmax(0, 1fr) 220px 220px;
       margin-bottom: 14px;
     }
+    .metadata-tools {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(5, minmax(0, 1fr)) 160px 170px;
+      margin-bottom: 14px;
+      padding: 12px;
+    }
     .scan-panel {
       margin-bottom: 16px;
     }
@@ -136,6 +145,9 @@ export function renderDashboard(scan: SavedScan | null) {
       padding: 11px 12px;
     }
     .checkbox input {
+      width: auto;
+    }
+    .row-check {
       width: auto;
     }
     .status {
@@ -213,6 +225,21 @@ export function renderDashboard(scan: SavedScan | null) {
       font-weight: 850;
     }
     .warn { color: var(--red); }
+    .folders {
+      margin-bottom: 16px;
+    }
+    .section-head {
+      align-items: end;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .section-note {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
     .empty {
       border: 1px dashed rgba(214, 168, 71, 0.38);
       border-radius: 8px;
@@ -222,9 +249,10 @@ export function renderDashboard(scan: SavedScan | null) {
       background: rgba(9, 11, 9, 0.72);
     }
     @media (max-width: 760px) {
-      .stats, .toolbar, .gate, .scan-form { grid-template-columns: 1fr; }
+      .stats, .toolbar, .gate, .scan-form, .metadata-tools { grid-template-columns: 1fr; }
       main, header { padding-left: 16px; padding-right: 16px; }
-      th:nth-child(4), td:nth-child(4), th:nth-child(5), td:nth-child(5) { display: none; }
+      .section-head { align-items: start; flex-direction: column; }
+      th.optional, td.optional { display: none; }
     }
   </style>
 </head>
@@ -247,13 +275,13 @@ export function renderDashboard(scan: SavedScan | null) {
           <input id="scan-limit" name="limit" placeholder="optional" inputmode="numeric">
         </label>
         <label class="checkbox">
-          <input id="skip-metadata" name="skipMetadata" type="checkbox" checked>
-          <span>Skip metadata</span>
+          <input id="skip-metadata" name="skipMetadata" type="checkbox">
+          <span>Fast scan, skip metadata</span>
         </label>
         <button id="choose-folder-button" type="button">Choose Folder</button>
         <button id="scan-button" type="submit">Scan Library</button>
       </form>
-      <div class="status" id="scan-status">Use skip metadata for a fast first pass. Uncheck it when ffprobe is ready.</div>
+      <div class="status" id="scan-status">Metadata is read by default so runtime and tags are available. Use fast scan only for rough inventory passes.</div>
     </section>
     ${scan ? renderStats(scan) : `<div class="empty">No saved scan yet. Run <code>node dist/cli/scan.js --root /path/to/music --save --skip-metadata</code>.</div>`}
     ${scan ? `
@@ -265,7 +293,32 @@ export function renderDashboard(scan: SavedScan | null) {
         </div>
         <button disabled>Apply Live365 Upload</button>
       </section>
+      ${renderFolderSummaries(scan)}
       <section class="controls">
+        <div class="metadata-tools">
+          <label>
+            <div class="label">Bulk Artist</div>
+            <input id="bulk-artist" placeholder="leave blank">
+          </label>
+          <label>
+            <div class="label">Bulk Album</div>
+            <input id="bulk-album" placeholder="leave blank">
+          </label>
+          <label>
+            <div class="label">Bulk Genre</div>
+            <input id="bulk-genre" placeholder="leave blank">
+          </label>
+          <label>
+            <div class="label">Bulk Year</div>
+            <input id="bulk-year" placeholder="leave blank">
+          </label>
+          <label>
+            <div class="label">Bulk Runtime</div>
+            <input id="bulk-duration" placeholder="seconds">
+          </label>
+          <button id="bulk-apply" type="button">Apply Selected</button>
+          <button id="save-metadata" type="button">Save Metadata</button>
+        </div>
         <div class="toolbar">
           <label>
             <div class="label">Search</div>
@@ -293,10 +346,14 @@ export function renderDashboard(scan: SavedScan | null) {
         <table>
           <thead>
             <tr>
-              <th style="width: 20%">Artist</th>
-              <th style="width: 24%">Title</th>
-              <th style="width: 18%">Bucket</th>
-              <th style="width: 18%">Readiness</th>
+              <th style="width: 42px"></th>
+              <th style="width: 16%">Artist</th>
+              <th style="width: 18%">Title</th>
+              <th class="optional" style="width: 15%">Album</th>
+              <th style="width: 12%">Genre</th>
+              <th style="width: 80px">Year</th>
+              <th style="width: 100px">Runtime</th>
+              <th class="optional" style="width: 15%">Bucket</th>
               <th>Path</th>
             </tr>
           </thead>
@@ -312,6 +369,13 @@ export function renderDashboard(scan: SavedScan | null) {
       bucket: document.getElementById("bucket"),
       readiness: document.getElementById("readiness"),
       tracks: document.getElementById("tracks"),
+      bulkArtist: document.getElementById("bulk-artist"),
+      bulkAlbum: document.getElementById("bulk-album"),
+      bulkGenre: document.getElementById("bulk-genre"),
+      bulkYear: document.getElementById("bulk-year"),
+      bulkDuration: document.getElementById("bulk-duration"),
+      bulkApply: document.getElementById("bulk-apply"),
+      saveMetadata: document.getElementById("save-metadata"),
       scanForm: document.getElementById("scan-form"),
       scanRoot: document.getElementById("scan-root"),
       scanLimit: document.getElementById("scan-limit"),
@@ -332,11 +396,15 @@ export function renderDashboard(scan: SavedScan | null) {
           (!readiness || track.live365Readiness === readiness);
       }).slice(0, 500);
       els.tracks.innerHTML = filtered.map((track) => \`
-        <tr>
-          <td>\${escapeHtml(track.artist || "")}</td>
-          <td>\${escapeHtml(track.title || track.filename)}</td>
-          <td class="bucket">\${escapeHtml(track.proposedBucket)}</td>
-          <td class="\${track.live365Readiness.startsWith("skip") ? "warn" : ""}">\${escapeHtml(track.live365Readiness)}</td>
+        <tr data-path="\${escapeHtml(track.path)}">
+          <td><input class="row-check" type="checkbox" data-field="selected"></td>
+          <td><input data-field="artist" value="\${escapeAttr(track.artist || "")}"></td>
+          <td><input data-field="title" value="\${escapeAttr(track.title || track.filename)}"></td>
+          <td class="optional"><input data-field="album" value="\${escapeAttr(track.album || "")}"></td>
+          <td><input data-field="genre" value="\${escapeAttr(track.genre || "")}"></td>
+          <td><input data-field="year" value="\${escapeAttr(track.year || "")}"></td>
+          <td><input data-field="durationSeconds" value="\${track.durationSeconds ?? ""}" placeholder="seconds"></td>
+          <td class="optional bucket">\${escapeHtml(track.proposedBucket)}</td>
           <td title="\${escapeHtml(track.path)}">\${escapeHtml(track.path)}</td>
         </tr>
       \`).join("");
@@ -350,9 +418,69 @@ export function renderDashboard(scan: SavedScan | null) {
         "'": "&#39;"
       }[char]));
     }
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(new RegExp(String.fromCharCode(96), "g"), "&#96;");
+    }
+    function formatRuntime(seconds) {
+      if (seconds === null || seconds === undefined || Number.isNaN(Number(seconds))) return "Unknown";
+      const rounded = Math.round(Number(seconds));
+      const hours = Math.floor(rounded / 3600);
+      const minutes = Math.floor((rounded % 3600) / 60);
+      const secs = rounded % 60;
+      if (hours > 0) return \`\${hours}h \${minutes}m\`;
+      if (minutes > 0) return \`\${minutes}m \${secs}s\`;
+      return \`\${secs}s\`;
+    }
     els.search?.addEventListener("input", renderRows);
     els.bucket?.addEventListener("change", renderRows);
     els.readiness?.addEventListener("change", renderRows);
+    els.bulkApply?.addEventListener("click", () => {
+      const selectedRows = getRows().filter((row) => row.querySelector('[data-field="selected"]')?.checked);
+      const rows = selectedRows.length ? selectedRows : getRows();
+      const bulk = {
+        artist: els.bulkArtist?.value || "",
+        album: els.bulkAlbum?.value || "",
+        genre: els.bulkGenre?.value || "",
+        year: els.bulkYear?.value || "",
+        durationSeconds: els.bulkDuration?.value || "",
+      };
+      for (const row of rows) {
+        for (const [field, value] of Object.entries(bulk)) {
+          if (!value) continue;
+          const input = row.querySelector(\`[data-field="\${field}"]\`);
+          if (input) input.value = value;
+        }
+      }
+      setScanStatus(\`Applied bulk metadata to \${rows.length} visible row(s). Click Save Metadata to keep it.\`, "success");
+    });
+    els.saveMetadata?.addEventListener("click", async () => {
+      const updates = getRows().map((row) => ({
+        path: row.dataset.path,
+        artist: row.querySelector('[data-field="artist"]')?.value || "",
+        title: row.querySelector('[data-field="title"]')?.value || "",
+        album: row.querySelector('[data-field="album"]')?.value || "",
+        genre: row.querySelector('[data-field="genre"]')?.value || "",
+        year: row.querySelector('[data-field="year"]')?.value || "",
+        durationSeconds: row.querySelector('[data-field="durationSeconds"]')?.value || null,
+      })).filter((update) => update.path);
+      setScanStatus("Saving metadata edits.", "");
+      try {
+        const response = await fetch("/api/metadata", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ updates }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Save failed.");
+        setScanStatus(\`Saved metadata for \${data.changed} track(s). Refreshing...\`, "success");
+        window.location.reload();
+      } catch (error) {
+        setScanStatus(error instanceof Error ? error.message : String(error), "error");
+      }
+    });
+    function getRows() {
+      return [...document.querySelectorAll("tbody#tracks tr")];
+    }
     els.chooseFolderButton?.addEventListener("click", async () => {
       els.chooseFolderButton.disabled = true;
       els.chooseFolderButton.textContent = "Choosing...";
@@ -425,6 +553,14 @@ function renderStats(scan: SavedScan) {
       <div class="value">${formatBytes(scan.summary.totalBytes)}</div>
     </div>
     <div class="stat">
+      <div class="label">Known Runtime</div>
+      <div class="value">${formatRuntime(scan.summary.knownRuntimeSeconds ?? 0)}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Unknown Runtime</div>
+      <div class="value">${scan.summary.unknownRuntimeCount ?? scan.tracks.filter((track) => track.durationSeconds === null).length}</div>
+    </div>
+    <div class="stat">
       <div class="label">Duplicate Groups</div>
       <div class="value">${scan.summary.duplicateCandidateGroups}</div>
     </div>
@@ -433,6 +569,53 @@ function renderStats(scan: SavedScan) {
       <div class="value">${new Date(scan.createdAt).toLocaleDateString()}</div>
     </div>
   </section>`;
+}
+
+function renderFolderSummaries(scan: SavedScan) {
+  const folderSummaries = scan.summary.folderSummaries ?? [];
+  const rows = folderSummaries
+    .slice(0, 100)
+    .map(
+      (folder) => `<tr>
+        <td title="${escapeHtml(folder.folder)}">${escapeHtml(folder.folder)}</td>
+        <td>${folder.trackCount}</td>
+        <td>${formatRuntime(folder.knownRuntimeSeconds)}</td>
+        <td>${folder.unknownRuntimeCount}</td>
+        <td class="optional">${formatBytes(folder.totalBytes)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  return `<section class="folders">
+    <div class="section-head">
+      <div>
+        <div class="label">Folder Runtime</div>
+        <div class="section-note">Top ${Math.min(folderSummaries.length, 100)} folders by path, with known-duration totals.</div>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Folder</th>
+          <th style="width: 110px">Tracks</th>
+          <th style="width: 150px">Runtime</th>
+          <th style="width: 130px">Unknown</th>
+          <th class="optional" style="width: 130px">Size</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </section>`;
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[char] ?? char);
 }
 
 function uniqueBuckets(buckets: TrackBucket[]) {
@@ -448,4 +631,15 @@ function formatBytes(bytes: number) {
     value /= 1024;
   }
   return `${value.toFixed(1)} PB`;
+}
+
+function formatRuntime(seconds: number) {
+  const rounded = Math.round(seconds);
+  const hours = Math.floor(rounded / 3600);
+  const minutes = Math.floor((rounded % 3600) / 60);
+  const secs = rounded % 60;
+
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${secs}s`;
+  return `${secs}s`;
 }

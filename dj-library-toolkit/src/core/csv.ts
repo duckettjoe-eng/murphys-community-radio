@@ -2,6 +2,7 @@ import type { LibraryTrack } from "./types.js";
 
 const headers: Array<keyof LibraryTrack> = [
   "path",
+  "relativeFolder",
   "filename",
   "extension",
   "fileSizeBytes",

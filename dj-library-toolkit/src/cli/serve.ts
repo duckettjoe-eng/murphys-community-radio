@@ -4,6 +4,8 @@ import { promisify } from "node:util";
 import { scanLibrary } from "../core/scanner.js";
 import { defaultStorePath, latestScan } from "../core/store.js";
 import { saveScan } from "../core/store.js";
+import { updateLatestScanTracks } from "../core/store.js";
+import type { TrackMetadataUpdate } from "../core/store.js";
 import { renderDashboard } from "../web/dashboard.js";
 
 const execFile = promisify(execFileCallback);
@@ -20,6 +22,11 @@ const server = http.createServer(async (request, response) => {
 
     if (request.method === "POST" && request.url === "/api/choose-folder") {
       await handleChooseFolderRequest(response);
+      return;
+    }
+
+    if (request.method === "POST" && request.url === "/api/metadata") {
+      await handleMetadataRequest(request, response);
       return;
     }
 
@@ -55,7 +62,7 @@ async function handleScanRequest(
   const result = await scanLibrary({
     root,
     limit: Number.isFinite(limit) ? limit : undefined,
-    skipMetadata: Boolean(body.skipMetadata),
+    skipMetadata: body.skipMetadata === true,
     ffprobePath:
       typeof body.ffprobePath === "string" && body.ffprobePath.trim()
         ? body.ffprobePath.trim()
@@ -64,6 +71,46 @@ async function handleScanRequest(
   const savedScan = await saveScan(result, store);
   response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
   response.end(JSON.stringify({ scanId: savedScan.id, summary: savedScan.summary }));
+}
+
+async function handleMetadataRequest(
+  request: http.IncomingMessage,
+  response: http.ServerResponse,
+) {
+  const body = await readJsonBody(request);
+  const updates = Array.isArray(body.updates) ? body.updates : [];
+  const cleanedUpdates: TrackMetadataUpdate[] = [];
+  for (const update of updates) {
+      if (!update || typeof update !== "object") continue;
+      const record = update as Record<string, unknown>;
+      const durationValue =
+        record.durationSeconds === "" || record.durationSeconds === null
+          ? null
+          : Number(record.durationSeconds);
+      const cleaned: TrackMetadataUpdate = {
+        path: String(record.path ?? ""),
+        artist: optionalString(record.artist),
+        title: optionalString(record.title),
+        album: optionalString(record.album),
+        genre: optionalString(record.genre),
+        year: optionalString(record.year),
+        durationSeconds:
+          record.durationSeconds === undefined
+            ? undefined
+            : Number.isFinite(durationValue)
+              ? durationValue
+              : null,
+      };
+      if (cleaned.path) cleanedUpdates.push(cleaned);
+  }
+
+  const result = await updateLatestScanTracks(cleanedUpdates, store);
+  response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+  response.end(JSON.stringify({ changed: result.changed, summary: result.scan.summary }));
+}
+
+function optionalString(value: unknown) {
+  return value === undefined ? undefined : String(value);
 }
 
 async function handleChooseFolderRequest(response: http.ServerResponse) {

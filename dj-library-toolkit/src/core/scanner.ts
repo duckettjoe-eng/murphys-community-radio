@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { audioExtensions, classifyTrack, duplicateKey, live365Readiness } from "./classifier.js";
-import type { AudioMetadata, LibraryTrack, ScanOptions, ScanResult, TrackBucket } from "./types.js";
+import type { AudioMetadata, FolderSummary, LibraryTrack, ScanOptions, ScanResult, TrackBucket } from "./types.js";
 
 const execFile = promisify(execFileCallback);
 
@@ -25,17 +25,11 @@ export async function scanLibrary(options: ScanOptions): Promise<ScanResult> {
   }
 
   const tracks: LibraryTrack[] = [];
-  const extensionCounts: Record<string, number> = {};
-  const bucketCounts = emptyBucketCounts();
-  let totalBytes = 0;
-
   for (let index = 0; index < audioFiles.length; index += 1) {
     const filePath = audioFiles[index];
     const ext = path.extname(filePath).toLowerCase();
-    extensionCounts[ext || "(none)"] = (extensionCounts[ext || "(none)"] ?? 0) + 1;
 
     const stat = await safeStat(filePath);
-    if (stat?.size) totalBytes += stat.size;
 
     const metadata = options.skipMetadata
       ? metadataFromFilename(filePath)
@@ -43,6 +37,7 @@ export async function scanLibrary(options: ScanOptions): Promise<ScanResult> {
 
     const draft = {
       path: filePath,
+      relativeFolder: relativeFolder(options.root, filePath),
       filename: path.basename(filePath),
       extension: ext,
       fileSizeBytes: stat?.size ?? null,
@@ -56,24 +51,46 @@ export async function scanLibrary(options: ScanOptions): Promise<ScanResult> {
       duplicateKey: duplicateKey(draft),
     };
 
-    bucketCounts[proposedBucket] += 1;
     tracks.push(track);
     options.onProgress?.({ type: "metadata", current: index + 1, total: audioFiles.length });
   }
 
-  const duplicateCandidateGroups = countDuplicateCandidateGroups(tracks);
-
   return {
     tracks,
-    summary: {
-      root: options.root,
-      trackCount: tracks.length,
-      totalBytes,
-      extensionCounts,
-      bucketCounts,
-      duplicateCandidateGroups,
-      parseErrorCount: tracks.filter((track) => track.parseError).length,
-    },
+    summary: summarizeTracks(options.root, tracks),
+  };
+}
+
+export function summarizeTracks(root: string, tracks: LibraryTrack[]) {
+  const extensionCounts: Record<string, number> = {};
+  const bucketCounts = emptyBucketCounts();
+  let totalBytes = 0;
+  let knownRuntimeSeconds = 0;
+  let unknownRuntimeCount = 0;
+
+  for (const track of tracks) {
+    extensionCounts[track.extension || "(none)"] =
+      (extensionCounts[track.extension || "(none)"] ?? 0) + 1;
+    totalBytes += track.fileSizeBytes ?? 0;
+    bucketCounts[track.proposedBucket] += 1;
+    if (track.durationSeconds === null) {
+      unknownRuntimeCount += 1;
+    } else {
+      knownRuntimeSeconds += track.durationSeconds;
+    }
+  }
+
+  return {
+    root,
+    trackCount: tracks.length,
+    totalBytes,
+    knownRuntimeSeconds,
+    unknownRuntimeCount,
+    extensionCounts,
+    bucketCounts,
+    duplicateCandidateGroups: countDuplicateCandidateGroups(tracks),
+    parseErrorCount: tracks.filter((track) => track.parseError).length,
+    folderSummaries: summarizeFolders(tracks),
   };
 }
 
@@ -116,6 +133,11 @@ function metadataFromFilename(filePath: string): AudioMetadata {
     year: "",
     parseError: "",
   };
+}
+
+function relativeFolder(root: string, filePath: string) {
+  const folder = path.dirname(path.relative(root, filePath));
+  return folder === "." ? "(root)" : folder;
 }
 
 async function probeMetadata(filePath: string, ffprobePath = "ffprobe"): Promise<AudioMetadata> {
@@ -189,4 +211,32 @@ function countDuplicateCandidateGroups(tracks: LibraryTrack[]) {
     counts.set(track.duplicateKey, (counts.get(track.duplicateKey) ?? 0) + 1);
   }
   return [...counts.values()].filter((count) => count > 1).length;
+}
+
+function summarizeFolders(tracks: LibraryTrack[]): FolderSummary[] {
+  const folders = new Map<string, FolderSummary>();
+
+  for (const track of tracks) {
+    const folder = track.relativeFolder || "(root)";
+    const summary = folders.get(folder) ?? {
+      folder,
+      trackCount: 0,
+      totalBytes: 0,
+      knownRuntimeSeconds: 0,
+      unknownRuntimeCount: 0,
+    };
+
+    summary.trackCount += 1;
+    summary.totalBytes += track.fileSizeBytes ?? 0;
+    if (track.durationSeconds === null) {
+      summary.unknownRuntimeCount += 1;
+    } else {
+      summary.knownRuntimeSeconds += track.durationSeconds;
+    }
+    folders.set(folder, summary);
+  }
+
+  return [...folders.values()].sort((left, right) =>
+    left.folder.localeCompare(right.folder),
+  );
 }
