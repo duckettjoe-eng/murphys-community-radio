@@ -123,7 +123,7 @@ export function renderDashboard(scan: SavedScan | null) {
       align-items: end;
       display: grid;
       gap: 12px;
-      grid-template-columns: minmax(0, 1fr) 150px 190px 180px;
+      grid-template-columns: minmax(0, 1fr) 150px 190px 150px 180px;
       margin-top: 14px;
     }
     .checkbox {
@@ -250,6 +250,7 @@ export function renderDashboard(scan: SavedScan | null) {
           <input id="skip-metadata" name="skipMetadata" type="checkbox" checked>
           <span>Skip metadata</span>
         </label>
+        <button id="choose-folder-button" type="button">Choose Folder</button>
         <button id="scan-button" type="submit">Scan Library</button>
       </form>
       <div class="status" id="scan-status">Use skip metadata for a fast first pass. Uncheck it when ffprobe is ready.</div>
@@ -315,6 +316,7 @@ export function renderDashboard(scan: SavedScan | null) {
       scanRoot: document.getElementById("scan-root"),
       scanLimit: document.getElementById("scan-limit"),
       skipMetadata: document.getElementById("skip-metadata"),
+      chooseFolderButton: document.getElementById("choose-folder-button"),
       scanButton: document.getElementById("scan-button"),
       scanStatus: document.getElementById("scan-status"),
     };
@@ -351,6 +353,23 @@ export function renderDashboard(scan: SavedScan | null) {
     els.search?.addEventListener("input", renderRows);
     els.bucket?.addEventListener("change", renderRows);
     els.readiness?.addEventListener("change", renderRows);
+    els.chooseFolderButton?.addEventListener("click", async () => {
+      els.chooseFolderButton.disabled = true;
+      els.chooseFolderButton.textContent = "Choosing...";
+      setScanStatus("Opening the system folder picker.", "");
+      try {
+        const response = await fetch("/api/choose-folder", { method: "POST" });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to choose a folder.");
+        els.scanRoot.value = data.path;
+        setScanStatus("Folder selected. Ready to scan.", "success");
+      } catch (error) {
+        setScanStatus(error instanceof Error ? error.message : String(error), "error");
+      } finally {
+        els.chooseFolderButton.disabled = false;
+        els.chooseFolderButton.textContent = "Choose Folder";
+      }
+    });
     els.scanForm?.addEventListener("submit", async (event) => {
       event.preventDefault();
       const root = els.scanRoot?.value?.trim();

@@ -1,9 +1,12 @@
 import http from "node:http";
+import { execFile as execFileCallback } from "node:child_process";
+import { promisify } from "node:util";
 import { scanLibrary } from "../core/scanner.js";
 import { defaultStorePath, latestScan } from "../core/store.js";
 import { saveScan } from "../core/store.js";
 import { renderDashboard } from "../web/dashboard.js";
 
+const execFile = promisify(execFileCallback);
 const args = parseArgs(process.argv.slice(2));
 const port = args.port ? Number.parseInt(String(args.port), 10) : 4173;
 const store = String(args.store ?? defaultStorePath);
@@ -12,6 +15,11 @@ const server = http.createServer(async (request, response) => {
   try {
     if (request.method === "POST" && request.url === "/api/scan") {
       await handleScanRequest(request, response);
+      return;
+    }
+
+    if (request.method === "POST" && request.url === "/api/choose-folder") {
+      await handleChooseFolderRequest(response);
       return;
     }
 
@@ -56,6 +64,28 @@ async function handleScanRequest(
   const savedScan = await saveScan(result, store);
   response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
   response.end(JSON.stringify({ scanId: savedScan.id, summary: savedScan.summary }));
+}
+
+async function handleChooseFolderRequest(response: http.ServerResponse) {
+  if (process.platform !== "darwin") {
+    response.writeHead(501, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: "Native folder picking is currently implemented for macOS." }));
+    return;
+  }
+
+  try {
+    const { stdout } = await execFile("osascript", [
+      "-e",
+      'POSIX path of (choose folder with prompt "Choose a music library folder for Crate OS")',
+    ]);
+    const folderPath = stdout.trim();
+    response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ path: folderPath }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    response.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: message || "Folder selection was canceled." }));
+  }
 }
 
 async function readJsonBody(request: http.IncomingMessage) {
