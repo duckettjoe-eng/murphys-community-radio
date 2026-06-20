@@ -177,7 +177,7 @@ export default function Live365Player({
         ) : null}
         <div className="min-w-0">
           <p className="text-[11px] font-black uppercase tracking-[0.28em] text-orange-300">
-            {nowPlaying.playlistName || "Live365 Stream"}
+            {nowPlaying.playlistName || "DJ Hello Joey"}
           </p>
           <h3 className="mt-2 truncate text-2xl font-black text-white">
             {nowPlaying.showName}
