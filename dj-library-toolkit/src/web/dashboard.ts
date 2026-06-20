@@ -89,7 +89,7 @@ export function renderDashboard(scan: SavedScan | null) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
       margin-bottom: 16px;
     }
-    .stat, .gate, .controls {
+    .stat, .gate, .controls, .scan-panel {
       border: 1px solid var(--line);
       background: rgba(9, 11, 9, 0.84);
       border-radius: 8px;
@@ -116,6 +116,37 @@ export function renderDashboard(scan: SavedScan | null) {
       grid-template-columns: minmax(0, 1fr) 220px 220px;
       margin-bottom: 14px;
     }
+    .scan-panel {
+      margin-bottom: 16px;
+    }
+    .scan-form {
+      align-items: end;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(0, 1fr) 150px 190px 180px;
+      margin-top: 14px;
+    }
+    .checkbox {
+      align-items: center;
+      border: 1px solid var(--line-soft);
+      border-radius: 6px;
+      display: flex;
+      gap: 10px;
+      min-height: 45px;
+      padding: 11px 12px;
+    }
+    .checkbox input {
+      width: auto;
+    }
+    .status {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+    .status.error { color: var(--red); }
+    .status.success { color: var(--green); }
     input, select, button {
       width: 100%;
       border: 1px solid var(--line-soft);
@@ -191,7 +222,7 @@ export function renderDashboard(scan: SavedScan | null) {
       background: rgba(9, 11, 9, 0.72);
     }
     @media (max-width: 760px) {
-      .stats, .toolbar, .gate { grid-template-columns: 1fr; }
+      .stats, .toolbar, .gate, .scan-form { grid-template-columns: 1fr; }
       main, header { padding-left: 16px; padding-right: 16px; }
       th:nth-child(4), td:nth-child(4), th:nth-child(5), td:nth-child(5) { display: none; }
     }
@@ -204,6 +235,25 @@ export function renderDashboard(scan: SavedScan | null) {
     <p class="tagline">${productTagline}</p>
   </header>
   <main>
+    <section class="scan-panel">
+      <div class="label">Library Scan</div>
+      <form class="scan-form" id="scan-form">
+        <label>
+          <div class="label">Folder Path</div>
+          <input id="scan-root" name="root" placeholder="/Volumes/Music/DJ Library" autocomplete="off">
+        </label>
+        <label>
+          <div class="label">Limit</div>
+          <input id="scan-limit" name="limit" placeholder="optional" inputmode="numeric">
+        </label>
+        <label class="checkbox">
+          <input id="skip-metadata" name="skipMetadata" type="checkbox" checked>
+          <span>Skip metadata</span>
+        </label>
+        <button id="scan-button" type="submit">Scan Library</button>
+      </form>
+      <div class="status" id="scan-status">Use skip metadata for a fast first pass. Uncheck it when ffprobe is ready.</div>
+    </section>
     ${scan ? renderStats(scan) : `<div class="empty">No saved scan yet. Run <code>node dist/cli/scan.js --root /path/to/music --save --skip-metadata</code>.</div>`}
     ${scan ? `
       <section class="gate">
@@ -261,6 +311,12 @@ export function renderDashboard(scan: SavedScan | null) {
       bucket: document.getElementById("bucket"),
       readiness: document.getElementById("readiness"),
       tracks: document.getElementById("tracks"),
+      scanForm: document.getElementById("scan-form"),
+      scanRoot: document.getElementById("scan-root"),
+      scanLimit: document.getElementById("scan-limit"),
+      skipMetadata: document.getElementById("skip-metadata"),
+      scanButton: document.getElementById("scan-button"),
+      scanStatus: document.getElementById("scan-status"),
     };
     function renderRows() {
       if (!els.tracks) return;
@@ -295,6 +351,44 @@ export function renderDashboard(scan: SavedScan | null) {
     els.search?.addEventListener("input", renderRows);
     els.bucket?.addEventListener("change", renderRows);
     els.readiness?.addEventListener("change", renderRows);
+    els.scanForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const root = els.scanRoot?.value?.trim();
+      if (!root) {
+        setScanStatus("Choose a folder path first.", "error");
+        return;
+      }
+
+      els.scanButton.disabled = true;
+      els.scanButton.textContent = "Scanning...";
+      setScanStatus("Scanning local files. Large libraries can take a while.", "");
+
+      try {
+        const response = await fetch("/api/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            root,
+            limit: els.scanLimit?.value || undefined,
+            skipMetadata: Boolean(els.skipMetadata?.checked),
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Scan failed.");
+        setScanStatus(\`Saved \${data.summary.trackCount} tracks. Refreshing...\`, "success");
+        window.location.reload();
+      } catch (error) {
+        setScanStatus(error instanceof Error ? error.message : String(error), "error");
+      } finally {
+        els.scanButton.disabled = false;
+        els.scanButton.textContent = "Scan Library";
+      }
+    });
+    function setScanStatus(message, tone) {
+      if (!els.scanStatus) return;
+      els.scanStatus.textContent = message;
+      els.scanStatus.className = \`status \${tone || ""}\`;
+    }
     renderRows();
   </script>
 </body>

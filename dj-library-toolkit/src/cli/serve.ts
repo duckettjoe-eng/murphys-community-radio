@@ -1,5 +1,7 @@
 import http from "node:http";
+import { scanLibrary } from "../core/scanner.js";
 import { defaultStorePath, latestScan } from "../core/store.js";
+import { saveScan } from "../core/store.js";
 import { renderDashboard } from "../web/dashboard.js";
 
 const args = parseArgs(process.argv.slice(2));
@@ -7,16 +9,76 @@ const port = args.port ? Number.parseInt(String(args.port), 10) : 4173;
 const store = String(args.store ?? defaultStorePath);
 
 const server = http.createServer(async (request, response) => {
-  if (request.url !== "/" && request.url !== "/index.html") {
-    response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-    response.end("Not found");
+  try {
+    if (request.method === "POST" && request.url === "/api/scan") {
+      await handleScanRequest(request, response);
+      return;
+    }
+
+    if (request.url !== "/" && request.url !== "/index.html") {
+      response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+      response.end("Not found");
+      return;
+    }
+
+    const scan = await latestScan(store);
+    response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    response.end(renderDashboard(scan));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    response.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: message }));
+  }
+});
+
+async function handleScanRequest(
+  request: http.IncomingMessage,
+  response: http.ServerResponse,
+) {
+  const body = await readJsonBody(request);
+  const root = String(body.root ?? "").trim();
+  if (!root) {
+    response.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: "Choose a library folder before scanning." }));
     return;
   }
 
-  const scan = await latestScan(store);
-  response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-  response.end(renderDashboard(scan));
-});
+  const limit = body.limit ? Number.parseInt(String(body.limit), 10) : undefined;
+  const result = await scanLibrary({
+    root,
+    limit: Number.isFinite(limit) ? limit : undefined,
+    skipMetadata: Boolean(body.skipMetadata),
+    ffprobePath:
+      typeof body.ffprobePath === "string" && body.ffprobePath.trim()
+        ? body.ffprobePath.trim()
+        : undefined,
+  });
+  const savedScan = await saveScan(result, store);
+  response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+  response.end(JSON.stringify({ scanId: savedScan.id, summary: savedScan.summary }));
+}
+
+async function readJsonBody(request: http.IncomingMessage) {
+  const chunks: Buffer[] = [];
+  let size = 0;
+
+  for await (const chunk of request) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    chunks.push(buffer);
+    size += buffer.length;
+    if (size > 1024 * 1024) {
+      throw new Error("Request body is too large.");
+    }
+  }
+
+  const text = Buffer.concat(chunks).toString("utf8");
+  if (!text) return {};
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    throw new Error("Request body must be valid JSON.");
+  }
+}
 
 server.listen(port, "127.0.0.1", () => {
   console.log(`Crate OS dashboard: http://127.0.0.1:${port}`);
