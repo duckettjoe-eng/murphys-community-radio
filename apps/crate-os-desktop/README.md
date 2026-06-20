@@ -40,4 +40,10 @@ Native app bundle:
 npm run tauri:build
 ```
 
-The current scanner walks audio folders, stores scan summaries and tracks in SQLite, and emits progress. Full audio metadata and runtime extraction is the next native layer to wire in.
+macOS app bundle without the DMG wrapper:
+
+```sh
+npm run tauri:build:app
+```
+
+The current scanner walks audio folders, reads runtime, preserves editable metadata across rescans, stores scan summaries and tracks in SQLite, and emits progress.

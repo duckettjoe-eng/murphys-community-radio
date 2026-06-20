@@ -1,8 +1,10 @@
 use chrono::Utc;
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::fs::File;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use symphonia::core::errors::Error as SymphoniaError;
 use symphonia::core::formats::FormatOptions;
@@ -51,6 +53,7 @@ struct TrackRow {
     duration_seconds: Option<f64>,
     proposed_bucket: String,
     live365_readiness: String,
+    scan_status: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -76,6 +79,17 @@ struct BulkMetadataUpdate {
     year: Option<String>,
     proposed_bucket: Option<String>,
     live365_readiness: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ExportArgs {
+    format: String,
+    tier: String,
+}
+
+#[derive(Debug, Serialize)]
+struct ExportResponse {
+    path: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -109,6 +123,49 @@ fn latest_scan(app: AppHandle) -> Result<LatestScanResponse, String> {
         Vec::new()
     };
     Ok(LatestScanResponse { summary, tracks })
+}
+
+#[tauri::command]
+fn export_latest_scan(app: AppHandle, args: ExportArgs) -> Result<ExportResponse, String> {
+    if args.format == "live365" && args.tier != "supporter" && args.tier != "pro" {
+        return Err("Live365 exports require the supporter tier.".to_string());
+    }
+
+    let conn = open_database(&app)?;
+    init_database(&conn)?;
+    let summary =
+        latest_summary(&conn)?.ok_or_else(|| "Scan a folder before exporting.".to_string())?;
+    let tracks = tracks_for_scan(&conn, &summary.scan_id)?;
+    let export_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| error.to_string())?
+        .join("exports");
+    fs::create_dir_all(&export_dir).map_err(|error| error.to_string())?;
+
+    let stamp = Utc::now().format("%Y%m%d-%H%M%S");
+    let path = match args.format.as_str() {
+        "json" => {
+            let path = export_dir.join(format!("crate-os-scan-{stamp}.json"));
+            let body = serde_json::to_string_pretty(&tracks).map_err(|error| error.to_string())?;
+            fs::write(&path, body).map_err(|error| error.to_string())?;
+            path
+        }
+        "live365" => {
+            let path = export_dir.join(format!("crate-os-live365-{stamp}.csv"));
+            write_csv_export(&path, &tracks)?;
+            path
+        }
+        _ => {
+            let path = export_dir.join(format!("crate-os-library-{stamp}.csv"));
+            write_csv_export(&path, &tracks)?;
+            path
+        }
+    };
+
+    Ok(ExportResponse {
+        path: path.to_string_lossy().to_string(),
+    })
 }
 
 #[tauri::command]
@@ -192,7 +249,11 @@ fn bulk_update_tracks(app: AppHandle, update: BulkMetadataUpdate) -> Result<(), 
 }
 
 #[tauri::command]
-async fn scan_library(app: AppHandle, root: String, limit: Option<usize>) -> Result<ScanSummary, String> {
+async fn scan_library(
+    app: AppHandle,
+    root: String,
+    limit: Option<usize>,
+) -> Result<ScanSummary, String> {
     let args = ScanArgs { root, limit };
     tauri::async_runtime::spawn_blocking(move || scan_library_blocking(app, args))
         .await
@@ -206,7 +267,11 @@ fn scan_library_blocking(app: AppHandle, args: ScanArgs) -> Result<ScanSummary, 
     }
 
     let mut files = Vec::new();
-    for entry in WalkDir::new(&root).follow_links(false).into_iter().filter_map(Result::ok) {
+    for entry in WalkDir::new(&root)
+        .follow_links(false)
+        .into_iter()
+        .filter_map(Result::ok)
+    {
         if !entry.file_type().is_file() {
             continue;
         }
@@ -223,6 +288,14 @@ fn scan_library_blocking(app: AppHandle, args: ScanArgs) -> Result<ScanSummary, 
     let started_at = Utc::now().to_rfc3339();
     let mut tracks = Vec::new();
     let mut total_bytes = 0_i64;
+    let conn = open_database(&app)?;
+    init_database(&conn)?;
+    let previous_tracks = latest_tracks_for_root(&conn, &args.root)?;
+    let previous_by_path = previous_tracks
+        .into_iter()
+        .map(|track| (track.path.clone(), track))
+        .collect::<HashMap<_, _>>();
+    let mut current_paths = HashSet::new();
 
     for (index, file) in files.iter().enumerate() {
         let _ = app.emit(
@@ -238,21 +311,52 @@ fn scan_library_blocking(app: AppHandle, args: ScanArgs) -> Result<ScanSummary, 
         let metadata = fs::metadata(file).map_err(|error| error.to_string())?;
         let size = metadata.len() as i64;
         total_bytes += size;
-        tracks.push(track_from_path(&root, file, size));
+        let mut track = track_from_path(&root, file, size);
+        if let Some(previous) = previous_by_path.get(&track.path) {
+            track.artist = previous.artist.clone();
+            track.album = previous.album.clone();
+            track.genre = previous.genre.clone();
+            track.year = previous.year.clone();
+            track.title = previous.title.clone();
+            track.proposed_bucket = previous.proposed_bucket.clone();
+            track.live365_readiness = previous.live365_readiness.clone();
+            track.scan_status = if previous.file_size_bytes != track.file_size_bytes {
+                "changed".to_string()
+            } else {
+                "unchanged".to_string()
+            };
+        }
+        current_paths.insert(track.path.clone());
+        tracks.push(track);
+    }
+
+    for previous in previous_by_path.values() {
+        if !current_paths.contains(&previous.path) {
+            let mut missing = previous.clone();
+            missing.scan_status = "missing".to_string();
+            tracks.push(missing);
+        }
     }
 
     let known_runtime_seconds = tracks
         .iter()
+        .filter(|track| track.scan_status != "missing")
         .filter_map(|track| track.duration_seconds)
         .sum::<f64>();
     let unknown_runtime_count = tracks
         .iter()
+        .filter(|track| track.scan_status != "missing")
         .filter(|track| track.duration_seconds.is_none())
         .count();
 
-    let conn = open_database(&app)?;
-    init_database(&conn)?;
-    save_scan(&conn, &scan_id, &args.root, &started_at, total_bytes, &tracks)?;
+    save_scan(
+        &conn,
+        &scan_id,
+        &args.root,
+        &started_at,
+        total_bytes,
+        &tracks,
+    )?;
     let summary = ScanSummary {
         scan_id,
         root: args.root,
@@ -291,7 +395,11 @@ fn track_from_path(root: &Path, file: &Path, size: i64) -> TrackRow {
         .and_then(|parent| parent.strip_prefix(root).ok())
         .map(|folder| {
             let value = folder.to_string_lossy().to_string();
-            if value.is_empty() { "(root)".to_string() } else { value }
+            if value.is_empty() {
+                "(root)".to_string()
+            } else {
+                value
+            }
         })
         .unwrap_or_else(|| "(root)".to_string());
     let haystack = format!("{} {} {}", file.to_string_lossy(), filename, title).to_lowercase();
@@ -312,6 +420,7 @@ fn track_from_path(root: &Path, file: &Path, size: i64) -> TrackRow {
         duration_seconds: audio_duration_seconds(file),
         proposed_bucket,
         live365_readiness,
+        scan_status: "new".to_string(),
     }
 }
 
@@ -360,7 +469,10 @@ fn audio_duration_seconds(file: &Path) -> Option<f64> {
 }
 
 fn classify(haystack: &str) -> String {
-    if ["mix", "podcast", "interview", "talk"].iter().any(|term| haystack.contains(term)) {
+    if ["mix", "podcast", "interview", "talk"]
+        .iter()
+        .any(|term| haystack.contains(term))
+    {
         return "longform_radio".to_string();
     }
     if ["house", "club", "techno", "dance", "disco", "remix"]
@@ -395,7 +507,12 @@ fn open_database(app: &AppHandle) -> Result<Connection, String> {
 
 fn init_database(conn: &Connection) -> Result<(), String> {
     conn.execute_batch(include_str!("../migrations/001_init.sql"))
-        .map_err(|error| error.to_string())
+        .map_err(|error| error.to_string())?;
+    let _ = conn.execute(
+        "alter table tracks add column scan_status text not null default 'scanned'",
+        [],
+    );
+    Ok(())
 }
 
 fn save_scan(
@@ -415,8 +532,16 @@ fn save_scan(
             started_at,
             tracks.len() as i64,
             total_bytes,
-            tracks.iter().filter_map(|track| track.duration_seconds).sum::<f64>(),
-            tracks.iter().filter(|track| track.duration_seconds.is_none()).count() as i64,
+            tracks
+                .iter()
+                .filter(|track| track.scan_status != "missing")
+                .filter_map(|track| track.duration_seconds)
+                .sum::<f64>(),
+            tracks
+                .iter()
+                .filter(|track| track.scan_status != "missing")
+                .filter(|track| track.duration_seconds.is_none())
+                .count() as i64,
         ],
     )
     .map_err(|error| error.to_string())?;
@@ -425,8 +550,8 @@ fn save_scan(
         conn.execute(
             "insert into tracks (
               scan_id, path, relative_folder, filename, extension, file_size_bytes,
-              title, artist, album, genre, year, duration_seconds, proposed_bucket, live365_readiness
-            ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+              title, artist, album, genre, year, duration_seconds, proposed_bucket, live365_readiness, scan_status
+            ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
             params![
                 scan_id,
                 track.path,
@@ -442,11 +567,24 @@ fn save_scan(
                 track.duration_seconds,
                 track.proposed_bucket,
                 track.live365_readiness,
+                track.scan_status,
             ],
         )
         .map_err(|error| error.to_string())?;
     }
     Ok(())
+}
+
+fn latest_tracks_for_root(conn: &Connection, root: &str) -> Result<Vec<TrackRow>, String> {
+    let mut stmt = conn
+        .prepare("select id from scans where root = ?1 order by started_at desc limit 1")
+        .map_err(|error| error.to_string())?;
+    let scan_id = stmt.query_row([root], |row| row.get::<_, String>(0)).ok();
+    if let Some(scan_id) = scan_id {
+        tracks_for_scan(conn, &scan_id)
+    } else {
+        Ok(Vec::new())
+    }
 }
 
 fn latest_summary(conn: &Connection) -> Result<Option<ScanSummary>, String> {
@@ -464,7 +602,8 @@ fn latest_summary(conn: &Connection) -> Result<Option<ScanSummary>, String> {
             track_count: row.get::<_, i64>(2).map_err(|error| error.to_string())? as usize,
             total_bytes: row.get(3).map_err(|error| error.to_string())?,
             known_runtime_seconds: row.get(4).map_err(|error| error.to_string())?,
-            unknown_runtime_count: row.get::<_, i64>(5).map_err(|error| error.to_string())? as usize,
+            unknown_runtime_count: row.get::<_, i64>(5).map_err(|error| error.to_string())?
+                as usize,
         }))
     } else {
         Ok(None)
@@ -475,8 +614,8 @@ fn tracks_for_scan(conn: &Connection, scan_id: &str) -> Result<Vec<TrackRow>, St
     let mut stmt = conn
         .prepare(
             "select path, relative_folder, filename, extension, file_size_bytes, title, artist, album,
-                    genre, year, duration_seconds, proposed_bucket, live365_readiness
-             from tracks where scan_id = ?1 order by relative_folder, filename limit 500",
+                    genre, year, duration_seconds, proposed_bucket, live365_readiness, scan_status
+             from tracks where scan_id = ?1 order by relative_folder, filename",
         )
         .map_err(|error| error.to_string())?;
     let rows = stmt
@@ -495,11 +634,46 @@ fn tracks_for_scan(conn: &Connection, scan_id: &str) -> Result<Vec<TrackRow>, St
                 duration_seconds: row.get(10)?,
                 proposed_bucket: row.get(11)?,
                 live365_readiness: row.get(12)?,
+                scan_status: row.get(13)?,
             })
         })
         .map_err(|error| error.to_string())?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(|error| error.to_string())
+}
+
+fn write_csv_export(path: &Path, tracks: &[TrackRow]) -> Result<(), String> {
+    let mut file = File::create(path).map_err(|error| error.to_string())?;
+    writeln!(
+        file,
+        "artist,title,album,genre,year,duration_seconds,bucket,readiness,status,path"
+    )
+    .map_err(|error| error.to_string())?;
+    for track in tracks {
+        writeln!(
+            file,
+            "{},{},{},{},{},{},{},{},{},{}",
+            csv_field(&track.artist),
+            csv_field(&track.title),
+            csv_field(&track.album),
+            csv_field(&track.genre),
+            csv_field(&track.year),
+            track
+                .duration_seconds
+                .map(|value| value.to_string())
+                .unwrap_or_default(),
+            csv_field(&track.proposed_bucket),
+            csv_field(&track.live365_readiness),
+            csv_field(&track.scan_status),
+            csv_field(&track.path),
+        )
+        .map_err(|error| error.to_string())?;
+    }
+    Ok(())
+}
+
+fn csv_field(value: &str) -> String {
+    format!("\"{}\"", value.replace('"', "\"\""))
 }
 
 pub fn run() {
@@ -509,7 +683,8 @@ pub fn run() {
             latest_scan,
             scan_library,
             update_track_metadata,
-            bulk_update_tracks
+            bulk_update_tracks,
+            export_latest_scan
         ])
         .run(tauri::generate_context!())
         .expect("error while running Crate OS");

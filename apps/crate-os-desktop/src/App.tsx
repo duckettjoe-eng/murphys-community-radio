@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
 import { productByline, productName, productTagline } from "./lib/brand";
 import { checkFeature } from "./lib/paywall/featureGate";
+import type { ToolkitTier } from "./lib/entitlements";
 
 type ScanSummary = {
   scan_id: string;
@@ -34,6 +35,7 @@ type TrackRow = {
   duration_seconds: number | null;
   proposed_bucket: string;
   live365_readiness: string;
+  scan_status: string;
 };
 
 type EditableTrackField =
@@ -54,6 +56,18 @@ type BulkForm = {
   live365_readiness: string;
 };
 
+type FolderRollup = {
+  folder: string;
+  trackCount: number;
+  totalBytes: number;
+  runtimeSeconds: number;
+  unknownRuntimeCount: number;
+  missingMetadataCount: number;
+  newCount: number;
+  changedCount: number;
+  missingCount: number;
+};
+
 const emptyBulkForm: BulkForm = {
   artist: "",
   album: "",
@@ -70,6 +84,7 @@ const readinessOptions = [
   "needs_rights_review",
   "do_not_upload",
 ];
+const statusOptions = ["all", "new", "changed", "unchanged", "missing", "scanned"];
 
 export default function App() {
   const [folder, setFolder] = useState("");
@@ -79,10 +94,15 @@ export default function App() {
   const [summary, setSummary] = useState<ScanSummary | null>(null);
   const [tracks, setTracks] = useState<TrackRow[]>([]);
   const [search, setSearch] = useState("");
+  const [folderFilter, setFolderFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [bulkForm, setBulkForm] = useState<BulkForm>(emptyBulkForm);
   const [metadataStatus, setMetadataStatus] = useState("");
-  const gate = checkFeature("free", "live365.upload.apply");
+  const [exportStatus, setExportStatus] = useState("");
+  const currentTier: ToolkitTier = "free";
+  const gate = checkFeature(currentTier, "live365.upload.apply");
+  const live365ExportGate = checkFeature(currentTier, "live365.upload.apply");
 
   const refreshLatest = useCallback(async () => {
     const latest = await invoke<{ summary: ScanSummary | null; tracks: TrackRow[] }>(
@@ -199,16 +219,72 @@ export default function App() {
     setMetadataStatus(`Updated ${paths.length.toLocaleString()} selected tracks`);
   }
 
+  async function exportScan(format: "csv" | "json" | "live365") {
+    setExportStatus("");
+    try {
+      const result = await invoke<{ path: string }>("export_latest_scan", {
+        args: { format, tier: currentTier },
+      });
+      setExportStatus(`Exported ${result.path}`);
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  function selectFolder(folderName: string) {
+    setFolderFilter(folderName);
+    setSelectedPaths(new Set());
+  }
+
+  const folderRollups = (() => {
+    const rollups = new Map<string, FolderRollup>();
+    for (const track of tracks) {
+      const folderName = track.relative_folder || "(root)";
+      const rollup =
+        rollups.get(folderName) ??
+        {
+          folder: folderName,
+          trackCount: 0,
+          totalBytes: 0,
+          runtimeSeconds: 0,
+          unknownRuntimeCount: 0,
+          missingMetadataCount: 0,
+          newCount: 0,
+          changedCount: 0,
+          missingCount: 0,
+        };
+      rollup.trackCount += 1;
+      if (track.scan_status !== "missing") {
+        rollup.totalBytes += track.file_size_bytes;
+      }
+      if (track.duration_seconds === null) {
+        rollup.unknownRuntimeCount += 1;
+      } else if (track.scan_status !== "missing") {
+        rollup.runtimeSeconds += track.duration_seconds;
+      }
+      if (!track.artist || !track.title || !track.genre) {
+        rollup.missingMetadataCount += 1;
+      }
+      if (track.scan_status === "new") rollup.newCount += 1;
+      if (track.scan_status === "changed") rollup.changedCount += 1;
+      if (track.scan_status === "missing") rollup.missingCount += 1;
+      rollups.set(folderName, rollup);
+    }
+    return Array.from(rollups.values()).sort((a, b) => a.folder.localeCompare(b.folder));
+  })();
+
   const filteredTracks = (() => {
     const query = search.trim().toLowerCase();
-    if (!query) return tracks.slice(0, 500);
     return tracks
-      .filter((track) =>
-        [track.artist, track.title, track.album, track.filename, track.path]
+      .filter((track) => folderFilter === "all" || track.relative_folder === folderFilter)
+      .filter((track) => statusFilter === "all" || track.scan_status === statusFilter)
+      .filter((track) => {
+        if (!query) return true;
+        return [track.artist, track.title, track.album, track.genre, track.filename, track.path]
           .join(" ")
           .toLowerCase()
-          .includes(query),
-      )
+          .includes(query);
+      })
       .slice(0, 500);
   })();
 
@@ -275,7 +351,60 @@ export default function App() {
         <button disabled>Apply Live365 Upload</button>
       </section>
 
+      <section className="panel export-panel">
+        <div>
+          <div className="label">Exports</div>
+          <strong>Station package prep</strong>
+          <p className="status">
+            Basic library exports are available. Live365-ready exports stay locked until supporter.
+          </p>
+          {exportStatus ? <p className="status">{exportStatus}</p> : null}
+        </div>
+        <button type="button" disabled={!summary} onClick={() => exportScan("csv")}>
+          Export CSV
+        </button>
+        <button type="button" disabled={!summary} onClick={() => exportScan("json")}>
+          Export JSON
+        </button>
+        <button
+          type="button"
+          disabled={!summary || !live365ExportGate.allowed}
+          onClick={() => exportScan("live365")}
+        >
+          Live365 CSV
+        </button>
+      </section>
+
       <section className="panel">
+        <div className="folder-header">
+          <div>
+            <span className="label">Folders</span>
+            <strong>{folderRollups.length.toLocaleString()} crates</strong>
+          </div>
+          <button type="button" className="small-button" onClick={() => selectFolder("all")}>
+            All Folders
+          </button>
+        </div>
+        <div className="folder-grid">
+          {folderRollups.map((folder) => (
+            <button
+              key={folder.folder}
+              type="button"
+              className={`folder-card ${folderFilter === folder.folder ? "active" : ""}`}
+              onClick={() => selectFolder(folder.folder)}
+            >
+              <span>{folder.folder}</span>
+              <strong>{folder.trackCount.toLocaleString()} tracks</strong>
+              <small>
+                {formatRuntime(folder.runtimeSeconds)} / {formatBytes(folder.totalBytes)}
+              </small>
+              <small>
+                {folder.missingMetadataCount} metadata gaps | {folder.newCount} new |{" "}
+                {folder.changedCount} changed | {folder.missingCount} missing
+              </small>
+            </button>
+          ))}
+        </div>
         <div className="toolbar">
           <label>
             <span className="label">Search Tracks</span>
@@ -284,6 +413,16 @@ export default function App() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
+          </label>
+          <label>
+            <span className="label">Status</span>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
         <div className="bulk-editor">
@@ -344,6 +483,7 @@ export default function App() {
                 <th>Runtime</th>
                 <th>Bucket</th>
                 <th>Readiness</th>
+                <th>Status</th>
                 <th>Save</th>
               </tr>
             </thead>
@@ -407,6 +547,7 @@ export default function App() {
                       ))}
                     </select>
                   </td>
+                  <td className={`status-pill ${track.scan_status}`}>{track.scan_status}</td>
                   <td>
                     <select
                       value={track.live365_readiness}
