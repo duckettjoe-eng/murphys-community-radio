@@ -1,5 +1,4 @@
 import Live365Player from "@/components/Live365Player";
-import NowPlayingSummary from "./NowPlayingSummary";
 
 type RadioPlayerProps = {
   embedUrl?: string;
@@ -28,7 +27,6 @@ export default function RadioPlayer({ embedUrl }: RadioPlayerProps) {
         </div>
         <div className="overflow-hidden rounded-xl bg-black">
           <Live365Player embedUrl={embedUrl} />
-          <NowPlayingSummary />
         </div>
       </div>
     </section>
