@@ -127,8 +127,11 @@ fn latest_scan(app: AppHandle) -> Result<LatestScanResponse, String> {
 
 #[tauri::command]
 fn export_latest_scan(app: AppHandle, args: ExportArgs) -> Result<ExportResponse, String> {
-    if args.format == "live365" && args.tier != "supporter" && args.tier != "pro" {
-        return Err("Live365 exports require the supporter tier.".to_string());
+    if matches!(args.format.as_str(), "json" | "live365")
+        && args.tier != "supporter"
+        && args.tier != "pro"
+    {
+        return Err("Advanced exports require the supporter tier.".to_string());
     }
 
     let conn = open_database(&app)?;

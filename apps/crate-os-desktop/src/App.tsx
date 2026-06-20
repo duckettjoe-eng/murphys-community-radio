@@ -102,7 +102,7 @@ export default function App() {
   const [exportStatus, setExportStatus] = useState("");
   const currentTier: ToolkitTier = "free";
   const gate = checkFeature(currentTier, "live365.upload.apply");
-  const live365ExportGate = checkFeature(currentTier, "live365.upload.apply");
+  const advancedExportGate = checkFeature(currentTier, "live365.upload.apply");
 
   const refreshLatest = useCallback(async () => {
     const latest = await invoke<{ summary: ScanSummary | null; tracks: TrackRow[] }>(
@@ -356,19 +356,24 @@ export default function App() {
           <div className="label">Exports</div>
           <strong>Station package prep</strong>
           <p className="status">
-            Basic library exports are available. Live365-ready exports stay locked until supporter.
+            CSV is available for everyday library work. JSON backup and Live365-ready exports stay
+            locked until supporter.
           </p>
           {exportStatus ? <p className="status">{exportStatus}</p> : null}
         </div>
         <button type="button" disabled={!summary} onClick={() => exportScan("csv")}>
           Export CSV
         </button>
-        <button type="button" disabled={!summary} onClick={() => exportScan("json")}>
+        <button
+          type="button"
+          disabled={!summary || !advancedExportGate.allowed}
+          onClick={() => exportScan("json")}
+        >
           Export JSON
         </button>
         <button
           type="button"
-          disabled={!summary || !live365ExportGate.allowed}
+          disabled={!summary || !advancedExportGate.allowed}
           onClick={() => exportScan("live365")}
         >
           Live365 CSV
