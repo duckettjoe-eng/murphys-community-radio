@@ -16,17 +16,24 @@ function isValidEmbedUrl(embedUrl?: string) {
   }
 }
 
-function getPlayerUrl(embedUrl: string, size: "md" | "xl") {
-  const url = new URL(embedUrl);
-  url.searchParams.set("s", size);
-  return url.toString();
+function getStreamUrl(embedUrl: string) {
+  try {
+    const { pathname } = new URL(embedUrl);
+    const mountId = pathname.match(/\/player\/([^/?#]+)/)?.[1];
+    return mountId ? `https://streaming.live365.com/${mountId}` : null;
+  } catch {
+    return null;
+  }
 }
 
 export default function Live365Player({
   embedUrl,
 }: Live365PlayerProps) {
   const playerRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [playerSize, setPlayerSize] = useState<"md" | "xl">("xl");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const updatePlayerSize = () => {
@@ -56,25 +63,80 @@ export default function Live365Player({
     );
   }
 
-  const playerUrl = getPlayerUrl(embedUrl, playerSize);
-  const sourceHeight = playerSize === "xl" ? 296 : 316;
+  const streamUrl = getStreamUrl(embedUrl);
+  const sourceHeight = playerSize === "xl" ? 190 : 176;
+
+  const togglePlayback = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    try {
+      setError(null);
+
+      if (isPlaying) {
+        audio.pause();
+        setIsPlaying(false);
+        return;
+      }
+
+      audio.load();
+      await audio.play();
+      setIsPlaying(true);
+    } catch {
+      setIsPlaying(false);
+      setError("Stream unavailable");
+    }
+  };
+
+  if (!streamUrl) {
+    return (
+      <div
+        className="grid h-[176px] place-items-center bg-black/40 px-6 text-center text-sm font-semibold text-zinc-300 sm:h-[190px]"
+        role="status"
+      >
+        Live365 player is not configured yet.
+      </div>
+    );
+  }
 
   return (
     <div
       ref={playerRef}
-      className="overflow-hidden"
+      className="grid place-items-center overflow-hidden bg-[#171321] px-5 py-5"
       style={{ height: `${sourceHeight}px` }}
     >
-      <iframe
-        title="Murphys Community Radio Live365 Player"
-        src={playerUrl}
-        width="100%"
-        height={sourceHeight}
-        frameBorder="0"
-        allow="autoplay"
-        loading="lazy"
-        className="block w-full overflow-hidden border-0"
+      <audio
+        ref={audioRef}
+        src={streamUrl}
+        preload="none"
+        onPause={() => setIsPlaying(false)}
+        onPlay={() => setIsPlaying(true)}
+        onError={() => {
+          setIsPlaying(false);
+          setError("Stream unavailable");
+        }}
       />
+      <div className="flex w-full max-w-xl items-center justify-between gap-5">
+        <div className="min-w-0">
+          <p className="text-[11px] font-black uppercase tracking-[0.28em] text-orange-300">
+            Live365 Stream
+          </p>
+          <h3 className="mt-2 truncate text-2xl font-black text-white">
+            Murphys Community Radio
+          </h3>
+          <p className="mt-2 text-sm font-semibold text-zinc-400">
+            {error || (isPlaying ? "Live now" : "Ready")}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={togglePlayback}
+          className="grid h-16 w-16 flex-none place-items-center rounded-full bg-orange-400 text-sm font-black uppercase tracking-normal text-zinc-950 shadow-[0_0_30px_rgba(251,146,60,0.35)] transition hover:scale-105 hover:bg-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200"
+          aria-label={isPlaying ? "Pause live stream" : "Play live stream"}
+        >
+          {isPlaying ? "Pause" : "Play"}
+        </button>
+      </div>
     </div>
   );
 }

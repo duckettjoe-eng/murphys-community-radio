@@ -94,6 +94,8 @@ type Live365StationPayload = {
     title?: string;
     artist?: string;
     art?: string;
+    end?: string;
+    status?: string;
   };
 };
 
@@ -229,6 +231,11 @@ async function getLive365NowPlaying() {
     const currentTrack = data["current-track"];
     const title = currentTrack?.title?.trim();
     const artist = currentTrack?.artist?.trim();
+    const end = currentTrack?.end ? new Date(currentTrack.end) : null;
+
+    if (end && Number.isFinite(end.getTime()) && Date.now() > end.getTime() + 10000) {
+      return null;
+    }
 
     if (!title && !artist) return null;
 

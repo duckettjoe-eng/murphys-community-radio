@@ -35,7 +35,7 @@ export default function NowPlayingSummary() {
 
     const loadNowPlaying = async () => {
       try {
-        const response = await fetch("/api/now-playing", {
+        const response = await fetch(`/api/now-playing?t=${Date.now()}`, {
           cache: "no-store",
         });
         const data = (await response.json()) as NowPlayingPayload;
@@ -54,7 +54,7 @@ export default function NowPlayingSummary() {
     };
 
     loadNowPlaying();
-    const interval = setInterval(loadNowPlaying, 30000);
+    const interval = setInterval(loadNowPlaying, 15000);
 
     return () => {
       isMounted = false;
