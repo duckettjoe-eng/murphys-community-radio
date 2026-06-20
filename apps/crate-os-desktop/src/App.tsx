@@ -100,11 +100,17 @@ export default function App() {
   return (
     <main>
       <header>
-        <p className="topline">Local Library Command Center</p>
-        <h1>
-          {productName} <span>{productByline}</span>
-        </h1>
-        <p className="tagline">{productTagline}</p>
+        <div className="brand-lockup">
+          {/* eslint-disable-next-line @next/next/no-img-element -- Vite/Tauri app, not a Next.js route. */}
+          <img src="/crate-os-logo.png" alt="Crate OS" className="brand-logo" />
+          <div>
+            <p className="topline">Local Library Command Center</p>
+            <h1>
+              {productName} <span>{productByline}</span>
+            </h1>
+            <p className="tagline">{productTagline}</p>
+          </div>
+        </div>
       </header>
 
       <section className="panel scan-panel">

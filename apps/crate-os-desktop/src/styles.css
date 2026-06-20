@@ -35,6 +35,24 @@ header {
   padding: 28px 24px 24px;
 }
 
+.brand-lockup {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 116px minmax(0, 1fr);
+}
+
+.brand-logo {
+  aspect-ratio: 1;
+  background: linear-gradient(145deg, rgba(248, 239, 216, 0.1), rgba(214, 168, 71, 0.08));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: block;
+  object-fit: contain;
+  padding: 8px;
+  width: 116px;
+}
+
 .topline,
 .label {
   color: var(--gold);
@@ -170,6 +188,19 @@ th {
 }
 
 @media (max-width: 760px) {
+  .brand-lockup {
+    align-items: start;
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .brand-logo {
+    width: 82px;
+  }
+
+  h1 {
+    font-size: 34px;
+  }
+
   .scan-form,
   .gate,
   .stats {
