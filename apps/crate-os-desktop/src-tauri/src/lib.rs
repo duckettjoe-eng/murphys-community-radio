@@ -53,6 +53,31 @@ struct TrackRow {
     live365_readiness: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct TrackMetadataUpdate {
+    scan_id: String,
+    path: String,
+    title: String,
+    artist: String,
+    album: String,
+    genre: String,
+    year: String,
+    proposed_bucket: String,
+    live365_readiness: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct BulkMetadataUpdate {
+    scan_id: String,
+    paths: Vec<String>,
+    artist: Option<String>,
+    album: Option<String>,
+    genre: Option<String>,
+    year: Option<String>,
+    proposed_bucket: Option<String>,
+    live365_readiness: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 struct LatestScanResponse {
     summary: Option<ScanSummary>,
@@ -84,6 +109,86 @@ fn latest_scan(app: AppHandle) -> Result<LatestScanResponse, String> {
         Vec::new()
     };
     Ok(LatestScanResponse { summary, tracks })
+}
+
+#[tauri::command]
+fn update_track_metadata(app: AppHandle, update: TrackMetadataUpdate) -> Result<(), String> {
+    let conn = open_database(&app)?;
+    init_database(&conn)?;
+    conn.execute(
+        "update tracks
+         set title = ?1, artist = ?2, album = ?3, genre = ?4, year = ?5,
+             proposed_bucket = ?6, live365_readiness = ?7
+         where scan_id = ?8 and path = ?9",
+        params![
+            update.title,
+            update.artist,
+            update.album,
+            update.genre,
+            update.year,
+            update.proposed_bucket,
+            update.live365_readiness,
+            update.scan_id,
+            update.path,
+        ],
+    )
+    .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn bulk_update_tracks(app: AppHandle, update: BulkMetadataUpdate) -> Result<(), String> {
+    if update.paths.is_empty() {
+        return Ok(());
+    }
+
+    let conn = open_database(&app)?;
+    init_database(&conn)?;
+    for path in update.paths {
+        if let Some(value) = &update.artist {
+            conn.execute(
+                "update tracks set artist = ?1 where scan_id = ?2 and path = ?3",
+                params![value, update.scan_id, path],
+            )
+            .map_err(|error| error.to_string())?;
+        }
+        if let Some(value) = &update.album {
+            conn.execute(
+                "update tracks set album = ?1 where scan_id = ?2 and path = ?3",
+                params![value, update.scan_id, path],
+            )
+            .map_err(|error| error.to_string())?;
+        }
+        if let Some(value) = &update.genre {
+            conn.execute(
+                "update tracks set genre = ?1 where scan_id = ?2 and path = ?3",
+                params![value, update.scan_id, path],
+            )
+            .map_err(|error| error.to_string())?;
+        }
+        if let Some(value) = &update.year {
+            conn.execute(
+                "update tracks set year = ?1 where scan_id = ?2 and path = ?3",
+                params![value, update.scan_id, path],
+            )
+            .map_err(|error| error.to_string())?;
+        }
+        if let Some(value) = &update.proposed_bucket {
+            conn.execute(
+                "update tracks set proposed_bucket = ?1 where scan_id = ?2 and path = ?3",
+                params![value, update.scan_id, path],
+            )
+            .map_err(|error| error.to_string())?;
+        }
+        if let Some(value) = &update.live365_readiness {
+            conn.execute(
+                "update tracks set live365_readiness = ?1 where scan_id = ?2 and path = ?3",
+                params![value, update.scan_id, path],
+            )
+            .map_err(|error| error.to_string())?;
+        }
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -402,7 +507,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             choose_folder,
             latest_scan,
-            scan_library
+            scan_library,
+            update_track_metadata,
+            bulk_update_tracks
         ])
         .run(tauri::generate_context!())
         .expect("error while running Crate OS");

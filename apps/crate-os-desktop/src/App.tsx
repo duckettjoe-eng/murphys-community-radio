@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { productByline, productName, productTagline } from "./lib/brand";
 import { checkFeature } from "./lib/paywall/featureGate";
 
@@ -36,6 +36,41 @@ type TrackRow = {
   live365_readiness: string;
 };
 
+type EditableTrackField =
+  | "title"
+  | "artist"
+  | "album"
+  | "genre"
+  | "year"
+  | "proposed_bucket"
+  | "live365_readiness";
+
+type BulkForm = {
+  artist: string;
+  album: string;
+  genre: string;
+  year: string;
+  proposed_bucket: string;
+  live365_readiness: string;
+};
+
+const emptyBulkForm: BulkForm = {
+  artist: "",
+  album: "",
+  genre: "",
+  year: "",
+  proposed_bucket: "",
+  live365_readiness: "",
+};
+
+const bucketOptions = ["day_safe", "day_safe_review", "club_late_night", "longform_radio"];
+const readinessOptions = [
+  "metadata_review_before_upload",
+  "ready_for_upload",
+  "needs_rights_review",
+  "do_not_upload",
+];
+
 export default function App() {
   const [folder, setFolder] = useState("");
   const [limit, setLimit] = useState("");
@@ -44,6 +79,9 @@ export default function App() {
   const [summary, setSummary] = useState<ScanSummary | null>(null);
   const [tracks, setTracks] = useState<TrackRow[]>([]);
   const [search, setSearch] = useState("");
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [bulkForm, setBulkForm] = useState<BulkForm>(emptyBulkForm);
+  const [metadataStatus, setMetadataStatus] = useState("");
   const gate = checkFeature("free", "live365.upload.apply");
 
   const refreshLatest = useCallback(async () => {
@@ -52,6 +90,7 @@ export default function App() {
     );
     setSummary(latest.summary);
     setTracks(latest.tracks);
+    setSelectedPaths(new Set());
   }, []);
 
   useEffect(() => {
@@ -84,7 +123,83 @@ export default function App() {
     }
   }
 
-  const filteredTracks = useMemo(() => {
+  function updateTrackField(path: string, field: EditableTrackField, value: string) {
+    setTracks((currentTracks) =>
+      currentTracks.map((track) => (track.path === path ? { ...track, [field]: value } : track)),
+    );
+  }
+
+  async function saveTrack(track: TrackRow) {
+    if (!summary) return;
+    await invoke("update_track_metadata", {
+      update: {
+        scan_id: summary.scan_id,
+        path: track.path,
+        title: track.title,
+        artist: track.artist,
+        album: track.album,
+        genre: track.genre,
+        year: track.year,
+        proposed_bucket: track.proposed_bucket,
+        live365_readiness: track.live365_readiness,
+      },
+    });
+    setMetadataStatus(`Saved ${track.title || track.filename}`);
+  }
+
+  function toggleTrack(path: string) {
+    setSelectedPaths((current) => {
+      const next = new Set(current);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
+      return next;
+    });
+  }
+
+  function toggleVisibleTracks() {
+    setSelectedPaths((current) => {
+      const visiblePaths = filteredTracks.map((track) => track.path);
+      const allVisibleSelected = visiblePaths.every((path) => current.has(path));
+      const next = new Set(current);
+      for (const path of visiblePaths) {
+        if (allVisibleSelected) {
+          next.delete(path);
+        } else {
+          next.add(path);
+        }
+      }
+      return next;
+    });
+  }
+
+  async function applyBulkEdit() {
+    if (!summary || selectedPaths.size === 0) return;
+    const update = Object.fromEntries(
+      Object.entries(bulkForm).filter(([, value]) => value.trim().length > 0),
+    );
+    if (Object.keys(update).length === 0) return;
+
+    const paths = Array.from(selectedPaths);
+    await invoke("bulk_update_tracks", {
+      update: {
+        scan_id: summary.scan_id,
+        paths,
+        ...update,
+      },
+    });
+    setTracks((currentTracks) =>
+      currentTracks.map((track) =>
+        selectedPaths.has(track.path) ? { ...track, ...update } : track,
+      ),
+    );
+    setBulkForm(emptyBulkForm);
+    setMetadataStatus(`Updated ${paths.length.toLocaleString()} selected tracks`);
+  }
+
+  const filteredTracks = (() => {
     const query = search.trim().toLowerCase();
     if (!query) return tracks.slice(0, 500);
     return tracks
@@ -95,7 +210,7 @@ export default function App() {
           .includes(query),
       )
       .slice(0, 500);
-  }, [search, tracks]);
+  })();
 
   return (
     <main>
@@ -171,28 +286,151 @@ export default function App() {
             />
           </label>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Artist</th>
-              <th>Title</th>
-              <th>Folder</th>
-              <th>Runtime</th>
-              <th>Bucket</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTracks.map((track) => (
-              <tr key={track.path}>
-                <td>{track.artist}</td>
-                <td>{track.title || track.filename}</td>
-                <td>{track.relative_folder}</td>
-                <td>{formatRuntime(track.duration_seconds)}</td>
-                <td className="bucket">{track.proposed_bucket}</td>
-              </tr>
+        <div className="bulk-editor">
+          <div>
+            <span className="label">Bulk Edit</span>
+            <strong>{selectedPaths.size.toLocaleString()} selected</strong>
+          </div>
+          <input
+            placeholder="artist"
+            value={bulkForm.artist}
+            onChange={(event) => setBulkForm({ ...bulkForm, artist: event.target.value })}
+          />
+          <input
+            placeholder="album"
+            value={bulkForm.album}
+            onChange={(event) => setBulkForm({ ...bulkForm, album: event.target.value })}
+          />
+          <input
+            placeholder="genre"
+            value={bulkForm.genre}
+            onChange={(event) => setBulkForm({ ...bulkForm, genre: event.target.value })}
+          />
+          <select
+            value={bulkForm.proposed_bucket}
+            onChange={(event) => setBulkForm({ ...bulkForm, proposed_bucket: event.target.value })}
+          >
+            <option value="">bucket</option>
+            {bucketOptions.map((bucket) => (
+              <option key={bucket} value={bucket}>
+                {bucket}
+              </option>
             ))}
-          </tbody>
-        </table>
+          </select>
+          <button type="button" disabled={selectedPaths.size === 0} onClick={applyBulkEdit}>
+            Apply
+          </button>
+        </div>
+        {metadataStatus ? <p className="status">{metadataStatus}</p> : null}
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th className="select-cell">
+                  <input
+                    type="checkbox"
+                    checked={
+                      filteredTracks.length > 0 &&
+                      filteredTracks.every((track) => selectedPaths.has(track.path))
+                    }
+                    onChange={toggleVisibleTracks}
+                  />
+                </th>
+                <th>Artist</th>
+                <th>Title</th>
+                <th>Album</th>
+                <th>Genre</th>
+                <th>Year</th>
+                <th>Runtime</th>
+                <th>Bucket</th>
+                <th>Readiness</th>
+                <th>Save</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTracks.map((track) => (
+                <tr key={track.path}>
+                  <td className="select-cell">
+                    <input
+                      type="checkbox"
+                      checked={selectedPaths.has(track.path)}
+                      onChange={() => toggleTrack(track.path)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      value={track.artist}
+                      placeholder="artist"
+                      onChange={(event) => updateTrackField(track.path, "artist", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      value={track.title}
+                      placeholder={track.filename}
+                      onChange={(event) => updateTrackField(track.path, "title", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      value={track.album}
+                      placeholder="album"
+                      onChange={(event) => updateTrackField(track.path, "album", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      value={track.genre}
+                      placeholder="genre"
+                      onChange={(event) => updateTrackField(track.path, "genre", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      value={track.year}
+                      placeholder="year"
+                      onChange={(event) => updateTrackField(track.path, "year", event.target.value)}
+                    />
+                  </td>
+                  <td>{formatRuntime(track.duration_seconds)}</td>
+                  <td>
+                    <select
+                      value={track.proposed_bucket}
+                      onChange={(event) =>
+                        updateTrackField(track.path, "proposed_bucket", event.target.value)
+                      }
+                    >
+                      {bucketOptions.map((bucket) => (
+                        <option key={bucket} value={bucket}>
+                          {bucket}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <select
+                      value={track.live365_readiness}
+                      onChange={(event) =>
+                        updateTrackField(track.path, "live365_readiness", event.target.value)
+                      }
+                    >
+                      {readinessOptions.map((readiness) => (
+                        <option key={readiness} value={readiness}>
+                          {readiness}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <button type="button" className="small-button" onClick={() => saveTrack(track)}>
+                      Save
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
     </main>
   );
