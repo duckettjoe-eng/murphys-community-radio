@@ -38,19 +38,19 @@ header {
 .brand-lockup {
   align-items: center;
   display: grid;
-  gap: 24px;
-  grid-template-columns: 156px minmax(0, 1fr);
+  gap: 30px;
+  grid-template-columns: 280px minmax(0, 1fr);
 }
 
 .brand-logo {
-  aspect-ratio: 1;
+  aspect-ratio: 16 / 9;
   background: linear-gradient(145deg, rgba(248, 239, 216, 0.14), rgba(214, 168, 71, 0.12));
   border: 1px solid var(--line);
   border-radius: 8px;
   display: block;
   object-fit: contain;
-  padding: 10px;
-  width: 156px;
+  padding: 12px;
+  width: 280px;
 }
 
 .topline,
@@ -200,11 +200,11 @@ th {
   .brand-lockup {
     align-items: start;
     gap: 14px;
-    grid-template-columns: 96px minmax(0, 1fr);
+    grid-template-columns: 132px minmax(0, 1fr);
   }
 
   .brand-logo {
-    width: 96px;
+    width: 132px;
   }
 
   h1 {

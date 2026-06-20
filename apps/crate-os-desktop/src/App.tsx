@@ -102,7 +102,7 @@ export default function App() {
       <header>
         <div className="brand-lockup">
           {/* eslint-disable-next-line @next/next/no-img-element -- Vite/Tauri app, not a Next.js route. */}
-          <img src="/crate-os-logo.png" alt="Crate OS" className="brand-logo" />
+          <img src="/crate-os-logo-mark.png" alt="Crate OS" className="brand-logo" />
           <div>
             <p className="topline">Local Library Command Center</p>
             <h1>{productName}</h1>
