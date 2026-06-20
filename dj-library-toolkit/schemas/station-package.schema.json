@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://murphyscommunityradio.com/schemas/station-package.schema.json",
-  "title": "DJ Library Toolkit Station Package",
+  "title": "Crate OS Station Package",
   "type": "object",
   "required": ["schemaVersion", "station", "shows", "schedule", "archive"],
   "additionalProperties": false,

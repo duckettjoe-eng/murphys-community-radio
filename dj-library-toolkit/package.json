@@ -1,0 +1,14 @@
+{
+  "name": "@xtragoodlabs/crate-os",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Crate OS by XTRAGOODLABS: a local-first command center for large DJ libraries.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "scan": "node dist/cli/scan.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

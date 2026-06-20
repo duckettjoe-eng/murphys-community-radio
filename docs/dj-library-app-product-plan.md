@@ -1,8 +1,8 @@
 # DJ Library App Product Plan
 
-## Working Name
+## Name
 
-Crate Commander, Library Radio Toolkit, or DJ Hello Joey Crate OS.
+Crate OS by XTRAGOODLABS.
 
 ## Product Idea
 
