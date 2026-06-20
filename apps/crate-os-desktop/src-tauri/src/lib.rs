@@ -2,7 +2,14 @@ use chrono::Utc;
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::fs::File;
 use std::path::{Path, PathBuf};
+use symphonia::core::errors::Error as SymphoniaError;
+use symphonia::core::formats::FormatOptions;
+use symphonia::core::io::MediaSourceStream;
+use symphonia::core::meta::MetadataOptions;
+use symphonia::core::probe::Hint;
+use symphonia::default::get_probe;
 use tauri::{AppHandle, Emitter, Manager};
 use uuid::Uuid;
 use walkdir::WalkDir;
@@ -129,6 +136,15 @@ fn scan_library_blocking(app: AppHandle, args: ScanArgs) -> Result<ScanSummary, 
         tracks.push(track_from_path(&root, file, size));
     }
 
+    let known_runtime_seconds = tracks
+        .iter()
+        .filter_map(|track| track.duration_seconds)
+        .sum::<f64>();
+    let unknown_runtime_count = tracks
+        .iter()
+        .filter(|track| track.duration_seconds.is_none())
+        .count();
+
     let conn = open_database(&app)?;
     init_database(&conn)?;
     save_scan(&conn, &scan_id, &args.root, &started_at, total_bytes, &tracks)?;
@@ -137,8 +153,8 @@ fn scan_library_blocking(app: AppHandle, args: ScanArgs) -> Result<ScanSummary, 
         root: args.root,
         track_count: tracks.len(),
         total_bytes,
-        known_runtime_seconds: 0.0,
-        unknown_runtime_count: tracks.len(),
+        known_runtime_seconds,
+        unknown_runtime_count,
     };
     let _ = app.emit(
         "scan-progress",
@@ -188,10 +204,54 @@ fn track_from_path(root: &Path, file: &Path, size: i64) -> TrackRow {
         album: String::new(),
         genre: String::new(),
         year: String::new(),
-        duration_seconds: None,
+        duration_seconds: audio_duration_seconds(file),
         proposed_bucket,
         live365_readiness,
     }
+}
+
+fn audio_duration_seconds(file: &Path) -> Option<f64> {
+    let source = File::open(file).ok()?;
+    let media_source = MediaSourceStream::new(Box::new(source), Default::default());
+    let mut hint = Hint::new();
+    if let Some(extension) = file.extension().and_then(|extension| extension.to_str()) {
+        hint.with_extension(extension);
+    }
+
+    let probed = get_probe()
+        .format(
+            &hint,
+            media_source,
+            &FormatOptions::default(),
+            &MetadataOptions::default(),
+        )
+        .ok()?;
+    let mut format = probed.format;
+    let track = format.default_track()?;
+    let track_id = track.id;
+    let time_base = track.codec_params.time_base?;
+
+    if let Some(frame_count) = track.codec_params.n_frames {
+        let duration = time_base.calc_time(frame_count);
+        return Some(duration.seconds as f64 + duration.frac);
+    }
+
+    let mut last_timestamp = None;
+    loop {
+        match format.next_packet() {
+            Ok(packet) if packet.track_id() == track_id => {
+                last_timestamp = Some(packet.ts().saturating_add(packet.dur()));
+            }
+            Ok(_) => {}
+            Err(SymphoniaError::IoError(_)) | Err(SymphoniaError::ResetRequired) => break,
+            Err(_) => break,
+        }
+    }
+
+    last_timestamp.map(|timestamp| {
+        let duration = time_base.calc_time(timestamp);
+        duration.seconds as f64 + duration.frac
+    })
 }
 
 fn classify(haystack: &str) -> String {
@@ -243,8 +303,16 @@ fn save_scan(
 ) -> Result<(), String> {
     conn.execute(
         "insert into scans (id, root, started_at, track_count, total_bytes, known_runtime_seconds, unknown_runtime_count)
-         values (?1, ?2, ?3, ?4, ?5, 0, ?6)",
-        params![scan_id, root, started_at, tracks.len() as i64, total_bytes, tracks.len() as i64],
+         values (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![
+            scan_id,
+            root,
+            started_at,
+            tracks.len() as i64,
+            total_bytes,
+            tracks.iter().filter_map(|track| track.duration_seconds).sum::<f64>(),
+            tracks.iter().filter(|track| track.duration_seconds.is_none()).count() as i64,
+        ],
     )
     .map_err(|error| error.to_string())?;
 
