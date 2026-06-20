@@ -94,9 +94,15 @@ type Live365StationPayload = {
     title?: string;
     artist?: string;
     art?: string;
+    start?: string;
     end?: string;
     status?: string;
   };
+  "last-played"?: {
+    title?: string;
+    artist?: string;
+    start?: string;
+  }[];
 };
 
 type Live365Event = {
@@ -212,6 +218,56 @@ function getShowArtwork(showName: string) {
   return match?.artwork || "/logos/skull-county-radio-logo.png";
 }
 
+function getCanonicalShowName(value: string) {
+  const normalizedValue = normalizeShowName(value);
+  const match = showArtwork.find((show) =>
+    show.names.some((name) => {
+      const normalizedName = normalizeShowName(name);
+      return (
+        normalizedValue === normalizedName ||
+        normalizedValue.startsWith(`${normalizedName} `)
+      );
+    }),
+  );
+
+  return match?.names[0] || value;
+}
+
+function getLive365PlaylistMarker(data: Live365StationPayload) {
+  const candidates = [data["current-track"], ...(data["last-played"] || [])];
+  const maxMarkerAgeMs = 4 * 60 * 60 * 1000;
+
+  for (const candidate of candidates) {
+    const title = candidate?.title?.trim();
+    const artist = candidate?.artist?.trim();
+    const start = candidate?.start ? new Date(candidate.start) : null;
+
+    if (!title || artist !== "DJ Hello Joey") continue;
+    if (
+      start &&
+      Number.isFinite(start.getTime()) &&
+      Date.now() - start.getTime() > maxMarkerAgeMs
+    ) {
+      continue;
+    }
+
+    const canonicalShowName = getCanonicalShowName(title);
+
+    if (canonicalShowName === title && getShowArtwork(title).includes("skull-county")) {
+      continue;
+    }
+
+    return {
+      showName: canonicalShowName,
+      playlistName: title,
+      showArt: getShowArtwork(title),
+      showSource: "live365-event" as const,
+    };
+  }
+
+  return null;
+}
+
 async function getLive365NowPlaying() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
@@ -232,6 +288,7 @@ async function getLive365NowPlaying() {
     const title = currentTrack?.title?.trim();
     const artist = currentTrack?.artist?.trim();
     const end = currentTrack?.end ? new Date(currentTrack.end) : null;
+    const playlistMarker = getLive365PlaylistMarker(data);
 
     if (end && Number.isFinite(end.getTime()) && Date.now() > end.getTime() + 10000) {
       return null;
@@ -242,8 +299,9 @@ async function getLive365NowPlaying() {
     return {
       title: title || fallbackTitle,
       artist: artist || fallbackArtist,
-      art: currentTrack?.art || null,
+      art: playlistMarker?.showArt || null,
       isPlaying: Boolean(data.is_playing),
+      playlistMarker,
     };
   } catch {
     return null;
@@ -470,12 +528,16 @@ export async function GET() {
   try {
     const showMetadata = await getCurrentShowMetadata();
     const live365NowPlaying = await getLive365NowPlaying();
+    const currentShowMetadata = live365NowPlaying?.playlistMarker || showMetadata;
 
     if (live365NowPlaying) {
       return NextResponse.json(
         {
-          ...live365NowPlaying,
-          ...showMetadata,
+          title: live365NowPlaying.title,
+          artist: live365NowPlaying.artist,
+          art: live365NowPlaying.art,
+          isPlaying: live365NowPlaying.isPlaying,
+          ...currentShowMetadata,
           source: "live365",
         } satisfies NowPlayingPayload,
         {

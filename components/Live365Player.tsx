@@ -6,6 +6,24 @@ interface Live365PlayerProps {
   embedUrl?: string;
 }
 
+type NowPlayingPayload = {
+  title: string;
+  artist: string;
+  art?: string | null;
+  showArt?: string | null;
+  showName: string;
+  playlistName?: string | null;
+};
+
+const fallbackNowPlaying: NowPlayingPayload = {
+  title: "Live Stream",
+  artist: "Murphys Community Radio",
+  art: null,
+  showArt: "/logos/skull-county-radio-logo.png",
+  showName: "Murphys Community Radio",
+  playlistName: null,
+};
+
 function isValidEmbedUrl(embedUrl?: string) {
   if (!embedUrl) return false;
 
@@ -34,6 +52,8 @@ export default function Live365Player({
   const [playerSize, setPlayerSize] = useState<"md" | "xl">("xl");
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nowPlaying, setNowPlaying] =
+    useState<NowPlayingPayload>(fallbackNowPlaying);
 
   useEffect(() => {
     const updatePlayerSize = () => {
@@ -52,6 +72,36 @@ export default function Live365Player({
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadNowPlaying = async () => {
+      try {
+        const response = await fetch(`/api/now-playing?t=${Date.now()}`, {
+          cache: "no-store",
+        });
+        const data = (await response.json()) as NowPlayingPayload;
+
+        if (isMounted) {
+          setNowPlaying({
+            ...fallbackNowPlaying,
+            ...data,
+          });
+        }
+      } catch {
+        if (isMounted) setNowPlaying(fallbackNowPlaying);
+      }
+    };
+
+    loadNowPlaying();
+    const interval = setInterval(loadNowPlaying, 15000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   if (!embedUrl || !isValidEmbedUrl(embedUrl)) {
     return (
       <div
@@ -65,6 +115,7 @@ export default function Live365Player({
 
   const streamUrl = getStreamUrl(embedUrl);
   const sourceHeight = playerSize === "xl" ? 190 : 176;
+  const artwork = nowPlaying.showArt || nowPlaying.art || fallbackNowPlaying.showArt;
 
   const togglePlayback = async () => {
     const audio = audioRef.current;
@@ -117,15 +168,25 @@ export default function Live365Player({
         }}
       />
       <div className="flex w-full max-w-xl items-center justify-between gap-5">
+        {artwork ? (
+          <img
+            src={artwork}
+            alt=""
+            className="h-24 w-24 flex-none rounded-md border border-white/10 object-cover shadow-[0_18px_40px_rgba(0,0,0,0.35)] sm:h-28 sm:w-28"
+          />
+        ) : null}
         <div className="min-w-0">
           <p className="text-[11px] font-black uppercase tracking-[0.28em] text-orange-300">
-            Live365 Stream
+            {nowPlaying.playlistName || "Live365 Stream"}
           </p>
           <h3 className="mt-2 truncate text-2xl font-black text-white">
-            Murphys Community Radio
+            {nowPlaying.showName}
           </h3>
           <p className="mt-2 text-sm font-semibold text-zinc-400">
             {error || (isPlaying ? "Live now" : "Ready")}
+          </p>
+          <p className="mt-2 truncate text-sm font-bold text-zinc-200">
+            {nowPlaying.artist} - {nowPlaying.title}
           </p>
         </div>
         <button
