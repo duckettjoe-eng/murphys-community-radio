@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Crate OS",
+  "version": "0.1.0",
+  "identifier": "labs.xtragood.crate-os",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Crate OS by XTRAGOODLABS",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 940,
+        "minHeight": 640
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Music",
+    "shortDescription": "Local-first DJ library control.",
+    "longDescription": "Crate OS is a local-first command center for DJs, radio hosts, and serious crate keepers."
+  }
+}
