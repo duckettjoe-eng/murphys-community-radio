@@ -1,4 +1,7 @@
 use chrono::Utc;
+use lofty::config::WriteOptions;
+use lofty::file::{AudioFile, TaggedFileExt};
+use lofty::tag::{Accessor, Tag};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -55,6 +58,8 @@ struct TrackRow {
     proposed_bucket: String,
     live365_readiness: String,
     scan_status: String,
+    metadata_dirty: bool,
+    tag_write_status: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -94,6 +99,19 @@ struct ExportArgs {
 #[derive(Debug, Serialize)]
 struct ExportResponse {
     path: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct WriteTagsArgs {
+    scan_id: String,
+    paths: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct WriteTagsResponse {
+    written_count: usize,
+    failed_count: usize,
+    backup_path: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -199,7 +217,8 @@ fn update_track_metadata(app: AppHandle, update: TrackMetadataUpdate) -> Result<
     conn.execute(
         "update tracks
          set title = ?1, artist = ?2, album = ?3, genre = ?4, year = ?5,
-             proposed_bucket = ?6, live365_readiness = ?7
+             proposed_bucket = ?6, live365_readiness = ?7,
+             metadata_dirty = 1, tag_write_status = 'pending'
          where scan_id = ?8 and path = ?9",
         params![
             update.title,
@@ -268,8 +287,56 @@ fn bulk_update_tracks(app: AppHandle, update: BulkMetadataUpdate) -> Result<(), 
             )
             .map_err(|error| error.to_string())?;
         }
+        conn.execute(
+            "update tracks set metadata_dirty = 1, tag_write_status = 'pending' where scan_id = ?1 and path = ?2",
+            params![update.scan_id, path],
+        )
+        .map_err(|error| error.to_string())?;
     }
     Ok(())
+}
+
+#[tauri::command]
+fn write_tags_to_files(app: AppHandle, args: WriteTagsArgs) -> Result<WriteTagsResponse, String> {
+    if args.paths.is_empty() {
+        return Err("Select tracks before writing tags.".to_string());
+    }
+
+    let conn = open_database(&app)?;
+    init_database(&conn)?;
+    let tracks = tracks_by_paths(&conn, &args.scan_id, &args.paths)?;
+    if tracks.is_empty() {
+        return Err("No selected tracks were found in the latest scan.".to_string());
+    }
+
+    let backup_path = write_tag_backup(&app, &tracks)?;
+    let mut written_count = 0_usize;
+    let mut failed_count = 0_usize;
+
+    for track in tracks {
+        if track.scan_status == "missing" {
+            failed_count += 1;
+            set_tag_write_status(&conn, &args.scan_id, &track.path, true, "failed_missing")?;
+            continue;
+        }
+
+        match write_track_tags(&track) {
+            Ok(()) => {
+                written_count += 1;
+                set_tag_write_status(&conn, &args.scan_id, &track.path, false, "written")?;
+            }
+            Err(_) => {
+                failed_count += 1;
+                set_tag_write_status(&conn, &args.scan_id, &track.path, true, "failed")?;
+            }
+        }
+    }
+
+    Ok(WriteTagsResponse {
+        written_count,
+        failed_count,
+        backup_path: backup_path.to_string_lossy().to_string(),
+    })
 }
 
 #[tauri::command]
@@ -337,11 +404,22 @@ fn scan_library_blocking(app: AppHandle, args: ScanArgs) -> Result<ScanSummary, 
         total_bytes += size;
         let mut track = track_from_path(&root, file, size);
         if let Some(previous) = previous_by_path.get(&track.path) {
-            track.artist = previous.artist.clone();
-            track.album = previous.album.clone();
-            track.genre = previous.genre.clone();
-            track.year = previous.year.clone();
-            track.title = previous.title.clone();
+            if previous.metadata_dirty {
+                track.artist = previous.artist.clone();
+                track.album = previous.album.clone();
+                track.genre = previous.genre.clone();
+                track.year = previous.year.clone();
+                track.title = previous.title.clone();
+                track.metadata_dirty = previous.metadata_dirty;
+                track.tag_write_status = previous.tag_write_status.clone();
+            } else {
+                track.artist = fallback_text(&track.artist, &previous.artist);
+                track.album = fallback_text(&track.album, &previous.album);
+                track.genre = fallback_text(&track.genre, &previous.genre);
+                track.year = fallback_text(&track.year, &previous.year);
+                track.title = fallback_text(&track.title, &previous.title);
+                track.tag_write_status = "synced".to_string();
+            }
             track.proposed_bucket = previous.proposed_bucket.clone();
             track.live365_readiness = previous.live365_readiness.clone();
             track.scan_status = if previous.file_size_bytes != track.file_size_bytes {
@@ -410,7 +488,7 @@ fn track_from_path(root: &Path, file: &Path, size: i64) -> TrackRow {
         .extension()
         .map(|ext| format!(".{}", ext.to_string_lossy().to_lowercase()))
         .unwrap_or_default();
-    let title = file
+    let file_stem_title = file
         .file_stem()
         .map(|stem| stem.to_string_lossy().to_string())
         .unwrap_or_else(|| filename.clone());
@@ -426,6 +504,8 @@ fn track_from_path(root: &Path, file: &Path, size: i64) -> TrackRow {
             }
         })
         .unwrap_or_else(|| "(root)".to_string());
+    let audio_tags = audio_tags(file);
+    let title = fallback_text(&audio_tags.title, &file_stem_title);
     let haystack = format!("{} {} {}", file.to_string_lossy(), filename, title).to_lowercase();
     let proposed_bucket = classify(&haystack);
     let live365_readiness = "metadata_review_before_upload".to_string();
@@ -437,14 +517,60 @@ fn track_from_path(root: &Path, file: &Path, size: i64) -> TrackRow {
         extension,
         file_size_bytes: size,
         title,
-        artist: String::new(),
-        album: String::new(),
-        genre: String::new(),
-        year: String::new(),
+        artist: audio_tags.artist,
+        album: audio_tags.album,
+        genre: audio_tags.genre,
+        year: audio_tags.year,
         duration_seconds: audio_duration_seconds(file),
         proposed_bucket,
         live365_readiness,
         scan_status: "new".to_string(),
+        metadata_dirty: false,
+        tag_write_status: "scanned".to_string(),
+    }
+}
+
+#[derive(Default)]
+struct AudioTags {
+    title: String,
+    artist: String,
+    album: String,
+    genre: String,
+    year: String,
+}
+
+fn audio_tags(file: &Path) -> AudioTags {
+    let Ok(tagged_file) = lofty::read_from_path(file) else {
+        return AudioTags::default();
+    };
+    let Some(tag) = tagged_file
+        .primary_tag()
+        .or_else(|| tagged_file.first_tag())
+    else {
+        return AudioTags::default();
+    };
+
+    AudioTags {
+        title: tag
+            .title()
+            .map(|value| value.into_owned())
+            .unwrap_or_default(),
+        artist: tag
+            .artist()
+            .map(|value| value.into_owned())
+            .unwrap_or_default(),
+        album: tag
+            .album()
+            .map(|value| value.into_owned())
+            .unwrap_or_default(),
+        genre: tag
+            .genre()
+            .map(|value| value.into_owned())
+            .unwrap_or_default(),
+        year: tag
+            .year()
+            .map(|value| value.to_string())
+            .unwrap_or_default(),
     }
 }
 
@@ -544,6 +670,14 @@ fn init_database(conn: &Connection) -> Result<(), String> {
         "alter table tracks add column scan_status text not null default 'scanned'",
         [],
     );
+    let _ = conn.execute(
+        "alter table tracks add column metadata_dirty integer not null default 0",
+        [],
+    );
+    let _ = conn.execute(
+        "alter table tracks add column tag_write_status text not null default 'scanned'",
+        [],
+    );
     Ok(())
 }
 
@@ -582,8 +716,9 @@ fn save_scan(
         conn.execute(
             "insert into tracks (
               scan_id, path, relative_folder, filename, extension, file_size_bytes,
-              title, artist, album, genre, year, duration_seconds, proposed_bucket, live365_readiness, scan_status
-            ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+              title, artist, album, genre, year, duration_seconds, proposed_bucket, live365_readiness,
+              scan_status, metadata_dirty, tag_write_status
+            ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
             params![
                 scan_id,
                 track.path,
@@ -600,6 +735,8 @@ fn save_scan(
                 track.proposed_bucket,
                 track.live365_readiness,
                 track.scan_status,
+                track.metadata_dirty as i64,
+                track.tag_write_status,
             ],
         )
         .map_err(|error| error.to_string())?;
@@ -646,7 +783,8 @@ fn tracks_for_scan(conn: &Connection, scan_id: &str) -> Result<Vec<TrackRow>, St
     let mut stmt = conn
         .prepare(
             "select path, relative_folder, filename, extension, file_size_bytes, title, artist, album,
-                    genre, year, duration_seconds, proposed_bucket, live365_readiness, scan_status
+                    genre, year, duration_seconds, proposed_bucket, live365_readiness, scan_status,
+                    metadata_dirty, tag_write_status
              from tracks where scan_id = ?1 order by relative_folder, filename",
         )
         .map_err(|error| error.to_string())?;
@@ -667,11 +805,101 @@ fn tracks_for_scan(conn: &Connection, scan_id: &str) -> Result<Vec<TrackRow>, St
                 proposed_bucket: row.get(11)?,
                 live365_readiness: row.get(12)?,
                 scan_status: row.get(13)?,
+                metadata_dirty: row.get::<_, i64>(14)? != 0,
+                tag_write_status: row.get(15)?,
             })
         })
         .map_err(|error| error.to_string())?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(|error| error.to_string())
+}
+
+fn tracks_by_paths(
+    conn: &Connection,
+    scan_id: &str,
+    paths: &[String],
+) -> Result<Vec<TrackRow>, String> {
+    let all_tracks = tracks_for_scan(conn, scan_id)?;
+    let selected = paths.iter().cloned().collect::<HashSet<_>>();
+    Ok(all_tracks
+        .into_iter()
+        .filter(|track| selected.contains(&track.path))
+        .collect())
+}
+
+fn set_tag_write_status(
+    conn: &Connection,
+    scan_id: &str,
+    path: &str,
+    dirty: bool,
+    status: &str,
+) -> Result<(), String> {
+    conn.execute(
+        "update tracks set metadata_dirty = ?1, tag_write_status = ?2 where scan_id = ?3 and path = ?4",
+        params![dirty as i64, status, scan_id, path],
+    )
+    .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+fn write_tag_backup(app: &AppHandle, tracks: &[TrackRow]) -> Result<PathBuf, String> {
+    let backup_dir = exports_dir(app)?.join("tag-backups");
+    fs::create_dir_all(&backup_dir).map_err(|error| error.to_string())?;
+    let stamp = Utc::now().format("%Y%m%d-%H%M%S");
+    let backup_path = backup_dir.join(format!("crate-os-tag-backup-{stamp}.json"));
+    let body = serde_json::to_string_pretty(tracks).map_err(|error| error.to_string())?;
+    fs::write(&backup_path, body).map_err(|error| error.to_string())?;
+    Ok(backup_path)
+}
+
+fn write_track_tags(track: &TrackRow) -> Result<(), String> {
+    let path = Path::new(&track.path);
+    let mut tagged_file = lofty::read_from_path(path).map_err(|error| error.to_string())?;
+    let tag_type = tagged_file.primary_tag_type();
+    if tagged_file.primary_tag_mut().is_none() {
+        tagged_file.insert_tag(Tag::new(tag_type));
+    }
+
+    let tag = tagged_file
+        .primary_tag_mut()
+        .ok_or_else(|| "File does not support writable tags.".to_string())?;
+    if track.title.trim().is_empty() {
+        tag.remove_title();
+    } else {
+        tag.set_title(track.title.trim().to_string());
+    }
+    if track.artist.trim().is_empty() {
+        tag.remove_artist();
+    } else {
+        tag.set_artist(track.artist.trim().to_string());
+    }
+    if track.album.trim().is_empty() {
+        tag.remove_album();
+    } else {
+        tag.set_album(track.album.trim().to_string());
+    }
+    if track.genre.trim().is_empty() {
+        tag.remove_genre();
+    } else {
+        tag.set_genre(track.genre.trim().to_string());
+    }
+    if let Ok(year) = track.year.trim().parse::<u32>() {
+        tag.set_year(year);
+    } else if track.year.trim().is_empty() {
+        tag.remove_year();
+    }
+
+    tagged_file
+        .save_to_path(path, WriteOptions::default())
+        .map_err(|error| error.to_string())
+}
+
+fn fallback_text(value: &str, fallback: &str) -> String {
+    if value.trim().is_empty() {
+        fallback.to_string()
+    } else {
+        value.to_string()
+    }
 }
 
 fn write_csv_export(path: &Path, tracks: &[TrackRow]) -> Result<(), String> {
@@ -865,7 +1093,8 @@ pub fn run() {
             update_track_metadata,
             bulk_update_tracks,
             export_latest_scan,
-            open_exports_folder
+            open_exports_folder,
+            write_tags_to_files
         ])
         .run(tauri::generate_context!())
         .expect("error while running Crate OS");

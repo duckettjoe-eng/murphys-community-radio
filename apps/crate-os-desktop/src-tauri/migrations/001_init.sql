@@ -23,7 +23,10 @@ create table if not exists tracks (
   year text not null,
   duration_seconds real,
   proposed_bucket text not null,
-  live365_readiness text not null
+  live365_readiness text not null,
+  scan_status text not null default 'scanned',
+  metadata_dirty integer not null default 0,
+  tag_write_status text not null default 'scanned'
 );
 
 create index if not exists idx_tracks_scan_id on tracks(scan_id);

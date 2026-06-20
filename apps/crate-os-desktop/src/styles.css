@@ -250,7 +250,7 @@ button:disabled {
   border-radius: 8px;
   display: grid;
   gap: 10px;
-  grid-template-columns: 150px repeat(4, minmax(0, 1fr)) 110px;
+  grid-template-columns: 150px repeat(4, minmax(0, 1fr)) 110px 130px;
   margin-bottom: 14px;
   padding: 12px;
 }
@@ -267,7 +267,7 @@ button:disabled {
 
 table {
   border-collapse: collapse;
-  min-width: 1440px;
+  min-width: 1540px;
   table-layout: fixed;
   width: 100%;
 }
@@ -324,6 +324,12 @@ th {
 
 .status-pill.new {
   color: #86efac;
+}
+
+.dirty-pill {
+  color: #fb923c;
+  font-weight: 950;
+  text-transform: uppercase;
 }
 
 @media (max-width: 760px) {

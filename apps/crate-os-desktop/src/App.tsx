@@ -36,6 +36,8 @@ type TrackRow = {
   proposed_bucket: string;
   live365_readiness: string;
   scan_status: string;
+  metadata_dirty: boolean;
+  tag_write_status: string;
 };
 
 type EditableTrackField =
@@ -100,6 +102,7 @@ export default function App() {
   const [bulkForm, setBulkForm] = useState<BulkForm>(emptyBulkForm);
   const [metadataStatus, setMetadataStatus] = useState("");
   const [exportStatus, setExportStatus] = useState("");
+  const [isWritingTags, setIsWritingTags] = useState(false);
   const currentTier: ToolkitTier = "free";
   const gate = checkFeature(currentTier, "live365.upload.apply");
   const advancedExportGate = checkFeature(currentTier, "live365.upload.apply");
@@ -165,6 +168,13 @@ export default function App() {
       },
     });
     setMetadataStatus(`Saved ${track.title || track.filename}`);
+    setTracks((currentTracks) =>
+      currentTracks.map((currentTrack) =>
+        currentTrack.path === track.path
+          ? { ...currentTrack, metadata_dirty: true, tag_write_status: "pending" }
+          : currentTrack,
+      ),
+    );
   }
 
   function toggleTrack(path: string) {
@@ -212,7 +222,9 @@ export default function App() {
     });
     setTracks((currentTracks) =>
       currentTracks.map((track) =>
-        selectedPaths.has(track.path) ? { ...track, ...update } : track,
+        selectedPaths.has(track.path)
+          ? { ...track, ...update, metadata_dirty: true, tag_write_status: "pending" }
+          : track,
       ),
     );
     setBulkForm(emptyBulkForm);
@@ -248,6 +260,32 @@ export default function App() {
       await invoke("open_exports_folder");
     } catch (error) {
       setExportStatus(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  async function writeSelectedTags() {
+    if (!summary || selectedPaths.size === 0) return;
+    setIsWritingTags(true);
+    setMetadataStatus("");
+    try {
+      const result = await invoke<{
+        written_count: number;
+        failed_count: number;
+        backup_path: string;
+      }>("write_tags_to_files", {
+        args: {
+          scan_id: summary.scan_id,
+          paths: Array.from(selectedPaths),
+        },
+      });
+      setMetadataStatus(
+        `Wrote ${result.written_count.toLocaleString()} files, ${result.failed_count.toLocaleString()} failed. Backup: ${result.backup_path}`,
+      );
+      await refreshLatest();
+    } catch (error) {
+      setMetadataStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsWritingTags(false);
     }
   }
 
@@ -488,6 +526,13 @@ export default function App() {
           <button type="button" disabled={selectedPaths.size === 0} onClick={applyBulkEdit}>
             Apply
           </button>
+          <button
+            type="button"
+            disabled={selectedPaths.size === 0 || isWritingTags}
+            onClick={writeSelectedTags}
+          >
+            {isWritingTags ? "Writing..." : "Write Tags"}
+          </button>
         </div>
         {metadataStatus ? <p className="status">{metadataStatus}</p> : null}
         <div className="table-wrap">
@@ -513,6 +558,7 @@ export default function App() {
                 <th>Bucket</th>
                 <th>Readiness</th>
                 <th>Status</th>
+                <th>Tags</th>
                 <th>Save</th>
               </tr>
             </thead>
@@ -591,6 +637,9 @@ export default function App() {
                     </select>
                   </td>
                   <td className={`status-pill ${track.scan_status}`}>{track.scan_status}</td>
+                  <td className={track.metadata_dirty ? "dirty-pill" : "status-pill"}>
+                    {track.metadata_dirty ? "dirty" : track.tag_write_status}
+                  </td>
                   <td>
                     <button type="button" className="small-button" onClick={() => saveTrack(track)}>
                       Save
