@@ -36,6 +36,8 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
+    "apps/**",
+    "dj-library-toolkit/**",
     "node_modules"
   ]
 }
