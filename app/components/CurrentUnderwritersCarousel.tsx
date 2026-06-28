@@ -18,6 +18,7 @@ const underwriters: Underwriter[] = [
     description:
       "Murphys Irish Pub, supporting local music, community voices, and Calaveras County radio.",
     image: "/partners/murphys-irish-pub-transparent.png",
+    website: "https://www.murphysirishpubca.com/",
     imageClassName: "object-contain p-2",
   },
   {
@@ -25,6 +26,7 @@ const underwriters: Underwriter[] = [
     description:
       "Pure Aloha Cannabis Dispensary, proudly supporting community radio in Calaveras County.",
     image: "/partners/pure-aloha-transparent.png",
+    website: "https://purealoha.dispensary.shop/rec/menu",
     imageClassName: "object-contain",
   },
   {
@@ -39,6 +41,7 @@ const underwriters: Underwriter[] = [
     description:
       "Helping keep Murphys Community Radio creative, local, and on the air.",
     image: "/partners/punch-logo.png",
+    website: "https://www.punchcreations.com/",
     imageClassName: "object-contain p-4",
   },
 ];
