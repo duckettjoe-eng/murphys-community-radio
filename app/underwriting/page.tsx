@@ -57,7 +57,7 @@ const tiers = [
   },
   {
     name: "Tier 5 - Signature Underwriter",
-    price: "Standard retail value: $2,500+ / quarter",
+    price: "$2,500+ / quarter",
     audience:
       "For anchor partners, venue partners, live event partners, and businesses receiving expanded media services.",
     includes: [
