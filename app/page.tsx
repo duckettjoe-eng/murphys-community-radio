@@ -192,7 +192,7 @@ export default async function Home() {
             </p>
 
             <Link
-              href="/underwrite"
+              href="/underwriting"
               className="mt-8 inline-block rounded-full bg-orange-400 px-7 py-4 font-black text-black"
             >
               Become an Underwriter
@@ -227,7 +227,7 @@ export default async function Home() {
               </a>
 
               <Link
-                href="/underwrite"
+                href="/underwriting"
                 className="rounded-full border border-zinc-700 px-6 py-3 text-center text-sm font-black text-white hover:bg-zinc-900 sm:py-4 sm:text-base"
               >
                 Become a Sponsor

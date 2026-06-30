@@ -37,7 +37,7 @@ export default function SupportPage() {
           </Link>
 
           <Link
-            href="/underwrite"
+            href="/underwriting"
             className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800"
           >
             Underwrite
@@ -174,7 +174,7 @@ export default function SupportPage() {
             station website and, where appropriate, on-air mentions.
           </p>
           <Link
-            href="/#underwriters"
+            href="/underwriters"
             className="mt-8 inline-flex rounded-full bg-orange-400 px-7 py-4 font-black text-black hover:bg-orange-300"
           >
             View Underwriters / Sponsor MCR

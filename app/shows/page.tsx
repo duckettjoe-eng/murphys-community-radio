@@ -149,7 +149,7 @@ export default function ShowsPage() {
           </Link>
 
           <Link
-            href="/underwrite"
+            href="/underwriting"
             className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800"
           >
             Underwrite
