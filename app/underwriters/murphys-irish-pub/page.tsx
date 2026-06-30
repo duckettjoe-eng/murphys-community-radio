@@ -32,7 +32,7 @@ export default function MurphysIrishPubUnderwriterPage() {
       </nav>
 
       <section className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-        <div className="rounded-3xl bg-white p-8">
+        <div className="rounded-3xl border border-zinc-800 bg-black p-8">
           <img
             src="/partners/murphys-irish-pub-black.png"
             alt="Murphys Irish Pub logo"
