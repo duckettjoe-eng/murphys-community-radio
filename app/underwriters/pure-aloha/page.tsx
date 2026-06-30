@@ -31,7 +31,7 @@ export default function PureAlohaUnderwriterPage() {
       <section className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
         <div className="rounded-3xl border border-zinc-800 bg-black p-8">
           <img
-            src="/partners/pure-aloha-balanced.png"
+            src="/partners/pure-aloha-text-transparent.png"
             alt="Pure Aloha logo"
             className="mx-auto max-h-72 w-full object-contain"
           />

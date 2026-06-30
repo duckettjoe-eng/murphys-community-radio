@@ -6,7 +6,7 @@ const underwriters = [
     name: "Pure Aloha",
     packageName: "Founding Tier 2 - Business Radio",
     href: "/underwriters/pure-aloha",
-    image: "/partners/pure-aloha-balanced.png",
+    image: "/partners/pure-aloha-text-transparent.png",
     description:
       "A founding Business Radio underwriter supporting an in-store radio and display experience.",
   },
@@ -61,7 +61,7 @@ export default function UnderwritersPage() {
             href={underwriter.href}
             className="group rounded-3xl border border-zinc-800 bg-zinc-950 p-8 transition hover:border-orange-400"
           >
-            <div className="flex h-40 items-center justify-center rounded-2xl bg-white p-6">
+            <div className="flex h-40 items-center justify-center rounded-2xl border border-zinc-800 bg-black p-6">
               <img
                 src={underwriter.image}
                 alt={`${underwriter.name} logo`}
