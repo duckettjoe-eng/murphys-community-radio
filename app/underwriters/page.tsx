@@ -61,7 +61,7 @@ export default function UnderwritersPage() {
             href={underwriter.href}
             className="group rounded-3xl border border-zinc-800 bg-zinc-950 p-8 transition hover:border-orange-400"
           >
-            <div className="flex h-40 items-center justify-center rounded-2xl border border-zinc-800 bg-black p-6">
+            <div className="flex h-80 items-center justify-center rounded-2xl border border-zinc-800 bg-black p-8 sm:h-96">
               <img
                 src={underwriter.image}
                 alt={`${underwriter.name} logo`}
