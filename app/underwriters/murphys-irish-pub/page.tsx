@@ -36,7 +36,7 @@ export default function MurphysIrishPubUnderwriterPage() {
           <img
             src="/partners/murphys-irish-pub-black.png"
             alt="Murphys Irish Pub logo"
-            className="mx-auto max-h-72 w-full object-contain"
+            className="mx-auto max-h-72 w-full object-contain [filter:brightness(1.65)_contrast(1.5)_saturate(1.55)]"
           />
         </div>
         <div>

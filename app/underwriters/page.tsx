@@ -15,6 +15,8 @@ const underwriters = [
     packageName: "Founding Tier 5 - Signature Underwriter",
     href: "/underwriters/murphys-irish-pub",
     image: "/partners/murphys-irish-pub-black.png",
+    imageClassName:
+      "h-full w-full object-contain [filter:brightness(1.65)_contrast(1.5)_saturate(1.55)]",
     description:
       "A founding Signature Underwriter supporting live radio, events, and community recognition.",
   },
@@ -65,7 +67,9 @@ export default function UnderwritersPage() {
               <img
                 src={underwriter.image}
                 alt={`${underwriter.name} logo`}
-                className="h-full w-full object-contain"
+                className={
+                  underwriter.imageClassName || "h-full w-full object-contain"
+                }
               />
             </div>
             <p className="mt-6 text-sm font-black uppercase tracking-[0.22em] text-orange-400">
