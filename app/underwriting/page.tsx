@@ -91,6 +91,19 @@ const avoided = [
   "Promotional pricing",
 ];
 
+const foundingUnderwriters = [
+  {
+    name: "Pure Aloha",
+    packageName: "Founding Tier 2 - Business Radio",
+    href: "/underwriters/pure-aloha",
+  },
+  {
+    name: "Murphys Irish Pub",
+    packageName: "Founding Tier 5 - Signature Underwriter",
+    href: "/underwriters/murphys-irish-pub",
+  },
+];
+
 export default function UnderwritingPage() {
   return (
     <main className="min-h-screen bg-black px-6 py-20 text-white">
@@ -207,8 +220,22 @@ export default function UnderwritingPage() {
             pricing for future underwriters while honoring existing founding
             agreements.
           </p>
+          <div className="mt-8 grid gap-3">
+            {foundingUnderwriters.map((underwriter) => (
+              <Link
+                key={underwriter.name}
+                href={underwriter.href}
+                className="rounded-2xl bg-black px-5 py-4 text-white transition hover:bg-zinc-900"
+              >
+                <span className="block text-lg font-black">{underwriter.name}</span>
+                <span className="mt-1 block text-sm text-orange-200">
+                  {underwriter.packageName}
+                </span>
+              </Link>
+            ))}
+          </div>
           <Link href="/underwriters" className="mt-8 inline-flex rounded-full bg-black px-7 py-4 font-black text-white">
-            Meet Current Underwriters
+            View Underwriter Directory
           </Link>
         </div>
 
