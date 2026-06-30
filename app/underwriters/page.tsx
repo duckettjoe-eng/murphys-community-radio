@@ -26,13 +26,16 @@ export default function UnderwritersPage() {
   return (
     <main className="min-h-screen bg-black px-6 py-20 text-white">
       <nav className="mx-auto mb-12 flex max-w-7xl flex-wrap items-center justify-between gap-4">
-        <div>
+        <Link href="/" aria-label="Murphys Community Radio home">
           <p className="text-sm font-bold uppercase tracking-[0.35em] text-orange-400">
             Murphys Community Radio
           </p>
-        </div>
+        </Link>
         <div className="flex flex-wrap gap-3">
           <LiveBroadcastButton />
+          <Link href="/" className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800">
+            Home
+          </Link>
           <Link href="/underwriting" className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold hover:bg-zinc-800">
             Underwriting
           </Link>
