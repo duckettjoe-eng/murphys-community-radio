@@ -74,23 +74,6 @@ const tiers = [
   },
 ];
 
-const allowed = [
-  "Business name",
-  "Location",
-  "Website",
-  "Phone",
-  "Hours",
-  "Products or services",
-  "Value-neutral descriptions",
-];
-
-const avoided = [
-  "Calls to action",
-  "Discount language",
-  "Comparative claims",
-  "Promotional pricing",
-];
-
 const foundingUnderwriters = [
   {
     name: "Pure Aloha",
@@ -204,7 +187,7 @@ export default function UnderwritingPage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-20 grid max-w-7xl gap-8 lg:grid-cols-2">
+      <section className="mx-auto mt-20 max-w-7xl">
         <div className="rounded-3xl bg-orange-400 p-8 text-black sm:p-10">
           <p className="text-sm font-black uppercase tracking-[0.25em]">
             Founding Underwriters
@@ -237,31 +220,6 @@ export default function UnderwritingPage() {
           <Link href="/underwriters" className="mt-8 inline-flex rounded-full bg-black px-7 py-4 font-black text-white">
             View Underwriter Directory
           </Link>
-        </div>
-
-        <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 sm:p-10">
-          <p className="text-sm font-black uppercase tracking-[0.25em] text-orange-400">
-            Underwriting Compliance
-          </p>
-          <h2 className="mt-4 text-4xl font-black">Factual, clear, community-minded.</h2>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2">
-            <div>
-              <h3 className="text-xl font-black text-orange-300">Allowed</h3>
-              <ul className="mt-4 space-y-3 text-sm text-zinc-300">
-                {allowed.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-xl font-black text-orange-300">Avoid</h3>
-              <ul className="mt-4 space-y-3 text-sm text-zinc-300">
-                {avoided.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
         </div>
       </section>
 

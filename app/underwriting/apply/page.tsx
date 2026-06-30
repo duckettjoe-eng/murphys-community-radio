@@ -10,6 +10,23 @@ const packages = [
   "Not sure yet",
 ];
 
+const recognitionDetails = [
+  "Business name",
+  "Location",
+  "Website",
+  "Phone",
+  "Hours",
+  "Products or services",
+  "Value-neutral descriptions",
+];
+
+const copyBoundaries = [
+  "Calls to action",
+  "Discount language",
+  "Comparative claims",
+  "Promotional pricing",
+];
+
 function Field({
   id,
   label,
@@ -92,6 +109,46 @@ export default function UnderwritingApplyPage() {
           payment links, invoices, CRM automation, and notifications after the
           underwriting workflow is finalized.
         </p>
+      </section>
+
+      <section className="mx-auto mt-12 max-w-5xl rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-10">
+        <p className="text-sm font-black uppercase tracking-[0.25em] text-orange-400">
+          Recognition Copy Notes
+        </p>
+        <h2 className="mt-4 text-3xl font-black">
+          We will keep acknowledgements factual and community-minded.
+        </h2>
+        <p className="mt-4 leading-7 text-zinc-300">
+          During setup, we will shape your underwriting language around clear
+          business information and avoid promotional phrasing that feels like a
+          hard-sell ad.
+        </p>
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          <div>
+            <h3 className="text-xl font-black text-orange-300">
+              Good details to include
+            </h3>
+            <ul className="mt-4 grid gap-3 text-sm text-zinc-300">
+              {recognitionDetails.map((item) => (
+                <li key={item} className="rounded-2xl bg-black px-4 py-3">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-orange-300">
+              We will steer away from
+            </h3>
+            <ul className="mt-4 grid gap-3 text-sm text-zinc-300">
+              {copyBoundaries.map((item) => (
+                <li key={item} className="rounded-2xl bg-black px-4 py-3">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </section>
 
       <form
