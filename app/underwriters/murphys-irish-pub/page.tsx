@@ -46,24 +46,12 @@ export default function MurphysIrishPubUnderwriterPage() {
           <h1 className="mt-5 text-5xl font-black md:text-7xl">
             Murphys Irish Pub
           </h1>
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <div className="mt-8 grid gap-4">
             <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-              <p className="text-sm font-bold text-zinc-500">Package</p>
-              <p className="mt-2 text-xl font-black">
+              <p className="text-sm font-bold text-zinc-500">Tier</p>
+              <p className="mt-2 text-2xl font-black">
                 Founding Tier 5 - Signature Underwriter
               </p>
-            </div>
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-              <p className="text-sm font-bold text-zinc-500">
-                Current founding rate
-              </p>
-              <p className="mt-2 text-xl font-black">$750 / quarter</p>
-            </div>
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-              <p className="text-sm font-bold text-zinc-500">
-                Standard resale value
-              </p>
-              <p className="mt-2 text-xl font-black">$2,500+ / quarter</p>
             </div>
           </div>
         </div>

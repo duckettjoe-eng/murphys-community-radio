@@ -41,16 +41,12 @@ export default function PureAlohaUnderwriterPage() {
             Founding Underwriter
           </p>
           <h1 className="mt-5 text-5xl font-black md:text-7xl">Pure Aloha</h1>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <div className="mt-8 grid gap-4">
             <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-              <p className="text-sm font-bold text-zinc-500">Package</p>
+              <p className="text-sm font-bold text-zinc-500">Tier</p>
               <p className="mt-2 text-2xl font-black">
                 Founding Tier 2 - Business Radio
               </p>
-            </div>
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-              <p className="text-sm font-bold text-zinc-500">Price</p>
-              <p className="mt-2 text-2xl font-black">$500 / quarter</p>
             </div>
           </div>
         </div>
